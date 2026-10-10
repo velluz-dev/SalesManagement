@@ -1,0 +1,34 @@
+// Product catalog and reusable payment terms.
+
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  unit        String   @default("unit")
+  category    String?
+  description String?
+  listPrice   Decimal  @db.Decimal(14, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quotationItems QuotationItem[]
+  orderItems     SalesOrderItem[]
+  invoiceItems   InvoiceItem[]
+
+  @@index([name])
+  @@index([category])
+}
+
+/// Commercial payment terms (Net 30, COD, ...). `days` drives invoice due dates.
+model PaymentTerm {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  days      Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customers Customer[]
+  invoices  Invoice[]
+}

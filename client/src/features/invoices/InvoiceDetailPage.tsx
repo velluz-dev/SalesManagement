@@ -124,7 +124,17 @@ export default function InvoiceDetailPage() {
                 { label: 'Issue date', value: date(inv.issueDate) },
                 { label: 'Due date', value: date(inv.dueDate) },
                 { label: 'Currency', value: inv.currency },
-                { label: 'Quotation', value: inv.quotation ? <Link className="text-brand-600 hover:underline" to={`/quotations/${inv.quotation.id}`}>{inv.quotation.number} v{inv.quotation.version}</Link> : 'Manual' },
+                {
+                  label: 'Source',
+                  value: inv.salesOrder ? (
+                    <Link className="text-brand-600 hover:underline" to={`/sales-orders/${inv.salesOrder.id}`}>Sales order {inv.salesOrder.number}</Link>
+                  ) : inv.quotation ? (
+                    <Link className="text-brand-600 hover:underline" to={`/quotations/${inv.quotation.id}`}>{inv.quotation.number} v{inv.quotation.version}</Link>
+                  ) : (
+                    'Manual'
+                  ),
+                },
+                { label: 'Payment terms', value: inv.paymentTerm ? `${inv.paymentTerm.name} (${inv.paymentTerm.days} days)` : inv.issueDate ? 'System default' : 'Set when issued' },
                 { label: 'Customer tax ID', value: inv.customer.taxId },
                 { label: 'Created by', value: inv.createdBy?.name },
               ]}
@@ -200,7 +210,7 @@ export default function InvoiceDetailPage() {
                   columns={1}
                   items={[
                     { label: 'Credit limit', value: money(credit.creditLimit) },
-                    { label: 'Terms', value: `${credit.paymentTermsDays} days` },
+                    { label: 'Terms', value: inv.customer.paymentTerm ? `${inv.customer.paymentTerm.name} (${inv.customer.paymentTerm.days} days)` : 'System default' },
                     { label: 'Status', value: credit.onHold ? <Badge tone="red">On hold</Badge> : <Badge tone="green">Good standing</Badge> },
                   ]}
                 />

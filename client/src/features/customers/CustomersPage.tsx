@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CUSTOMER_TYPES, enumLabel } from '@shared';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
@@ -17,7 +18,7 @@ export default function CustomersPage() {
   const { can } = useAuth();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
-  const lp = useListParams<'isActive'>({ sort: 'name', order: 'asc' });
+  const lp = useListParams<'isActive' | 'type'>({ sort: 'name', order: 'asc' });
   const { data, isLoading, isFetching, error, refetch } = useList<Customer>('customers', lp.query);
 
   const columns: Column<Customer>[] = [
@@ -32,6 +33,7 @@ export default function CustomersPage() {
         </div>
       ),
     },
+    { key: 'type', header: 'Type', cell: (c) => enumLabel(c.type), hideOnMobile: true },
     { key: 'industry', header: 'Industry', cell: (c) => c.industry ?? EMPTY, hideOnMobile: true },
     { key: 'owner', header: 'Owner', cell: (c) => c.owner.name },
     { key: 'counts', header: 'Opps / Quotes', cell: (c) => `${c._count?.opportunities ?? 0} / ${c._count?.quotations ?? 0}`, hideOnMobile: true, align: 'center' },
@@ -49,6 +51,12 @@ export default function CustomersPage() {
       <div className="card overflow-hidden">
         <Toolbar>
           <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search name, email, industry…" className="sm:w-80" />
+          <FilterSelect
+            label="Type"
+            value={lp.filters.type ?? ''}
+            onChange={(v) => lp.setFilter('type', v)}
+            options={CUSTOMER_TYPES.map((t) => ({ value: t, label: enumLabel(t) }))}
+          />
           <FilterSelect
             label="Status"
             value={lp.filters.isActive ?? ''}

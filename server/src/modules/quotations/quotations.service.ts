@@ -6,6 +6,7 @@ import { audit } from '../../lib/audit';
 import { notify } from '../../lib/notify';
 import { badRequest, notFound, unprocessable } from '../../lib/errors';
 import { calculateLine, calculateTotals } from '../../lib/money';
+import { assertSellableProducts, copyLines, normalizeLines, type LineInput } from '../../lib/line-items';
 import { contains, pageArgs, paged, sortBy } from '../../lib/pagination';
 import { getSettings } from '../../lib/settings';
 import { addDays, startOfTodayUtc } from '../../lib/dates';
@@ -26,10 +27,12 @@ const detailInclude = {
   owner: ownerSelect,
   customer: { select: { id: true, name: true, email: true, address: true } },
   opportunity: { select: { id: true, name: true, stage: true } },
-  items: { orderBy: { position: 'asc' } },
+  items: { orderBy: { position: 'asc' }, include: { product: { select: { id: true, code: true, name: true, unit: true } } } },
   parent: { select: { id: true, number: true, version: true, status: true } },
   revision: { select: { id: true, number: true, version: true, status: true } },
   invoices: { select: { id: true, number: true, status: true, total: true } },
+  contract: { select: { id: true, number: true, status: true } },
+  salesOrders: { where: { status: { not: 'CANCELLED' } }, select: { id: true, number: true, status: true }, orderBy: { createdAt: 'desc' } },
   approvalRequests: {
     orderBy: { createdAt: 'desc' },
     include: {
@@ -92,15 +95,8 @@ function assertStatus(current: QuotationStatus, allowed: QuotationStatus[], acti
   }
 }
 
-async function writeItems(tx: Prisma.TransactionClient, quotationId: string, items: LineItemInput[], defaultTaxRate: number) {
-  const normalized = items.map((i, idx) => ({
-    position: idx + 1,
-    description: i.description,
-    quantity: i.quantity,
-    unitPrice: i.unitPrice,
-    discountPercent: i.discountPercent ?? 0,
-    taxRate: i.taxRate ?? defaultTaxRate,
-  }));
+async function writeItems(tx: Prisma.TransactionClient, quotationId: string, items: LineInput[], defaultTaxRate: number) {
+  const normalized = normalizeLines(items, defaultTaxRate);
   await tx.quotationItem.deleteMany({ where: { quotationId } });
   await tx.quotationItem.createMany({ data: normalized.map((i) => ({ ...i, quotationId })) });
   const totals = calculateTotals(normalized);
@@ -141,6 +137,7 @@ export async function createQuotation(actor: Actor, input: CreateQuotationInput)
         terms: input.terms ?? null,
       },
     });
+    await assertSellableProducts(tx, input.items);
     const totals = await writeItems(tx, q.id, input.items, settings['quotation.defaultTaxRate']);
     await audit(tx, actor, { action: 'quotation.created', entityType: 'Quotation', entityId: q.id, after: { ...q, ...totals, items: input.items } });
     return q.id;
@@ -166,6 +163,7 @@ export async function updateQuotation(actor: Actor, id: string, input: UpdateQuo
       },
     });
     if (input.items) {
+      await assertSellableProducts(tx, input.items);
       const settings = await getSettings(tx);
       await writeItems(tx, id, input.items, settings['quotation.defaultTaxRate']);
     }
@@ -275,13 +273,7 @@ export async function reviseQuotation(actor: Actor, id: string, comment?: string
     await writeItems(
       tx,
       copy.id,
-      items.map((i) => ({
-        description: i.description,
-        quantity: i.quantity.toString(),
-        unitPrice: i.unitPrice.toString(),
-        discountPercent: i.discountPercent.toNumber(),
-        taxRate: i.taxRate.toNumber(),
-      })),
+      copyLines(items),
       0,
     );
     await tx.quotation.update({ where: { id }, data: { status: 'SUPERSEDED' } });

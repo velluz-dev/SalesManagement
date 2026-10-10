@@ -22,8 +22,9 @@ function salesOwners(actor: Actor): string[] | null | undefined {
 async function salesSection(actor: Actor, owners: string[] | null) {
   const today = startOfTodayUtc();
   const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  const lastMonthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
   const from = monthsBack(6);
-  const [activeLeads, openOpps, wonThisMonth, quotationStatus, monthly, pipeline] = await Promise.all([
+  const [activeLeads, openOpps, wonThisMonth, quotationStatus, monthly, pipeline, wonLastMonth, daily, leadFunnel, oppFunnel, recentQuotations] = await Promise.all([
     prisma.lead.count({ where: { ...ownerIn(owners), status: { in: ['NEW', 'CONTACTED', 'QUALIFIED'] } } }),
     prisma.opportunity.aggregate({
       where: { ...ownerIn(owners), stage: { notIn: ['CLOSED_WON', 'CLOSED_LOST'] } },
@@ -51,6 +52,22 @@ async function salesSection(actor: Actor, owners: string[] | null) {
       _sum: { amount: true },
       _count: true,
     }),
+    prisma.opportunity.aggregate({
+      where: { ...ownerIn(owners), stage: 'CLOSED_WON', closedAt: { gte: lastMonthStart, lt: monthStart } },
+      _sum: { amount: true },
+    }),
+    prisma.$queryRaw<{ day: number; won: Prisma.Decimal }[]>`
+      SELECT EXTRACT(DAY FROM "closedAt")::int AS day, SUM(amount) AS won
+      FROM "Opportunity" WHERE stage = 'CLOSED_WON' AND "closedAt" >= ${monthStart} ${ownerSql(owners, 'ownerId')}
+      GROUP BY 1 ORDER BY 1`,
+    prisma.lead.groupBy({ by: ['status'], where: ownerIn(owners), _count: true }),
+    prisma.opportunity.groupBy({ by: ['stage'], where: ownerIn(owners), _count: true }),
+    prisma.quotation.findMany({
+      where: { ...ownerIn(owners), status: { not: 'SUPERSEDED' } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, number: true, version: true, status: true, total: true, currency: true, validUntil: true, customer: { select: { id: true, name: true } } },
+    }),
   ]);
 
   let targets: Awaited<ReturnType<typeof withProgress>>[] = [];
@@ -68,10 +85,46 @@ async function salesSection(actor: Actor, owners: string[] | null) {
     targets = await Promise.all(rows.map((r) => withProgress(prisma, r)));
   }
 
+  // Cumulative won amount per day this month, against a straight-line pace to this month's targets.
+  const daysInMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).getUTCDate();
+  const monthTarget = targets
+    .filter((t) => t.userId && t.periodType === 'MONTH')
+    .reduce((sum, t) => sum.add(t.amount), ZERO);
+  const wonByDay = new Map(daily.map((d) => [d.day, new Prisma.Decimal(d.won)]));
+  let running = ZERO;
+  const dailyPerformance = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    running = running.add(wonByDay.get(day) ?? ZERO);
+    return {
+      day,
+      won: day <= today.getUTCDate() ? running.toFixed(2) : null,
+      target: monthTarget.gt(0) ? monthTarget.mul(day).div(daysInMonth).toFixed(2) : null,
+    };
+  });
+
+  // Funnel: how many records reached each stage (a won deal also counts as having reached proposal and negotiation).
+  const leadCount = (statuses: string[]) => leadFunnel.filter((l) => statuses.includes(l.status)).reduce((n, l) => n + l._count, 0);
+  const oppCount = (stages: string[]) => oppFunnel.filter((o) => stages.includes(o.stage)).reduce((n, o) => n + o._count, 0);
+  const funnel = [
+    { stage: 'Leads', count: leadCount(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED']) },
+    { stage: 'Qualified', count: leadCount(['QUALIFIED', 'CONVERTED']) },
+    { stage: 'Proposal', count: oppCount(['PROPOSAL', 'NEGOTIATION', 'CLOSED_WON']) },
+    { stage: 'Negotiation', count: oppCount(['NEGOTIATION', 'CLOSED_WON']) },
+    { stage: 'Won', count: oppCount(['CLOSED_WON']) },
+  ];
+
+  const myTarget = targets.find((t) => t.userId === actor.user.id) ?? null;
+
   return {
     activeLeads,
     openOpportunities: { count: openOpps._count, amount: (openOpps._sum.amount ?? ZERO).toFixed(2) },
     wonThisMonth: { count: wonThisMonth._count, amount: (wonThisMonth._sum.amount ?? ZERO).toFixed(2) },
+    wonLastMonth: (wonLastMonth._sum.amount ?? ZERO).toFixed(2),
+    dailyPerformance,
+    monthTarget: monthTarget.toFixed(2),
+    funnel,
+    recentQuotations,
+    myTarget,
     quotationsByStatus: quotationStatus.map((q) => ({ status: q.status, count: q._count, amount: (q._sum.total ?? ZERO).toFixed(2) })),
     monthlyWon: fillMonths(monthly.map((m) => ({ month: m.month, won: new Prisma.Decimal(m.won).toFixed(2) })), from, 6, { won: '0.00' }),
     pipeline: pipeline.map((p) => ({ stage: p.stage, count: p._count, amount: (p._sum.amount ?? ZERO).toFixed(2) })),
@@ -97,6 +150,7 @@ async function approvalsSection(actor: Actor) {
       include: {
         quotation: { select: { id: true, number: true, version: true, currency: true, customer: { select: { name: true } } } },
         requestedBy: { select: { id: true, name: true } },
+        approverRole: { select: { code: true, name: true } },
       },
     }),
   ]);

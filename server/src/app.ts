@@ -26,6 +26,10 @@ import { notificationsRouter } from './modules/notifications/notifications.route
 import { auditRouter } from './modules/audit/audit.routes';
 import { settingsRouter } from './modules/settings/settings.routes';
 import { lookupsRouter } from './modules/lookups/lookups.routes';
+import { productsRouter } from './modules/catalog/products.routes';
+import { paymentTermsRouter } from './modules/catalog/payment-terms.routes';
+import { contractsRouter } from './modules/contracts/contracts.routes';
+import { salesOrdersRouter } from './modules/sales-orders/sales-orders.routes';
 
 export function createApp() {
   const app = express();
@@ -68,6 +72,10 @@ export function createApp() {
   secured.use('/audit-logs', auditRouter);
   secured.use('/settings', settingsRouter);
   secured.use('/lookups', lookupsRouter);
+  secured.use('/products', productsRouter);
+  secured.use('/payment-terms', paymentTermsRouter);
+  secured.use('/contracts', contractsRouter);
+  secured.use('/sales-orders', salesOrdersRouter);
   api.use(secured);
 
   app.use('/api', api);

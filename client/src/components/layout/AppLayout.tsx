@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, ChevronDown, FlaskConical, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import { Bell, ChevronRight, CornerDownLeft, FlaskConical, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, UserRound, X } from 'lucide-react';
 import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
-import { NAVIGATION } from './navigation';
+import { NAVIGATION, SEARCH_TARGETS, isNavActive } from './navigation';
 import { cn } from '../../lib/cn';
 import { BrandMark } from '../ui/Layout';
 import { api } from '../../lib/api';
@@ -13,9 +13,12 @@ import type { Notification } from '../../lib/types';
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5 px-2">
+    <Link to="/" className="flex items-center gap-2.5 px-1">
       <BrandMark />
-      <span className="text-[17px] font-semibold tracking-tight text-white">SalesHub</span>
+      <span className="leading-tight">
+        <span className="block text-[16px] font-bold tracking-tight text-white">SalesPro</span>
+        <span className="block text-[11px] font-medium tracking-wide text-slate-400">CRM</span>
+      </span>
     </Link>
   );
 }
@@ -25,25 +28,51 @@ const initialsOf = (name: string) => name.split(' ').map((p) => p[0]).slice(0, 2
 function SidebarAccount() {
   const { me, logout } = useAuth();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useClickOutside(ref, () => setOpen(false), open);
   if (!me) return null;
   return (
-    <div className="border-t border-white/10 px-3 py-3">
-      <div className="flex items-center gap-3 px-3 py-2">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-marigold-300">{initialsOf(me.user.name)}</span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-white">{me.user.name}</p>
-          <p className="truncate text-xs text-brand-200/70">{me.user.email}</p>
+    <div className="relative border-t border-white/10 p-3" ref={ref}>
+      {open && (
+        <div role="menu" className="absolute right-3 bottom-full left-3 mb-2 overflow-hidden rounded-xl border border-white/10 bg-navy-800 py-1 shadow-xl">
+          <div className="border-b border-white/10 px-4 py-2.5">
+            <p className="truncate text-xs text-slate-400">{me.user.email}</p>
+            {me.user.team && <p className="mt-0.5 truncate text-xs text-slate-400">Team: {me.user.team.name}</p>}
+          </div>
+          <Link role="menuitem" to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-white/5">
+            <UserRound className="size-4" /> My profile
+          </Link>
+          <Link role="menuitem" to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-white/5">
+            <KeyRound className="size-4" /> Change password
+          </Link>
+          <button
+            role="menuitem"
+            onClick={async () => {
+              await logout();
+              navigate('/login');
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-300 hover:bg-white/5"
+          >
+            <LogOut className="size-4" /> Sign out
+          </button>
         </div>
-      </div>
+      )}
       <button
-        onClick={async () => {
-          await logout();
-          navigate('/login');
-        }}
-        className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-[7px] text-sm text-brand-100/75 hover:bg-white/[0.04] hover:text-white"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/[0.06]"
       >
-        <LogOut className="size-4 shrink-0" aria-hidden />
-        Sign out
+        <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+          {initialsOf(me.user.name)}
+          <span className="absolute right-0 bottom-0 size-2.5 rounded-full bg-emerald-400 ring-2 ring-navy-950" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold text-white">{me.user.name}</span>
+          <span className="block truncate text-[11px] text-slate-400">{me.roles.map(enumLabel).join(', ')}</span>
+        </span>
+        <ChevronRight className={cn('size-4 text-slate-400 transition-transform', open && '-rotate-90')} aria-hidden />
       </button>
     </div>
   );
@@ -51,35 +80,38 @@ function SidebarAccount() {
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { canAny } = useAuth();
+  const location = useLocation();
   return (
-    <nav aria-label="Main navigation" className="flex h-full flex-col bg-brand-950">
-      <div className="flex h-14 items-center px-4">
+    <nav aria-label="Main navigation" className="flex h-full flex-col bg-navy-950">
+      <div className="flex h-16 items-center px-5">
         <Logo />
       </div>
-      <div className="flex-1 space-y-5 overflow-y-auto px-3 pt-3 pb-6">
+      <div className="flex-1 space-y-5 overflow-y-auto px-3 pt-2 pb-6">
         {NAVIGATION.map((section) => {
           const items = section.items.filter((i) => !i.any.length || canAny(...i.any));
           if (!items.length) return null;
           return (
-            <div key={section.title}>
-              <p className="mb-1 px-3 text-xs text-brand-300/70">{section.title}</p>
-              <ul className="space-y-0.5">
+            <div key={section.title || 'main'}>
+              {section.title && (
+                <p className="mb-1.5 px-3 text-[10px] font-semibold tracking-[0.12em] text-slate-500">{section.title}</p>
+              )}
+              <ul className="space-y-1">
                 {items.map((item) => (
-                  <li key={item.to}>
+                  <li key={`${section.title}-${item.to}`}>
                     <NavLink
                       to={item.to}
                       end={item.to === '/'}
                       onClick={onNavigate}
-                      className={({ isActive }) =>
+                      className={() =>
                         cn(
-                          'flex items-center gap-3 rounded-md px-3 py-[7px] text-sm',
-                          isActive
-                            ? 'bg-white/[0.07] font-medium text-white shadow-[inset_3px_0_0_var(--color-marigold-400)]'
-                            : 'text-brand-100/75 hover:bg-white/[0.04] hover:text-white',
+                          'flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
+                          isNavActive(item.to, location.pathname, location.search)
+                            ? 'bg-brand-500 text-white shadow-[0_4px_12px_rgb(106_98_239/0.45)]'
+                            : 'text-slate-300/85 hover:bg-white/[0.06] hover:text-white',
                         )
                       }
                     >
-                      <item.icon className="size-4 shrink-0" aria-hidden />
+                      <item.icon className="size-[18px] shrink-0" aria-hidden />
                       {item.label}
                     </NavLink>
                   </li>
@@ -110,6 +142,113 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onOutside: ()
   }, [ref, onOutside, active]);
 }
 
+interface SearchOption {
+  key: string;
+  to: string;
+  label: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+/** Jumps to a page, or hands the text to a record list (each list page reads ?q=). Only shows what the user may open. */
+function GlobalSearch() {
+  const navigate = useNavigate();
+  const { canAny } = useAuth();
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  useClickOutside(ref, () => setOpen(false), open);
+
+  const text = q.trim();
+  const allowed = (any: string[]) => !any.length || canAny(...(any as never[]));
+  const options: SearchOption[] = text
+    ? [
+        ...SEARCH_TARGETS.filter((t) => allowed(t.any)).map((t) => ({
+          key: `search-${t.to}`,
+          to: `${t.to}?q=${encodeURIComponent(text)}`,
+          label: `Search ${t.label.toLowerCase()} for “${text}”`,
+          hint: t.label,
+          icon: t.icon,
+        })),
+        ...NAVIGATION.flatMap((sec) => sec.items)
+          .filter((i) => allowed(i.any) && i.label.toLowerCase().includes(text.toLowerCase()))
+          .map((i) => ({ key: `page-${i.to}`, to: i.to, label: i.label, hint: 'Go to page', icon: i.icon })),
+      ]
+    : [];
+
+  const go = (o?: SearchOption) => {
+    if (!o) return;
+    navigate(o.to);
+    setOpen(false);
+    setQ('');
+  };
+
+  return (
+    <div className="relative hidden w-full max-w-md md:block" ref={ref}>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          go(options[active]);
+        }}
+      >
+        <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+        <input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setActive(0);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setActive((a) => Math.min(a + 1, options.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setActive((a) => Math.max(a - 1, 0));
+            } else if (e.key === 'Escape') {
+              setOpen(false);
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          placeholder="Search anything..."
+          aria-label="Search anything"
+          role="combobox"
+          aria-expanded={open && options.length > 0}
+          aria-controls="global-search-results"
+          aria-activedescendant={open && options[active] ? options[active].key : undefined}
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pr-16 pl-10 text-[13px] shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+        />
+        <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+          Ctrl K
+        </kbd>
+      </form>
+      {open && options.length > 0 && (
+        <ul id="global-search-results" role="listbox" className="absolute right-0 left-0 z-40 mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+          {options.map((o, i) => (
+            <li key={o.key} id={o.key} role="option" aria-selected={i === active}>
+              <button
+                type="button"
+                onMouseEnter={() => setActive(i)}
+                onClick={() => go(o)}
+                className={cn('flex w-full items-center gap-3 px-3 py-2 text-left text-sm', i === active ? 'bg-brand-50 text-brand-800' : 'text-slate-700')}
+              >
+                <o.icon className="size-4 shrink-0 text-slate-400" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                <span className="shrink-0 text-xs text-slate-400">{o.hint}</span>
+                {i === active && <CornerDownLeft className="size-3.5 shrink-0 text-slate-400" aria-hidden />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -133,19 +272,19 @@ function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+        className="relative rounded-xl p-2 text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
         aria-expanded={open}
       >
         <Bell className="size-5" />
         {unread > 0 && (
-          <span className="tabular absolute top-0.5 right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] leading-4 font-semibold text-white ring-2 ring-white">
+          <span className="tabular absolute -top-0.5 -right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] leading-4 font-bold text-white ring-2 ring-[#f5f6fa]">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_10px_30px_-12px_rgb(24_34_30/0.3)]">
+        <div className="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_16px_40px_-12px_rgb(16_24_64/0.25)]">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold">Notifications</p>
             {unread > 0 && (
@@ -184,50 +323,7 @@ function NotificationBell() {
   );
 }
 
-function UserMenu() {
-  const { me, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  useClickOutside(ref, () => setOpen(false), open);
-  if (!me) return null;
-  return (
-    <div className="relative" ref={ref}>
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-md p-1.5 hover:bg-slate-100" aria-expanded={open} aria-haspopup="menu">
-        <span className="flex size-8 items-center justify-center rounded-full bg-brand-900 text-xs font-semibold text-marigold-300">{initialsOf(me.user.name)}</span>
-        <span className="hidden text-left sm:block">
-          <span className="block text-sm leading-tight font-medium text-slate-900">{me.user.name}</span>
-          <span className="block text-xs leading-tight text-slate-500">{me.roles.map(enumLabel).join(', ')}</span>
-        </span>
-        <ChevronDown className="hidden size-4 text-slate-400 sm:block" />
-      </button>
-      {open && (
-        <div role="menu" className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-[0_10px_30px_-12px_rgb(24_34_30/0.3)]">
-          <div className="border-b border-slate-100 px-4 py-2.5">
-            <p className="truncate text-sm font-medium">{me.user.name}</p>
-            <p className="truncate text-xs text-slate-500">{me.user.email}</p>
-            {me.user.team && <p className="mt-1 text-xs text-slate-500">Team: {me.user.team.name}</p>}
-          </div>
-          <Link role="menuitem" to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            <KeyRound className="size-4" /> Change password
-          </Link>
-          <button
-            role="menuitem"
-            onClick={async () => {
-              await logout();
-              navigate('/login');
-            }}
-            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            <LogOut className="size-4" /> Sign out
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const SIDEBAR_KEY = 'saleshub.sidebar';
+const SIDEBAR_KEY = 'salespro.sidebar';
 
 function readSidebarPref() {
   try {
@@ -264,6 +360,17 @@ export function AppLayout() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>('form[role="search"] input')?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const toggleDesktop = () => {
     const next = !desktopOpen;
     setDesktopOpen(next);
@@ -271,14 +378,14 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#f5f6fa]">
       <a href="#main" className="sr-only z-50 rounded bg-white px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Skip to content
       </a>
       <aside
         inert={!desktopOpen}
         className={cn(
-          'fixed inset-y-0 left-0 z-30 hidden w-64 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:block',
+          'fixed inset-y-0 left-0 z-30 hidden w-[228px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:block',
           !desktopOpen && '-translate-x-full',
         )}
       >
@@ -298,45 +405,48 @@ export function AppLayout() {
             mobileOpen ? 'translate-x-0' : '-translate-x-full',
           )}
         >
-          <button onClick={() => setMobileOpen(false)} className="absolute top-3.5 right-3 z-10 rounded-md p-1 text-brand-200 hover:text-white" aria-label="Close menu">
+          <button onClick={() => setMobileOpen(false)} className="absolute top-4 right-3 z-10 rounded-md p-1 text-slate-400 hover:text-white" aria-label="Close menu">
             <X className="size-5" />
           </button>
           <Sidebar onNavigate={() => setMobileOpen(false)} />
         </aside>
       </div>
 
-      <div className={cn('transition-[padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]', desktopOpen && 'lg:pl-64')}>
+      <div className={cn('transition-[padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]', desktopOpen && 'lg:pl-[228px]')}>
         {settings?.demoData && (
-          <div className="flex items-center justify-center gap-2 bg-marigold-300/40 px-4 py-1.5 text-center text-xs font-medium text-slate-800">
+          <div className="flex items-center justify-center gap-2 bg-amber-100/70 px-4 py-1.5 text-center text-xs font-medium text-slate-800">
             <FlaskConical className="size-3.5 shrink-0" aria-hidden />
             Demo environment. Every record here is made up for development and testing.
           </div>
         )}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-4 sm:px-6">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="-ml-2 rounded-md p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
-            aria-label="Open menu"
-            aria-expanded={mobileOpen}
-          >
-            <Menu className="size-5" />
-          </button>
-          <button
-            onClick={toggleDesktop}
-            className="-ml-2 hidden rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:inline-flex"
-            aria-label={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
-            aria-expanded={desktopOpen}
-            title={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
-          >
-            {desktopOpen ? <PanelLeftClose className="size-5" /> : <PanelLeftOpen className="size-5" />}
-          </button>
-          <p className="hidden truncate text-sm font-medium text-slate-700 sm:block">{settings?.['company.name']}</p>
-          <div className="ml-auto flex items-center gap-1">
-            <NotificationBell />
-            <UserMenu />
+        <header className="sticky top-0 z-20 bg-[#f5f6fa]/85 backdrop-blur">
+          <div className="flex h-16 items-center gap-2 px-4 sm:px-6">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="-ml-2 rounded-lg p-2 text-slate-500 hover:bg-white lg:hidden"
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
+            >
+              <Menu className="size-5" />
+            </button>
+            <button
+              onClick={toggleDesktop}
+              className="-ml-2 hidden rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-800 lg:inline-flex"
+              aria-label={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
+              aria-expanded={desktopOpen}
+              title={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
+            >
+              {desktopOpen ? <PanelLeftClose className="size-5" /> : <PanelLeftOpen className="size-5" />}
+            </button>
+            <div className="flex flex-1 justify-center">
+              <GlobalSearch />
+            </div>
+            <div className="ml-auto flex items-center gap-1 md:ml-0">
+              <NotificationBell />
+            </div>
           </div>
         </header>
-        <main id="main" className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main id="main" className="px-4 pb-10 sm:px-6">
           <Outlet />
         </main>
       </div>

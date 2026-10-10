@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CUSTOMER_TYPES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { ownerWhere, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -11,6 +12,7 @@ export const listCustomersQuery = listQuery(['name', 'createdAt', 'updatedAt'] a
   ownerId: uuid.optional(),
   isActive: booleanQuery,
   industry: z.string().max(80).optional(),
+  type: z.enum(CUSTOMER_TYPES).optional(),
 });
 
 const customerFields = {
@@ -20,6 +22,7 @@ const customerFields = {
   industry: optionalText(80),
   address: optionalText(400),
   taxId: optionalText(60),
+  type: z.enum(CUSTOMER_TYPES).optional(),
 };
 
 export const createCustomerSchema = z.strictObject({ ...customerFields, ownerId: uuid.optional() });
@@ -35,12 +38,13 @@ export async function listCustomers(actor: Actor, q: z.infer<typeof listCustomer
       q.ownerId ? { ownerId: q.ownerId } : {},
       q.isActive !== undefined ? { isActive: q.isActive } : {},
       q.industry ? { industry: q.industry } : {},
+      q.type ? { type: q.type } : {},
     ],
   };
   const [rows, total] = await Promise.all([
     prisma.customer.findMany({
       where,
-      include: { owner: ownerSelect, _count: { select: { opportunities: true, quotations: true, invoices: true } } },
+      include: { owner: ownerSelect, paymentTerm: { select: { id: true, name: true, days: true } }, _count: { select: { opportunities: true, quotations: true, invoices: true } } },
       orderBy: { [q.sort]: q.order },
       ...pageArgs(q),
     }),
@@ -54,6 +58,7 @@ export async function getCustomer(actor: Actor, id: string) {
     where: { id, ...customerScope(actor) },
     include: {
       owner: ownerSelect,
+      paymentTerm: { select: { id: true, name: true, days: true } },
       credit: actor.permissions.has('credit.read'),
       _count: { select: { opportunities: true, quotations: true, invoices: true, leads: true } },
     },

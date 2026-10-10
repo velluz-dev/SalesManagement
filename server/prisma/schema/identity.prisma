@@ -30,6 +30,10 @@ model User {
   targetsSet            SalesTarget[]     @relation("TargetSetter")
   invoicesAsSalesperson Invoice[]         @relation("InvoiceSalesperson")
   invoicesCreated       Invoice[]         @relation("InvoiceCreator")
+  contractsOwned        Contract[]        @relation("ContractOwner")
+  contractsCreated      Contract[]        @relation("ContractCreator")
+  salesOrdersOwned      SalesOrder[]      @relation("SalesOrderOwner")
+  salesOrdersCreated    SalesOrder[]      @relation("SalesOrderCreator")
   paymentsRecorded      Payment[]         @relation("PaymentRecorder")
   paymentsVoided        Payment[]         @relation("PaymentVoider")
   creditUpdates         CustomerCredit[]

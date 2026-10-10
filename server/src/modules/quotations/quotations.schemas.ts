@@ -4,6 +4,7 @@ import { listQuery } from '../../lib/pagination';
 import { booleanQuery, dateOnly, money, optionalText, percent, quantity, requiredText, uuid } from '../../lib/validation';
 
 export const lineItemSchema = z.strictObject({
+  productId: uuid.optional().nullable(),
   description: requiredText(500, 'Description'),
   quantity,
   unitPrice: money,

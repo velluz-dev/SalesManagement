@@ -12,6 +12,9 @@ export interface Customer {
   industry: string | null;
   address: string | null;
   taxId: string | null;
+  type: string;
+  paymentTermId: string | null;
+  paymentTerm?: PaymentTermRef | null;
   isActive: boolean;
   ownerId: string;
   owner: UserRef;
@@ -24,7 +27,6 @@ export interface CustomerCredit {
   id: string;
   customerId: string;
   creditLimit: string;
-  paymentTermsDays: number;
   onHold: boolean;
   notes: string | null;
   updatedAt: string;
@@ -83,6 +85,8 @@ export interface Activity {
 export interface QuotationItem {
   id: string;
   position: number;
+  productId?: string | null;
+  product?: ProductRef | null;
   description: string;
   quantity: string;
   unitPrice: string;
@@ -155,6 +159,8 @@ export interface Quotation {
   parent?: { id: string; number: string; version: number; status: string } | null;
   revision?: { id: string; number: string; version: number; status: string } | null;
   invoices?: { id: string; number: string; status: string; total: string }[];
+  contract?: { id: string; number: string; status: string } | null;
+  salesOrders?: { id: string; number: string; status: string }[];
   approvalRequests?: ApprovalRequest[];
 }
 
@@ -163,8 +169,10 @@ export interface Invoice {
   number: string;
   status: string;
   customerId: string;
-  customer: { id: string; name: string; email?: string | null; address?: string | null; taxId?: string | null; credit?: CustomerCredit | null };
+  customer: { id: string; name: string; email?: string | null; address?: string | null; taxId?: string | null; credit?: CustomerCredit | null; paymentTerm?: PaymentTermRef | null };
   quotation?: { id: string; number: string; version: number } | null;
+  salesOrder?: { id: string; number: string } | null;
+  paymentTerm?: PaymentTermRef | null;
   salesperson: UserRef | null;
   createdBy?: UserRef;
   issueDate: string | null;
@@ -270,4 +278,96 @@ export interface AuditLog {
   userAgent: string | null;
   createdAt: string;
   actor: UserRef | null;
+}
+
+export interface PaymentTermRef {
+  id: string;
+  name: string;
+  days: number;
+}
+
+export interface PaymentTerm extends PaymentTermRef {
+  isActive: boolean;
+  customerCount?: number;
+}
+
+export interface Product {
+  id: string;
+  code: string;
+  name: string;
+  unit: string;
+  category: string | null;
+  description: string | null;
+  listPrice: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ProductRef {
+  id: string;
+  code: string;
+  name?: string;
+  unit: string;
+}
+
+export interface Contract {
+  id: string;
+  number: string;
+  title: string;
+  status: string;
+  quotationId: string;
+  customerId: string;
+  customer: { id: string; name: string };
+  owner: UserRef;
+  createdBy?: UserRef;
+  startDate: string;
+  endDate: string | null;
+  value: string;
+  currency: string;
+  terms: string | null;
+  documentUrl: string | null;
+  cancelReason: string | null;
+  createdAt: string;
+  quotation?: { id: string; number: string; version: number; total: string; currency: string };
+  orders?: { id: string; number: string; status: string; total: string; orderDate: string }[];
+}
+
+export interface SalesOrderItem {
+  id: string;
+  position: number;
+  productId: string | null;
+  product: ProductRef | null;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  discountPercent: string;
+  taxRate: string;
+  lineTotal?: string;
+}
+
+export interface SalesOrder {
+  id: string;
+  number: string;
+  status: string;
+  customerId: string;
+  customer: { id: string; name: string };
+  owner: UserRef;
+  createdBy?: UserRef;
+  contract: { id: string; number: string } | null;
+  quotation?: { id: string; number: string; version: number } | null;
+  orderDate: string;
+  deliveryDate: string | null;
+  currency: string;
+  notes: string | null;
+  subtotal: string;
+  discountTotal: string;
+  taxTotal: string;
+  total: string;
+  confirmedAt: string | null;
+  deliveredAt: string | null;
+  cancelReason: string | null;
+  createdAt: string;
+  items?: SalesOrderItem[];
+  invoices?: { id: string; number: string; status: string; total: string }[];
+  warnings?: string[];
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { enumLabel } from '@shared';
@@ -166,7 +167,11 @@ export default function ReportsPage() {
   const { canAny, can } = useAuth();
   const hasSales = canAny('report.sales.own', 'report.sales.team', 'report.sales.all');
   const hasFinance = can('report.finance');
-  const [tab, setTab] = useState<'sales' | 'finance'>(hasSales ? 'sales' : 'finance');
+  // The tab lives in the URL (?tab=sales|finance) so the sidebar links open the right report.
+  const [params, setParams] = useSearchParams();
+  const requested = params.get('tab') === 'finance' ? 'finance' : 'sales';
+  const tab: 'sales' | 'finance' = requested === 'finance' ? (hasFinance ? 'finance' : 'sales') : hasSales ? 'sales' : 'finance';
+  const setTab = (t: 'sales' | 'finance') => setParams({ tab: t }, { replace: true });
   const [range, setRange] = useState(defaultRange);
 
   return (

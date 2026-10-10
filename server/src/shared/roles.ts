@@ -16,6 +16,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, { name: string; descript
     description: 'Manages own leads, opportunities and quotations',
     permissions: [
       'customer.read.own', 'customer.create', 'customer.update',
+      'product.read',
+      'contract.read.own', 'contract.manage',
+      'order.read.own', 'order.create', 'order.update',
       'lead.read.own', 'lead.create', 'lead.update', 'lead.convert',
       'opportunity.read.own', 'opportunity.create', 'opportunity.update',
       'activity.read.own', 'activity.manage',
@@ -29,6 +32,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, { name: string; descript
     description: 'Leads a sales team, approves quotations within authority, sets team targets',
     permissions: [
       'customer.read.team', 'customer.create', 'customer.update',
+      'product.read', 'product.manage',
+      'contract.read.team', 'contract.manage',
+      'order.read.team', 'order.create', 'order.update',
       'lead.read.team', 'lead.create', 'lead.update', 'lead.convert', 'lead.assign',
       'opportunity.read.team', 'opportunity.create', 'opportunity.update',
       'activity.read.team', 'activity.manage',
@@ -46,6 +52,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, { name: string; descript
     permissions: [
       'customer.read.all', 'customer.update',
       'quotation.read.all',
+      'product.read', 'contract.read.all', 'order.read.all',
       'invoice.read', 'invoice.create', 'invoice.update', 'invoice.cancel',
       'payment.read', 'payment.create', 'payment.void',
       'credit.read', 'credit.manage',
@@ -57,6 +64,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, { name: string; descript
     description: 'Approves high-value requests and reviews company performance',
     permissions: [
       'customer.read.all',
+      'product.read', 'contract.read.all', 'order.read.all',
       'lead.read.all',
       'opportunity.read.all',
       'quotation.read.all',

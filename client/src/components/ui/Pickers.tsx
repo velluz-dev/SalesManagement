@@ -1,4 +1,6 @@
 import type { ComponentProps } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../lib/api';
 import { useLookup } from '../../hooks/useApi';
 import { Select } from './Form';
 
@@ -24,3 +26,20 @@ export const OpportunitySelect = ({ customerId, ...p }: SelectProps & { customer
 );
 
 export const enumOptions = (values: readonly string[], label: (v: string) => string) => values.map((v) => ({ value: v, label: label(v) }));
+
+/** Active payment terms (Net 30, COD, ...), labelled with their day count. */
+export function PaymentTermSelect({ placeholder = 'Default terms', ...rest }: SelectProps) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['payment-terms'],
+    queryFn: async () => (await api.get<{ data: { id: string; name: string; days: number }[] }>('/payment-terms')).data,
+    staleTime: 5 * 60_000,
+  });
+  return (
+    <Select {...rest} disabled={rest.disabled || isLoading}>
+      <option value="">{isLoading ? 'Loading…' : placeholder}</option>
+      {data?.map((t) => (
+        <option key={t.id} value={t.id}>{t.name}{t.name.toLowerCase().includes(String(t.days)) || t.days === 0 ? '' : ` (${t.days} days)`}</option>
+      ))}
+    </Select>
+  );
+}

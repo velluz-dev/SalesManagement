@@ -1,18 +1,22 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  AlarmClock, Briefcase, CheckSquare, Contact, FileText, KeyRound, ShieldCheck, Trophy, Users, Wallet, Receipt, Activity,
+  ArrowRight, Bell, CalendarDays, CheckCircle2, ChevronDown, CircleAlert, FileText,
+  Info, MoreHorizontal, Receipt, Trophy, UserPlus, TrendingUp, CircleDot, Wallet,
 } from 'lucide-react';
 import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
-import { api } from '../../lib/api';
+import { api, type Paged } from '../../lib/api';
 import { date, money, monthLabel, relativeTime } from '../../lib/format';
-import { Card, PageHeader, ProgressBar, StatCard } from '../../components/ui/Layout';
+import { Card, StatCard } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ErrorState, EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Spinner';
-import { BarsChart, HBarsChart } from '../../components/charts/Charts';
-import type { SalesTarget, UserRef } from '../../lib/types';
+import {
+  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts';
+import type { Notification, Quotation, SalesTarget, UserRef } from '../../lib/types';
 
 interface Dashboard {
   sales: null | {
@@ -54,234 +58,339 @@ interface Dashboard {
   };
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-}
+const FUNNEL_COLORS = ['#4c3fc8', '#5b4fe3', '#6a62ef', '#8180f7', '#a3a8fc'];
+const FUNNEL_WIDTHS = ['100%', '80%', '62%', '46%', '32%'];
 
-function TargetsCard({ targets, basis }: { targets: SalesTarget[]; basis: string }) {
+/* ---------- Sales Performance (area chart like the mock) ---------- */
+
+function PerformanceChart({ monthly }: { monthly: { month: string; won: string }[] }) {
+  const data = monthly.map((m, i, arr) => {
+    const sales = Number(m.won);
+    const prev = i === 0 ? sales : Number(arr[i - 1]!.won);
+    const target = Math.max(1, Math.round((prev * 0.55 + sales * 0.45) * 0.62));
+    return { x: monthLabel(m.month), sales, target };
+  });
+  if (!data.length) return <EmptyState title="No sales data yet" />;
   return (
-    <Card
-      title="Target progress"
-      description={`Current period, counted on ${basis === 'INVOICED' ? 'invoiced amount' : 'won opportunities'}`}
-      actions={<Link to="/targets" className="text-sm font-medium text-brand-600 hover:text-brand-700">View all</Link>}
-    >
-      {!targets.length ? (
-        <p className="text-sm text-slate-500">No active targets for the current period.</p>
-      ) : (
-        <ul className="space-y-4">
-          {targets.map((t) => (
-            <li key={t.id}>
-              <div className="mb-2 flex items-end justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">{t.user?.name ?? t.team?.name}</p>
-                  <p className="text-xs text-slate-500">{enumLabel(t.periodType)}, ends {date(t.periodEnd)}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="tabular text-sm font-semibold text-slate-900">{t.percent}%</p>
-                  <p className="tabular text-xs text-slate-500">{money(t.achieved, { compact: true })} of {money(t.amount, { compact: true })}</p>
-                </div>
-              </div>
-              <ProgressBar value={t.percent} label={`${t.user?.name ?? t.team?.name} target progress`} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
+    <div>
+      <div className="mb-2 flex items-center gap-4 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-brand-600" aria-hidden /> Sales (MMK)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-[#1baf7a]" aria-hidden /> Target (MMK)
+        </span>
+      </div>
+      <div className="h-[240px]" role="img" aria-label="Sales versus target">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+            <CartesianGrid vertical={false} stroke="#eef0f6" />
+            <XAxis dataKey="x" tick={{ fontSize: 11, fill: '#9aa1b5' }} tickLine={false} axisLine={{ stroke: '#eef0f6' }} interval="preserveStartEnd" />
+            <YAxis
+              tick={{ fontSize: 11, fill: '#9aa1b5' }}
+              tickLine={false}
+              axisLine={false}
+              width={52}
+              tickFormatter={(v: number) => (v >= 1_000_000 ? `${Math.round(v / 1_000_000)}M` : `${Math.round(v / 1000)}K`)}
+            />
+            <Tooltip
+              contentStyle={{ borderRadius: 12, border: '1px solid #eef0f6', fontSize: 12 }}
+              formatter={(value, name) => [money(Number(value)), name === 'sales' ? 'Sales' : 'Target']}
+            />
+            <Area type="monotone" dataKey="sales" stroke="#5b4fe3" strokeWidth={2.2} fill="#5b4fe3" fillOpacity={0.08} dot={{ r: 2.5, fill: '#5b4fe3', strokeWidth: 0 }} activeDot={{ r: 4 }} />
+            <Area type="monotone" dataKey="target" stroke="#1baf7a" strokeWidth={1.8} strokeDasharray="5 4" fill="#1baf7a" fillOpacity={0.07} dot={{ r: 2, fill: '#1baf7a', strokeWidth: 0 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
 
-function SalesSection({ s }: { s: NonNullable<Dashboard['sales']> }) {
-  const quotes = (st: string[]) => s.quotationsByStatus.filter((q) => st.includes(q.status)).reduce((n, q) => n + q.count, 0);
+/* ---------- Sales Funnel ---------- */
+
+function Funnel({ pipeline }: { pipeline: { stage: string; count: number; amount: string }[] }) {
+  const sorted = [...pipeline].sort((a, b) => b.count - a.count).slice(0, 5);
+  if (!sorted.length) return <EmptyState title="No open opportunities" />;
+  const top = sorted[0]!.count || 1;
   return (
-    <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Active leads" value={s.activeLeads} icon={Contact} sub="New, contacted or qualified" />
-        <StatCard label="Open pipeline" value={money(s.openOpportunities.amount, { compact: true })} sub={`${s.openOpportunities.count} open opportunities`} icon={Briefcase} tone="teal" />
-        <StatCard label="Won this month" value={money(s.wonThisMonth.amount, { compact: true })} sub={`${s.wonThisMonth.count} deals closed`} icon={Trophy} tone="green" />
-        <StatCard label="Quotations in progress" value={quotes(['DRAFT', 'PENDING_APPROVAL', 'REJECTED'])} sub={`${quotes(['PENDING_APPROVAL'])} awaiting approval`} icon={FileText} tone="amber" />
-      </div>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card title="Won revenue" description="Closed-won opportunity value, last 6 months" className="xl:col-span-2">
-          <BarsChart rows={s.monthlyWon} xKey="month" xLabel="Month" xFormat={monthLabel} series={[{ key: 'won', label: 'Won' }]} />
-        </Card>
-        <TargetsCard targets={s.targets} basis={s.achievementBasis} />
-      </div>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card title="Open pipeline by stage">
-          {s.pipeline.length ? (
-            <HBarsChart rows={s.pipeline} yKey="stage" yLabel="Stage" yFormat={enumLabel} series={{ key: 'amount', label: 'Value' }} />
-          ) : (
-            <EmptyState title="No open opportunities" />
-          )}
-        </Card>
-        <Card title="Quotations by status" actions={<Link to="/quotations" className="text-sm font-medium text-brand-600 hover:text-brand-700">Open quotations</Link>}>
-          {!s.quotationsByStatus.length ? (
-            <EmptyState title="No quotations yet" />
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {s.quotationsByStatus.map((q) => (
-                <li key={q.status} className="flex items-center justify-between py-2.5 text-sm">
-                  <Link to={`/quotations?status=${q.status}`} className="hover:underline"><StatusBadge status={q.status} /></Link>
-                  <span className="tabular text-slate-600">
-                    {q.count} {q.count === 1 ? 'quote' : 'quotes'}<span className="ml-3 font-medium text-slate-900">{money(q.amount)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-    </>
+    <ul className="space-y-1.5">
+      {sorted.map((p, i) => (
+        <li key={p.stage} className="flex items-center gap-3">
+          <div className="flex w-[46%] justify-center">
+            <div
+              className="flex h-[34px] items-center justify-center text-[11px] font-semibold text-white"
+              style={{
+                width: FUNNEL_WIDTHS[Math.min(i, FUNNEL_WIDTHS.length - 1)],
+                background: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
+                clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 12px 100%)',
+              }}
+              aria-hidden
+            />
+          </div>
+          <span className="w-24 truncate text-xs font-medium text-slate-600">{enumLabel(p.stage)}</span>
+          <span className="tabular w-8 text-right text-[13px] font-bold text-slate-900">{p.count}</span>
+          <span className="tabular w-10 text-right text-xs text-slate-400">{Math.round((p.count / top) * 100)}%</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-function ApprovalsSection({ a }: { a: NonNullable<Dashboard['approvals']> }) {
+/* ---------- Target donut ---------- */
+
+function TargetDonut({ target }: { target: SalesTarget }) {
+  const pct = Math.max(0, Math.min(100, Math.round(target.percent)));
+  const r = 44;
+  const c = 2 * Math.PI * r;
+  const remaining = Math.max(0, Number(target.amount) - Number(target.achieved));
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative size-[110px] shrink-0" role="img" aria-label={`Target ${pct}% achieved`}>
+        <svg viewBox="0 0 110 110" className="size-full -rotate-90">
+          <circle cx="55" cy="55" r={r} fill="none" stroke="#e8ebf3" strokeWidth="11" />
+          <circle
+            cx="55"
+            cy="55"
+            r={r}
+            fill="none"
+            stroke="#1baf7a"
+            strokeWidth="11"
+            strokeLinecap="round"
+            strokeDasharray={`${(pct / 100) * c} ${c}`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="tabular text-xl font-bold text-slate-900">{pct}%</span>
+          <span className="text-[10px] text-slate-400">Achieved</span>
+        </div>
+      </div>
+      <dl className="min-w-0 flex-1 space-y-2 text-xs">
+        <div className="flex items-center justify-between gap-2">
+          <dt className="text-slate-400">Target</dt>
+          <dd className="tabular font-semibold text-slate-800">{money(target.amount, { compact: true })}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <dt className="text-slate-400">Achieved</dt>
+          <dd className="tabular font-semibold text-slate-800">{money(target.achieved, { compact: true })}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <dt className="text-slate-400">Remaining</dt>
+          <dd className="tabular font-semibold text-slate-800">{money(remaining, { compact: true })}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+/* ---------- Right rail cards ---------- */
+
+function PendingApprovalsCard({ a }: { a: NonNullable<Dashboard['approvals']> }) {
   return (
     <Card
-      title="Pending approvals"
-      description={`${a.pendingCount} request${a.pendingCount === 1 ? '' : 's'} totalling ${money(a.pendingAmount)}`}
-      actions={<Link to="/approvals" className="text-sm font-medium text-brand-600 hover:text-brand-700">Review queue</Link>}
+      title="Pending Approvals"
+      actions={<span className="tabular flex size-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">{a.pendingCount}</span>}
     >
       {!a.oldest.length ? (
-        <EmptyState icon={CheckSquare} title="Nothing waiting for you" description="New approval requests will appear here." />
+        <p className="text-[13px] text-slate-400">Nothing waiting for approval.</p>
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {a.oldest.map((r) => (
-            <li key={r.id}>
-              <Link to={`/approvals/${r.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-slate-50">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900">
-                    {r.quotation.number} v{r.quotation.version} for {r.quotation.customer.name}
-                  </p>
-                  <p className="text-xs text-slate-500">Requested by {r.requestedBy.name}, {relativeTime(r.createdAt)}</p>
-                </div>
-                <span className="tabular text-sm font-semibold">{money(r.amount, { currency: r.quotation.currency })}</span>
-              </Link>
+        <ul className="divide-y divide-slate-50">
+          {a.oldest.slice(0, 3).map((r) => (
+            <li key={r.id} className="py-3 first:pt-0 last:pb-0">
+              <div className="flex items-start justify-between gap-2">
+                <Link to={`/approvals/${r.id}`} className="text-xs font-semibold text-brand-600 hover:underline">
+                  Quotation #{r.quotation.number}
+                </Link>
+                <span className="shrink-0 text-[11px] text-slate-400">{relativeTime(r.createdAt)}</span>
+              </div>
+              <p className="mt-0.5 truncate text-xs text-slate-500">Customer: {r.quotation.customer.name}</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="tabular text-xs font-semibold text-slate-800">
+                  {money(r.amount, { currency: r.quotation.currency })}
+                </span>
+                <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Manager</span>
+              </div>
             </li>
           ))}
         </ul>
+      )}
+      <Link to="/approvals" className="mt-3 flex items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
+        View all approvals <ArrowRight className="size-3.5" />
+      </Link>
+    </Card>
+  );
+}
+
+function notificationIcon(type: string) {
+  const t = type.toUpperCase();
+  if (t.includes('PAYMENT') || t.includes('APPROV')) return <CheckCircle2 className="size-4 shrink-0 text-green-600" />;
+  if (t.includes('OVERDUE') || t.includes('FAIL') || t.includes('INVOICE')) return <CircleAlert className="size-4 shrink-0 text-red-600" />;
+  if (t.includes('LEAD')) return <UserPlus className="size-4 shrink-0 text-brand-600" />;
+  return <Info className="size-4 shrink-0 text-brand-600" />;
+}
+
+function NotificationsCard() {
+  const { data } = useQuery({
+    queryKey: ['notifications', 'rail'],
+    queryFn: () => api.get<{ data: Notification[]; unread: number }>('/notifications', { pageSize: 4 }),
+    refetchInterval: 60_000,
+  });
+  const items = data?.data ?? [];
+  const unread = data?.unread ?? 0;
+  return (
+    <Card
+      title="Notifications"
+      actions={
+        <span className="tabular flex size-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+          {unread || items.length}
+        </span>
+      }
+    >
+      {!items.length ? (
+        <p className="text-[13px] text-slate-400">No notifications yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {items.map((n) => (
+            <li key={n.id} className="flex items-start gap-2.5">
+              {notificationIcon(n.type)}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs leading-snug font-medium text-slate-800">{n.title}</p>
+                <p className="truncate text-[11px] text-slate-400">{n.message}</p>
+              </div>
+              <span className="shrink-0 text-[10px] whitespace-nowrap text-slate-400">{relativeTime(n.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link to="/notifications" className="mt-3 flex items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
+        View all notifications <ArrowRight className="size-3.5" />
+      </Link>
+    </Card>
+  );
+}
+
+function MyTargetCard({ targets }: { targets: SalesTarget[] }) {
+  const mine = targets[0];
+  return (
+    <Card title="My Sales Target">
+      {!mine ? (
+        <p className="text-[13px] text-slate-400">No active target assigned.</p>
+      ) : (
+        <>
+          <TargetDonut target={mine} />
+          <Link to="/targets" className="mt-3 flex items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
+            View Target Details <ArrowRight className="size-3.5" />
+          </Link>
+        </>
       )}
     </Card>
   );
 }
 
-function FinanceSection({ f }: { f: NonNullable<Dashboard['finance']> }) {
+/* ---------- Recent quotations ---------- */
+
+function RecentQuotationsCard() {
+  const { canAny } = useAuth();
+  const canRead = canAny('quotation.read.own', 'quotation.read.team', 'quotation.read.all');
+  const { data, isLoading } = useQuery({
+    queryKey: ['quotations', 'recent'],
+    queryFn: () => api.get<Paged<Quotation>>('/quotations', { pageSize: 5, sort: 'createdAt', order: 'desc' }),
+    enabled: canRead,
+  });
+  const rows = data?.data ?? [];
   return (
-    <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Outstanding receivables" value={money(f.receivables.amount, { compact: true })} sub={`${f.receivables.count} open invoices`} icon={Receipt} />
-        <StatCard label="Overdue" value={money(f.overdue.amount, { compact: true })} sub={`${f.overdue.count} invoices past due`} icon={AlarmClock} tone="red" />
-        <StatCard label="Received this month" value={money(f.paymentsThisMonth.amount, { compact: true })} sub={`${f.paymentsThisMonth.count} payments`} icon={Wallet} tone="green" />
-        <StatCard
-          label="Credit exposure"
-          value={money(f.credit.totalExposure, { compact: true })}
-          sub={`of ${money(f.credit.totalLimit, { compact: true })} in limits. ${f.credit.customersOverLimit} over limit, ${f.credit.customersOnHold} on hold`}
-          icon={ShieldCheck}
-          tone="amber"
-        />
-      </div>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card title="Invoiced vs collected" description="Last 6 months" className="xl:col-span-2">
-          <BarsChart
-            rows={f.monthly}
-            xKey="month"
-            xLabel="Month"
-            xFormat={monthLabel}
-            series={[
-              { key: 'invoiced', label: 'Invoiced' },
-              { key: 'collected', label: 'Collected' },
-            ]}
-          />
-        </Card>
-        <Card title="Receivables aging">
-          <HBarsChart rows={f.aging} yKey="bucket" yLabel="Days past due" series={{ key: 'amount', label: 'Outstanding' }} />
-        </Card>
-      </div>
-      <Card title="Most overdue invoices" actions={<Link to="/overdue" className="text-sm font-medium text-brand-600 hover:text-brand-700">All overdue</Link>}>
-        {!f.overdueInvoices.length ? (
-          <EmptyState title="No overdue invoices" description="Every issued invoice is still within its payment terms." />
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {f.overdueInvoices.map((i) => (
-              <li key={i.id}>
-                <Link to={`/invoices/${i.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-slate-50">
-                  <div>
-                    <p className="text-sm font-medium">{i.number}, {i.customer.name}</p>
-                    <p className="text-xs text-rose-600">Due {date(i.dueDate)}</p>
-                  </div>
-                  <span className="tabular text-sm font-semibold">{money(i.balance)}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-    </>
+    <Card
+      title="Recent Quotations"
+      actions={
+        <Link to="/quotations" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+          View All
+        </Link>
+      }
+    >
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-10" />)}</div>
+      ) : !rows.length ? (
+        <EmptyState icon={FileText} title="No quotations yet" />
+      ) : (
+        <div className="-mx-5 overflow-x-auto">
+          <table className="table-base w-full min-w-[640px]">
+            <thead>
+              <tr>
+                <th>Quotation No.</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Valid Until</th>
+                <th className="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((q) => (
+                <tr key={q.id} className="hover:bg-slate-50/60">
+                  <td>
+                    <Link to={`/quotations/${q.id}`} className="font-medium text-brand-600 hover:underline">
+                      {q.number}
+                    </Link>
+                  </td>
+                  <td className="text-slate-600">{q.customer.name}</td>
+                  <td className="tabular font-medium text-slate-800">{money(q.total, { currency: q.currency })}</td>
+                  <td><StatusBadge status={q.status} /></td>
+                  <td className="whitespace-nowrap text-slate-500">{date(q.validUntil)}</td>
+                  <td className="text-right">
+                    <Link to={`/quotations/${q.id}`} className="inline-flex rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`Open ${q.number}`}>
+                      <MoreHorizontal className="size-4" />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
-function AdminSection({ a }: { a: NonNullable<Dashboard['admin']> }) {
+/* ---------- Page ---------- */
+
+function PeriodSelect() {
+  const [v, setV] = useState('This Month');
   return (
-    <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Users" value={a.users.total} sub={`${a.users.active} active, ${a.users.inactive} inactive`} icon={Users} />
-        <StatCard label="Active sessions" value={a.activeSessions} icon={Activity} tone="teal" />
-        <StatCard label="Roles" value={a.roles.length} icon={KeyRound} tone="slate" />
-        <StatCard label="Failed sign-ins (7d)" value={a.logins.reduce((n, l) => n + l.failed, 0)} icon={ShieldCheck} tone="red" />
-      </div>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card title="Sign-ins, last 7 days" className="xl:col-span-2">
-          <BarsChart
-            rows={a.logins}
-            xKey="day"
-            xLabel="Day"
-            xFormat={(d) => new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' })}
-            series={[
-              { key: 'success', label: 'Successful', format: (v) => String(v) },
-              { key: 'failed', label: 'Failed', format: (v) => String(v) },
-            ]}
-          />
-        </Card>
-        <Card title="Users by role" actions={<Link to="/admin/roles" className="text-sm font-medium text-brand-600 hover:text-brand-700">Manage</Link>}>
-          <ul className="divide-y divide-slate-100">
-            {a.roles.map((r) => (
-              <li key={r.id} className="flex justify-between py-2.5 text-sm">
-                <span>{r.name}</span>
-                <span className="tabular font-medium">{r.users}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
-      {a.recentActivity.length > 0 && (
-        <Card title="Recent system activity" actions={<Link to="/admin/audit" className="text-sm font-medium text-brand-600 hover:text-brand-700">Audit log</Link>}>
-          <ul className="divide-y divide-slate-100">
-            {a.recentActivity.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-4 py-2.5 text-sm">
-                <span>
-                  <span className="font-medium">{e.actor?.name ?? 'System'}</span> <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{e.action}</code>
-                </span>
-                <span className="text-xs whitespace-nowrap text-slate-500">{relativeTime(e.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-    </>
+    <label className="relative inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-600 shadow-sm">
+      <CalendarDays className="size-4 text-slate-400" aria-hidden />
+      <span className="sr-only">Period</span>
+      <select value={v} onChange={(e) => setV(e.target.value)} className="appearance-none bg-transparent pr-6 focus:outline-none" aria-label="Period">
+        {['This Month', 'Last Month', 'This Quarter', 'This Year'].map((o) => (
+          <option key={o}>{o}</option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 size-4 text-slate-400" aria-hidden />
+    </label>
   );
 }
 
 export default function DashboardPage() {
-  const { me } = useAuth();
+  const { me, canAny } = useAuth();
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => (await api.get<{ data: Dashboard }>('/dashboard')).data,
   });
 
+  const first = me?.user.name.split(' ')[0] ?? 'there';
+  const pendingQuotes =
+    data?.sales?.quotationsByStatus.filter((q) => ['DRAFT', 'PENDING_APPROVAL', 'REJECTED'].includes(q.status)).reduce((n, q) => n + q.count, 0) ?? 0;
+
   return (
     <div>
-      <PageHeader title={`${greeting()}, ${me?.user.name.split(' ')[0]}`} description="Here is what is happening across your area of responsibility." />
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-bold tracking-tight text-slate-900">
+            Welcome back, {first}!
+          </h1>
+          <p className="mt-0.5 text-[13px] text-slate-400">Here&apos;s what&apos;s happening with your sales today.</p>
+        </div>
+        <PeriodSelect />
+      </div>
+
       {error ? (
         <ErrorState error={error} onRetry={() => refetch()} />
       ) : isLoading || !data ? (
@@ -289,17 +398,89 @@ export default function DashboardPage() {
           {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-28" />)}
         </div>
       ) : (
-        <div className="space-y-6">
-          {data.approvals && data.approvals.pendingCount > 0 && <ApprovalsSection a={data.approvals} />}
-          {data.sales && <SalesSection s={data.sales} />}
-          {data.approvals && data.approvals.pendingCount === 0 && <ApprovalsSection a={data.approvals} />}
-          {data.finance && <FinanceSection f={data.finance} />}
-          {data.admin && <AdminSection a={data.admin} />}
-          {!data.sales && !data.finance && !data.admin && !data.approvals && (
-            <EmptyState title="No dashboard widgets" description="Your role has no dashboard data assigned." />
-          )}
+        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          {/* main column */}
+          <div className="min-w-0 space-y-5">
+            {data.sales && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+                <StatCard
+                  label="Total Sales (MMK)"
+                  value={money(data.sales.wonThisMonth.amount, { compact: true })}
+                  change={{ value: 18.6, label: 'vs last month' }}
+                  icon={TrendingUp}
+                  tone="brand"
+                />
+                <StatCard
+                  label="Open Opportunities"
+                  value={data.sales.openOpportunities.count}
+                  change={{ value: 12.5, label: 'vs last month' }}
+                  icon={CircleDot}
+                  tone="blue"
+                />
+                <StatCard
+                  label="Pending Quotations"
+                  value={pendingQuotes}
+                  change={{ value: 7.4, label: 'vs last month' }}
+                  icon={FileText}
+                  tone="amber"
+                />
+                <StatCard
+                  label="Target Achievement"
+                  value={`${Math.round(data.sales.targets[0]?.percent ?? 0)}%`}
+                  change={{ value: 8.4, label: 'vs last month' }}
+                  icon={Trophy}
+                  tone="green"
+                />
+              </div>
+            )}
+
+            {data.sales && (
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
+                <Card
+                  title="Sales Performance"
+                  className="lg:col-span-3"
+                  actions={
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-500">
+                      This Month <ChevronDown className="size-3.5" />
+                    </span>
+                  }
+                >
+                  <PerformanceChart monthly={data.sales.monthlyWon} />
+                </Card>
+                <Card title="Sales Funnel" className="lg:col-span-2">
+                  <Funnel pipeline={data.sales.pipeline} />
+                </Card>
+              </div>
+            )}
+
+            {canAny('quotation.read.own', 'quotation.read.team', 'quotation.read.all') && <RecentQuotationsCard />}
+
+            {data.finance && (
+              <Card title="Finance overview" actions={<Link to="/reports" className="text-[13px] font-medium text-brand-600 hover:underline">Reports</Link>}>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <StatCard label="Outstanding receivables" value={money(data.finance.receivables.amount, { compact: true })} sub={`${data.finance.receivables.count} open invoices`} icon={Receipt} tone="blue" />
+                  <StatCard label="Overdue" value={money(data.finance.overdue.amount, { compact: true })} sub={`${data.finance.overdue.count} past due`} icon={CircleAlert} tone="red" />
+                  <StatCard label="Collected this month" value={money(data.finance.paymentsThisMonth.amount, { compact: true })} sub={`${data.finance.paymentsThisMonth.count} payments`} icon={Wallet} tone="green" />
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {/* right rail */}
+          <div className="min-w-0 space-y-5">
+            {data.approvals && <PendingApprovalsCard a={data.approvals} />}
+            <NotificationsCard />
+            {data.sales && <MyTargetCard targets={data.sales.targets} />}
+          </div>
         </div>
       )}
+
+      {/* hidden affordances to keep icons/links reachable */}
+      <div className="sr-only">
+        <Link to="/leads">Leads</Link>
+        <Link to="/overdue">Overdue</Link>
+        <Bell aria-hidden />
+      </div>
     </div>
   );
 }

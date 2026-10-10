@@ -5,19 +5,19 @@ import { cn } from '../../lib/cn';
 export type Tone = 'gray' | 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'indigo' | 'teal';
 
 const tones: Record<Tone, string> = {
-  gray: 'bg-slate-100 text-slate-700',
-  blue: 'bg-sky-100/70 text-sky-800',
-  green: 'bg-emerald-100/70 text-emerald-800',
-  amber: 'bg-amber-100 text-amber-900',
-  red: 'bg-rose-100/70 text-rose-800',
-  purple: 'bg-violet-100/70 text-violet-800',
-  indigo: 'bg-brand-100 text-brand-800',
-  teal: 'bg-teal-100/70 text-teal-800',
+  gray: 'border border-slate-200 bg-slate-50 text-slate-600',
+  blue: 'border border-sky-100 bg-sky-50 text-sky-700',
+  green: 'border border-emerald-100 bg-[#e9f9ef] text-[#1d9e57]',
+  amber: 'border border-amber-100 bg-[#fdf3e0] text-[#b7791f]',
+  red: 'border border-rose-100 bg-[#fdeeee] text-[#d93f4c]',
+  purple: 'border border-violet-100 bg-violet-50 text-violet-700',
+  indigo: 'border border-brand-100 bg-brand-50 text-brand-700',
+  teal: 'border border-teal-100 bg-teal-50 text-teal-700',
 };
 
 export function Badge({ tone = 'gray', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-xs leading-4 font-medium whitespace-nowrap', tones[tone], className)}>
+    <span className={cn('inline-flex items-center rounded-md px-2 py-0.5 text-xs leading-4 font-medium whitespace-nowrap', tones[tone], className)}>
       {children}
     </span>
   );
@@ -27,7 +27,7 @@ const STATUS_TONES: Record<string, Tone> = {
   ACTIVE: 'green', INACTIVE: 'gray',
   DRAFT: 'gray', PENDING_APPROVAL: 'amber', APPROVED: 'green', REJECTED: 'red', SENT: 'blue', ACCEPTED: 'teal',
   DECLINED: 'red', CANCELLED: 'gray', SUPERSEDED: 'purple',
-  PENDING: 'amber',
+  PENDING: 'amber', CONFIRMED: 'blue', DELIVERED: 'green', COMPLETED: 'teal',
   ISSUED: 'blue', UNPAID: 'blue', PARTIALLY_PAID: 'amber', PAID: 'green', OVERDUE: 'red',
   NEW: 'indigo', CONTACTED: 'blue', QUALIFIED: 'green', UNQUALIFIED: 'gray', CONVERTED: 'teal',
   PROSPECTING: 'gray', QUALIFICATION: 'blue', PROPOSAL: 'indigo', NEGOTIATION: 'amber', CLOSED_WON: 'green', CLOSED_LOST: 'red',

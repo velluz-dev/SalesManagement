@@ -4,7 +4,7 @@ import { prisma, Prisma } from '../../lib/prisma';
 import { requirePermission } from '../../middleware/auth';
 import { getActor, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
-import { notFound } from '../../lib/errors';
+import { badRequest, notFound } from '../../lib/errors';
 import { contains, listQuery, pageArgs, paged } from '../../lib/pagination';
 import { booleanQuery, money, optionalText, uuid } from '../../lib/validation';
 import { ZERO } from '../../lib/money';
@@ -20,7 +20,7 @@ const listCreditQuery = listQuery(['name'] as const).extend({
 
 const creditSchema = z.strictObject({
   creditLimit: money,
-  paymentTermsDays: z.coerce.number().int().min(0).max(365),
+  paymentTermId: uuid.nullable().optional(),
   onHold: z.boolean().default(false),
   notes: optionalText(1000),
 });
@@ -73,7 +73,7 @@ creditRouter.get('/', requirePermission('credit.read'), async (req, res) => {
   const [rows, total] = await Promise.all([
     prisma.customer.findMany({
       where,
-      select: { id: true, name: true, owner: { select: { id: true, name: true } }, credit: true },
+      select: { id: true, name: true, type: true, owner: { select: { id: true, name: true } }, credit: true, paymentTerm: { select: { id: true, name: true, days: true } } },
       orderBy: { name: q.order === 'desc' ? 'desc' : 'asc' },
       ...(all ? {} : pageArgs(q)),
     }),
@@ -95,7 +95,8 @@ creditRouter.get('/:customerId', requirePermission('credit.read'), async (req, r
   const customer = await prisma.customer.findFirst({
     where: { id: customerId, ...scopedCustomers(actor) },
     select: {
-      id: true, name: true, email: true, owner: { select: { id: true, name: true } },
+      id: true, name: true, email: true, type: true, owner: { select: { id: true, name: true } },
+      paymentTerm: { select: { id: true, name: true, days: true } },
       credit: { include: { updatedBy: { select: { id: true, name: true } } } },
     },
   });
@@ -125,12 +126,25 @@ creditRouter.put('/:customerId', requirePermission('credit.manage'), async (req,
     const customer = await tx.customer.findFirst({ where: { id: customerId, ...scopedCustomers(actor) } });
     if (!customer) throw notFound('Customer');
     const before = await tx.customerCredit.findUnique({ where: { customerId } });
+    const { paymentTermId, ...creditInput } = input;
+    if (paymentTermId !== undefined) {
+      if (paymentTermId && !(await tx.paymentTerm.findFirst({ where: { id: paymentTermId, isActive: true } }))) {
+        throw badRequest('Payment term not found or inactive');
+      }
+      await tx.customer.update({ where: { id: customerId }, data: { paymentTermId } });
+    }
     const c = await tx.customerCredit.upsert({
       where: { customerId },
-      create: { customerId, ...input, updatedById: actor.user.id },
-      update: { ...input, updatedById: actor.user.id },
+      create: { customerId, ...creditInput, updatedById: actor.user.id },
+      update: { ...creditInput, updatedById: actor.user.id },
     });
-    await audit(tx, actor, { action: 'credit.updated', entityType: 'CustomerCredit', entityId: customerId, before, after: c });
+    await audit(tx, actor, {
+      action: 'credit.updated',
+      entityType: 'CustomerCredit',
+      entityId: customerId,
+      before: { ...before, paymentTermId: customer.paymentTermId },
+      after: { ...c, paymentTermId: paymentTermId !== undefined ? paymentTermId : customer.paymentTermId },
+    });
     return c;
   });
   res.json({ data: credit });

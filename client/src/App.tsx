@@ -34,6 +34,13 @@ const RolesPage = lazy(() => import('./features/admin/RolesPage'));
 const TeamsPage = lazy(() => import('./features/admin/TeamsPage'));
 const AuditLogPage = lazy(() => import('./features/admin/AuditLogPage'));
 const SettingsPage = lazy(() => import('./features/admin/SettingsPage'));
+const ProductsPage = lazy(() => import('./features/catalog/ProductsPage'));
+const PaymentTermsPage = lazy(() => import('./features/catalog/PaymentTermsPage'));
+const ContractsPage = lazy(() => import('./features/contracts/ContractsPage'));
+const ContractDetailPage = lazy(() => import('./features/contracts/ContractDetailPage'));
+const SalesOrdersPage = lazy(() => import('./features/sales-orders/SalesOrdersPage'));
+const SalesOrderCreatePage = lazy(() => import('./features/sales-orders/SalesOrderCreatePage'));
+const SalesOrderDetailPage = lazy(() => import('./features/sales-orders/SalesOrderDetailPage'));
 
 const guard = (any: Permission[], el: ReactNode) => <RequirePermission any={any}>{el}</RequirePermission>;
 
@@ -45,6 +52,9 @@ const P = {
   quotation: ['quotation.read.own', 'quotation.read.team', 'quotation.read.all'],
   target: ['target.read.own', 'target.read.team', 'target.read.all'],
   report: ['report.sales.own', 'report.sales.team', 'report.sales.all', 'report.finance'],
+  contract: ['contract.read.own', 'contract.read.team', 'contract.read.all'],
+  order: ['order.read.own', 'order.read.team', 'order.read.all'],
+  product: ['product.read', 'product.manage'],
 } satisfies Record<string, Permission[]>;
 
 export function App() {
@@ -76,6 +86,12 @@ export function App() {
                   <Route path="approvals" element={guard(['approval.read.assigned', 'approval.read.all'], <ApprovalsPage />)} />
                   <Route path="approvals/:id" element={<ApprovalDetailPage />} />
                   <Route path="targets" element={guard(P.target, <TargetsPage />)} />
+                  <Route path="products" element={guard(P.product, <ProductsPage />)} />
+                  <Route path="contracts" element={guard(P.contract, <ContractsPage />)} />
+                  <Route path="contracts/:id" element={guard(P.contract, <ContractDetailPage />)} />
+                  <Route path="sales-orders" element={guard(P.order, <SalesOrdersPage />)} />
+                  <Route path="sales-orders/new" element={guard(['order.create'], <SalesOrderCreatePage />)} />
+                  <Route path="sales-orders/:id" element={guard(P.order, <SalesOrderDetailPage />)} />
 
                   <Route path="invoices" element={guard(['invoice.read'], <InvoicesPage />)} />
                   <Route path="invoices/new" element={guard(['invoice.create'], <InvoiceCreatePage />)} />
@@ -83,6 +99,7 @@ export function App() {
                   <Route path="overdue" element={guard(['invoice.read'], <InvoicesPage overdueOnly />)} />
                   <Route path="payments" element={guard(['payment.read'], <PaymentsPage />)} />
                   <Route path="credit" element={guard(['credit.read'], <CreditPage />)} />
+                  <Route path="payment-terms" element={guard(['credit.manage'], <PaymentTermsPage />)} />
                   <Route path="reports" element={guard(P.report, <ReportsPage />)} />
 
                   <Route path="admin/users" element={guard(['user.read'], <UsersPage />)} />

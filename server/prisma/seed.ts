@@ -28,9 +28,13 @@ async function wipe() {
     prisma.payment.deleteMany(),
     prisma.invoiceItem.deleteMany(),
     prisma.invoice.deleteMany(),
+    prisma.salesOrderItem.deleteMany(),
+    prisma.salesOrder.deleteMany(),
+    prisma.contract.deleteMany(),
     prisma.approvalHistory.deleteMany(),
     prisma.approvalRequest.deleteMany(),
     prisma.quotationItem.deleteMany(),
+    prisma.product.deleteMany(),
     prisma.quotation.updateMany({ data: { parentId: null } }),
     prisma.quotation.deleteMany(),
     prisma.activity.deleteMany(),
@@ -89,6 +93,9 @@ async function main() {
     ['Granite Financial', 'Finance'], ['Lighthouse Media', 'Media'], ['Redwood Agritech', 'Agriculture'],
     ['Cobalt Mining', 'Mining'],
   ] as const;
+  const terms = await prisma.paymentTerm.findMany({ where: { isActive: true }, orderBy: { days: 'asc' } });
+  const termByName = new Map(terms.map((t) => [t.name, t.id]));
+  const customerTypes = ['CORPORATE', 'DEALER', 'RETAILER', 'CORPORATE'] as const;
   const customers = [];
   for (const [i, [name, industry]] of companies.entries()) {
     const owner = sellers[i % sellers.length]!;
@@ -100,6 +107,8 @@ async function main() {
         phone: `+1 555 01${String(i).padStart(2, '0')}`,
         address: `${between(10, 999)} Demo Street, Sample City`,
         taxId: `DEMO-${1000 + i}`,
+        type: customerTypes[i % customerTypes.length],
+        paymentTermId: i % 4 === 3 ? null : termByName.get(pick(['Net 15', 'Net 30', 'Net 30', 'Net 45', 'Net 60'])) ?? null,
       },
     });
     customers.push(c);
@@ -108,7 +117,6 @@ async function main() {
         data: {
           customerId: c.id,
           creditLimit: pick([25_000, 50_000, 75_000, 100_000, 150_000]),
-          paymentTermsDays: pick([15, 30, 30, 45, 60]),
           onHold: i === 9,
           notes: i === 9 ? 'On hold pending overdue settlement (demo)' : null,
           updatedById: finance.id,
@@ -179,10 +187,27 @@ async function main() {
     });
   }
 
-  const products = [
-    ['Implementation services (days)', 1200], ['Annual software license', 18000], ['Hardware bundle', 4500],
-    ['Premium support plan', 6000], ['Training workshop', 2500], ['Integration package', 9500],
+  const catalog = [
+    ['SRV-IMPL', 'Implementation services', 'day', 'Services', 1200],
+    ['LIC-ANNUAL', 'Annual software license', 'license', 'Software', 18000],
+    ['HW-BUNDLE', 'Hardware bundle', 'set', 'Hardware', 4500],
+    ['SUP-PREM', 'Premium support plan', 'year', 'Support', 6000],
+    ['TRN-WS', 'Training workshop', 'session', 'Services', 2500],
+    ['INT-PKG', 'Integration package', 'package', 'Software', 9500],
+    ['CBL-CAT6', 'Cat6 network cable (305 m)', 'box', 'Hardware', 180],
+    ['SW-24P', '24-port managed switch', 'unit', 'Hardware', 950],
+    ['UPS-3K', '3 kVA online UPS', 'unit', 'Hardware', 1650],
+    ['LEGACY-SCAN', 'Barcode scanner (discontinued)', 'unit', 'Hardware', 240],
   ] as const;
+  const products = [];
+  for (const [code, name, unit, category, price] of catalog) {
+    products.push(
+      await prisma.product.create({
+        data: { code, name, unit, category, listPrice: price, isActive: code !== 'LEGACY-SCAN', description: `${name} (demo catalog)` },
+      }),
+    );
+  }
+  const sellable = products.filter((p) => p.isActive);
   let qSeq = 1;
   let invSeq = 1;
   const year = today.getUTCFullYear();
@@ -205,12 +230,13 @@ async function main() {
     const n = between(1, 4);
     const big = i % 5 === 4;
     const items = Array.from({ length: n }, (_, idx) => {
-      const [description, price] = pick(products);
+      const product = pick(sellable.slice(0, 6));
       return {
         position: idx + 1,
-        description,
+        productId: product.id,
+        description: product.name,
         quantity: new Prisma.Decimal(big ? between(3, 8) : between(1, 3)),
-        unitPrice: new Prisma.Decimal(price),
+        unitPrice: product.listPrice,
         discountPercent: new Prisma.Decimal(pick([0, 0, 5, 10])),
         taxRate: new Prisma.Decimal(pick([0, 7])),
       };
@@ -277,8 +303,98 @@ async function main() {
     if (flow.status === 'ACCEPTED') accepted.push({ id: q.id, customerId: customer.id, ownerId: owner.id, items, total: totals.total });
   }
 
-  const invoicePlans = ['PAID', 'PAID', 'PARTIAL', 'OVERDUE', 'OVERDUE_PARTIAL', 'DRAFT'] as const;
-  for (const [i, q] of accepted.entries()) {
+  let cSeq = 1;
+  let oSeq = 1;
+  const lineCopy = (items: typeof accepted[number]['items']) =>
+    items.map(({ position, productId, description, quantity, unitPrice, discountPercent, taxRate }) => ({ position, productId, description, quantity, unitPrice, discountPercent, taxRate }));
+  for (const [i, q] of accepted.slice(0, 2).entries()) {
+    const start = daysAgo(between(20, 40));
+    const contract = await prisma.contract.create({
+      data: {
+        number: `C-${year}-${String(cSeq++).padStart(5, '0')}`,
+        quotationId: q.id,
+        customerId: q.customerId,
+        ownerId: q.ownerId,
+        title: i === 0 ? 'Annual supply agreement (demo)' : 'Rollout services contract (demo)',
+        startDate: start,
+        endDate: new Date(start.getTime() + 365 * DAY),
+        value: q.total,
+        currency: 'USD',
+        terms: 'Deliveries scheduled per sales order. Payment per customer terms.',
+        createdById: q.ownerId,
+        createdAt: start,
+      },
+    });
+    const totals = calculateTotals(q.items as never);
+    const delivered = i === 0;
+    const order = await prisma.salesOrder.create({
+      data: {
+        number: `SO-${year}-${String(oSeq++).padStart(5, '0')}`,
+        customerId: q.customerId,
+        ownerId: q.ownerId,
+        contractId: contract.id,
+        quotationId: q.id,
+        status: delivered ? 'DELIVERED' : 'PENDING',
+        orderDate: new Date(start.getTime() + 2 * DAY),
+        deliveryDate: delivered ? new Date(start.getTime() + 9 * DAY) : daysAhead(7),
+        currency: 'USD',
+        ...totals,
+        confirmedAt: delivered ? new Date(start.getTime() + 3 * DAY) : null,
+        deliveredAt: delivered ? new Date(start.getTime() + 9 * DAY) : null,
+        createdById: q.ownerId,
+        items: { createMany: { data: lineCopy(q.items) } },
+      },
+    });
+    if (delivered) {
+      const issueDate = new Date(start.getTime() + 10 * DAY);
+      const inv = await prisma.invoice.create({
+        data: {
+          number: `INV-${year}-${String(invSeq++).padStart(5, '0')}`,
+          customerId: q.customerId,
+          salesOrderId: order.id,
+          salespersonId: q.ownerId,
+          status: 'PAID',
+          issueDate,
+          dueDate: new Date(issueDate.getTime() + 30 * DAY),
+          currency: 'USD',
+          ...totals,
+          amountPaid: totals.total,
+          createdById: finance.id,
+          createdAt: issueDate,
+          items: { createMany: { data: lineCopy(q.items) } },
+        },
+      });
+      await prisma.payment.create({
+        data: { invoiceId: inv.id, amount: totals.total, method: 'KPAY', reference: `KPAY-${between(100000, 999999)}`, paidAt: new Date(Math.min(issueDate.getTime() + 12 * DAY, today.getTime())), recordedById: finance.id },
+      });
+    }
+  }
+
+  // A manual order for a dealer, waiting for confirmation.
+  const dealer = customers.find((c) => c.type === 'DEALER') ?? customers[1]!;
+  const dealerLines = [
+    { position: 1, productId: products[6]!.id, description: products[6]!.name, quantity: new Prisma.Decimal(40), unitPrice: products[6]!.listPrice, discountPercent: new Prisma.Decimal(5), taxRate: new Prisma.Decimal(0) },
+    { position: 2, productId: products[7]!.id, description: products[7]!.name, quantity: new Prisma.Decimal(6), unitPrice: products[7]!.listPrice, discountPercent: new Prisma.Decimal(0), taxRate: new Prisma.Decimal(0) },
+  ];
+  await prisma.salesOrder.create({
+    data: {
+      number: `SO-${year}-${String(oSeq++).padStart(5, '0')}`,
+      customerId: dealer.id,
+      ownerId: dealer.ownerId,
+      status: 'CONFIRMED',
+      orderDate: daysAgo(2),
+      deliveryDate: daysAhead(5),
+      currency: 'USD',
+      ...calculateTotals(dealerLines),
+      confirmedAt: daysAgo(1),
+      notes: 'Restock order (demo)',
+      createdById: dealer.ownerId,
+      items: { createMany: { data: dealerLines } },
+    },
+  });
+
+  const invoicePlans = ['OVERDUE', 'PARTIAL', 'OVERDUE_PARTIAL', 'DRAFT', 'PAID', 'PAID'] as const;
+  for (const [i, q] of accepted.slice(2).entries()) {
     const plan = invoicePlans[i % invoicePlans.length]!;
     const isDraft = plan === 'DRAFT';
     const issueDate = plan.startsWith('OVERDUE') ? daysAgo(between(50, 80)) : daysAgo(between(5, 25));
@@ -300,7 +416,7 @@ async function main() {
         amountPaid: paid,
         createdById: finance.id,
         createdAt: issueDate,
-        items: { createMany: { data: q.items.map(({ position, description, quantity, unitPrice, discountPercent, taxRate }) => ({ position, description, quantity, unitPrice, discountPercent, taxRate })) } },
+        items: { createMany: { data: lineCopy(q.items) } },
       },
     });
     if (paid.gt(0)) {
@@ -344,6 +460,8 @@ async function main() {
 
   await prisma.$executeRawUnsafe(`SELECT setval('quotation_number_seq', ${qSeq + 1000})`);
   await prisma.$executeRawUnsafe(`SELECT setval('invoice_number_seq', ${invSeq + 1000})`);
+  await prisma.$executeRawUnsafe(`SELECT setval('contract_number_seq', ${cSeq + 1000})`);
+  await prisma.$executeRawUnsafe(`SELECT setval('sales_order_number_seq', ${oSeq + 1000})`);
 
   const mStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   const mEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0));

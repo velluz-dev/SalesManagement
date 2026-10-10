@@ -1,6 +1,6 @@
 # SalesHub CRM
 
-A role-based sales management system. It covers the whole revenue cycle: leads, opportunities, quotations with an approval workflow, invoices, payments and collections. Access control is enforced on the server.
+A role-based sales management system for B2B selling. It covers the whole revenue cycle: leads, opportunities, a product catalog, quotations with an approval workflow, contracts, sales orders, invoices on customer payment terms (Net 30, COD, ...), payments including KPay, and collections. Access control is enforced on the server.
 
 | Layer | Technology |
 |---|---|

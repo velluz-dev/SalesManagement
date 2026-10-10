@@ -42,6 +42,7 @@ function Editor({ quotation }: { quotation?: Quotation }) {
           notes: quotation.notes ?? '',
           terms: quotation.terms ?? '',
           items: (quotation.items ?? []).map((i) => ({
+            productId: i.productId ?? '',
             description: i.description,
             quantity: String(Number(i.quantity)),
             unitPrice: i.unitPrice,
@@ -119,6 +120,7 @@ function Editor({ quotation }: { quotation?: Quotation }) {
         </Card>
         <Card title="Line items">
           <LineItemsEditor
+            setValue={setValue as never}
             control={control as never}
             register={register as never}
             errors={formState.errors as never}

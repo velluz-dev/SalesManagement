@@ -35,7 +35,9 @@ describe('invoices and payments', () => {
   });
 
   it('issues with credit warning when the limit would be exceeded (warn mode)', async () => {
-    await finance.put(`/api/credit/${customerId}`).send({ creditLimit: '1000', paymentTermsDays: 15, onHold: false }).expect(200);
+    const terms = (await finance.get('/api/payment-terms')).body.data as { id: string; name: string; days: number }[];
+    const net15 = terms.find((t) => t.name === 'Net 15')!;
+    await finance.put(`/api/credit/${customerId}`).send({ creditLimit: '1000', paymentTermId: net15.id, onHold: false }).expect(200);
     const res = await finance.post(`/api/invoices/${invoiceId}/issue`).send({});
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('ISSUED');

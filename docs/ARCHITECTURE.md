@@ -66,7 +66,13 @@ Scope suffixes: `.own` = records the user owns, `.team` = records owned by membe
 | target.manage (team scope / all) |  | team |  |  |  |
 | invoice.read / create / update / cancel |  |  | ✔ | read |  |
 | payment.read / create / void |  |  | ✔ | read |  |
-| credit.read / credit.manage |  | read | ✔ | read |  |
+| credit.read / credit.manage (credit.manage also maintains payment terms) |  | read | ✔ | read |  |
+| product.read |  ✔ | ✔ | ✔ | ✔ |  |
+| product.manage (catalog and prices) |  | ✔ |  |  |  |
+| contract.read.own / .team / .all | own | team | all | all |  |
+| contract.manage | ✔ | ✔ |  |  |  |
+| order.read.own / .team / .all | own | team | all | all |  |
+| order.create / order.update | ✔ | ✔ |  |  |  |
 | report.sales.own / .team / .all | own | team |  | all |  |
 | report.finance |  |  | ✔ | ✔ |  |
 | user.read / create / update / deactivate |  |  |  |  | ✔ |
@@ -112,6 +118,12 @@ ApprovalRule table) rather than hard-coded.
 | B15 | Payments cannot be future-dated; invoices created from a quotation keep the quotation's line items (edits only to notes while draft). | Fixed |
 | B16 | A quotation that has a non-cancelled invoice cannot be revised. | Fixed |
 | B17 | Password policy: 10 to 128 characters with letters and digits; new accounts must change the temporary password at first sign-in (default). | Fixed |
+| B18 | **Payment terms** (Net 15/30/45/60, COD, or custom) are a reusable list. A customer's term sets the due date of its invoices; customers without one use `invoice.defaultPaymentTermsDays`. Only `credit.manage` holders (Finance) assign a customer's term, because it is a credit decision. Terms in use cannot be deleted, only deactivated. | Finance → Payment Terms |
+| B19 | **Products**: quotation, order and manual invoice lines may reference a catalog product (description and list price are prefilled and stay editable). Discontinued products cannot be added to new lines; existing documents and copies keep them. Price changes never alter existing documents. | Sales → Products (`product.manage`) |
+| B20 | **Contracts** are created only from an ACCEPTED quotation, once per quotation, with the value fixed to the quotation total. Lifecycle ACTIVE → COMPLETED / CANCELLED; cancelling requires every order under it to be cancelled first. Document links must be http(s). | Fixed |
+| B21 | **Sales orders** come from an active contract, an ACCEPTED quotation, or are entered manually. Lifecycle PENDING → CONFIRMED → DELIVERED, with PENDING/CONFIRMED → CANCELLED (reason required, only if not invoiced). Lines are editable only while PENDING. Confirming runs the credit check (open invoices + confirmed uninvoiced orders + this order vs limit, and credit hold): warning, or blocked when `credit.blockOnExceed`. | `credit.blockOnExceed` |
+| B22 | **No double billing**: a confirmed/delivered order is invoiced at most once (partial unique index); a quotation fulfilled through orders cannot also be invoiced directly, and a quotation invoiced directly cannot get orders. A contract may have several orders (e.g. staged deliveries), each invoiced separately. | Fixed |
+| B23 | Customer type (Dealer, Retailer, Corporate, Other) and the KPay payment method are available. | Fixed |
 
 ## 4. Database design (PostgreSQL via Prisma)
 
@@ -125,7 +137,10 @@ Core tables (all have `createdAt`/`updatedAt`; money is `NUMERIC(14,2)`, percent
 - **Approval:** `ApprovalRule`, `ApprovalRequest` (quotationId, ruleId, approverRoleId, assignedToId nullable = role pool,
   status enum, amount snapshot), `ApprovalHistory` (append-only action log).
 - **Targets:** `SalesTarget` (userId XOR teamId, periodStart/periodEnd, amount). Check constraint enforces XOR.
-- **Finance:** `Invoice` (number unique, status enum, customerId, quotationId, salespersonId, dueDate, cached totals,
+- **Catalog:** `Product` (code unique, unit, category, listPrice, isActive), `PaymentTerm` (name unique, days 0–365).
+- **Fulfilment:** `Contract` (number unique, quotationId unique, value snapshot, status enum, documentUrl), `SalesOrder`
+  (number unique, contractId/quotationId optional, status enum, cached totals), `SalesOrderItem` (productId optional).
+- **Finance:** `Invoice` (number unique, status enum, customerId, quotationId, salesOrderId, paymentTermId, salespersonId, dueDate, cached totals,
   amountPaid), `InvoiceItem`, `Payment` (method enum, voidedAt), `CustomerCredit` (customerId unique, creditLimit,
   paymentTermsDays, onHold).
 - **Platform:** `Notification` (userId, type, link, readAt, dedupeKey unique per user), `AuditLog` (actorId, action,

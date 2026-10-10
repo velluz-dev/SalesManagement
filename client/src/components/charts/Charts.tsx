@@ -5,9 +5,9 @@ import {
 import { BarChart3, Table2 } from 'lucide-react';
 import { money } from '../../lib/format';
 
-export const SERIES = ['#2a78d6', '#eb6834', '#1baf7a'] as const;
-const AXIS = { fontSize: 12, fill: '#66746c' };
-const GRID = '#eaedea';
+export const SERIES = ['#5b4fe3', '#eb6834', '#1baf7a'] as const;
+const AXIS = { fontSize: 12, fill: '#64748b' };
+const GRID = '#eef0f6';
 
 export interface SeriesDef {
   key: string;
@@ -125,10 +125,10 @@ export function BarsChart<T extends Record<string, unknown>>({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }} barGap={2} barCategoryGap="28%">
           <CartesianGrid vertical={false} stroke={GRID} />
-          <XAxis dataKey={xKey as never} tick={AXIS} tickLine={false} axisLine={{ stroke: '#dde3de' }} tickFormatter={xFormat} interval="preserveStartEnd" />
+          <XAxis dataKey={xKey as never} tick={AXIS} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tickFormatter={xFormat} interval="preserveStartEnd" />
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(v) => yFormat(Number(v))} width={64} />
           <Tooltip cursor={{ fill: 'rgba(102,116,108,0.1)' }} content={<ChartTooltip series={series} labelFormat={xFormat} />} />
-          {series.length > 1 && <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12, color: '#4d5a53' }} />}
+          {series.length > 1 && <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12, color: '#475569' }} />}
           {series.map((s, i) => (
             <Bar key={s.key} dataKey={s.key} name={s.label} fill={SERIES[i]} radius={[4, 4, 0, 0]} maxBarSize={36} />
           ))}

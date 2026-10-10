@@ -5,6 +5,7 @@ import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest, notFound, unprocessable } from '../../lib/errors';
 import { calculateLine, calculateTotals, ZERO } from '../../lib/money';
+import { assertSellableProducts, copyLines, normalizeLines, type LineInput } from '../../lib/line-items';
 import { contains, listQuery, pageArgs, paged, sortBy } from '../../lib/pagination';
 import { getSettings } from '../../lib/settings';
 import { addDays, daysBetween, startOfTodayUtc } from '../../lib/dates';
@@ -23,6 +24,7 @@ export const listInvoicesQuery = listQuery(['createdAt', 'dueDate', 'issueDate',
 
 export const createInvoiceSchema = z.union([
   z.strictObject({ quotationId: uuid, notes: optionalText(4000) }),
+  z.strictObject({ salesOrderId: uuid, notes: optionalText(4000) }),
   z.strictObject({
     customerId: uuid,
     salespersonId: uuid.optional().nullable(),
@@ -84,10 +86,12 @@ export async function getInvoice(id: string) {
     where: { id },
     include: {
       ...listInclude,
-      customer: { select: { id: true, name: true, email: true, address: true, taxId: true, credit: true } },
+      customer: { select: { id: true, name: true, email: true, address: true, taxId: true, credit: true, paymentTerm: { select: { id: true, name: true, days: true } } } },
       quotation: { select: { id: true, number: true, version: true } },
+      salesOrder: { select: { id: true, number: true } },
+      paymentTerm: { select: { id: true, name: true, days: true } },
       createdBy: ownerSelect,
-      items: { orderBy: { position: 'asc' } },
+      items: { orderBy: { position: 'asc' }, include: { product: { select: { id: true, code: true, unit: true } } } },
       payments: { orderBy: { paidAt: 'desc' }, include: { recordedBy: ownerSelect, voidedBy: ownerSelect } },
     },
   });
@@ -99,15 +103,8 @@ export async function getInvoice(id: string) {
   };
 }
 
-async function writeInvoiceItems(tx: Prisma.TransactionClient, invoiceId: string, items: LineItemInput[], defaultTaxRate: number) {
-  const normalized = items.map((i, idx) => ({
-    position: idx + 1,
-    description: i.description,
-    quantity: i.quantity,
-    unitPrice: i.unitPrice,
-    discountPercent: i.discountPercent ?? 0,
-    taxRate: i.taxRate ?? defaultTaxRate,
-  }));
+async function writeInvoiceItems(tx: Prisma.TransactionClient, invoiceId: string, items: LineInput[], defaultTaxRate: number) {
+  const normalized = normalizeLines(items, defaultTaxRate);
   await tx.invoiceItem.deleteMany({ where: { invoiceId } });
   await tx.invoiceItem.createMany({ data: normalized.map((i) => ({ ...i, invoiceId })) });
   const totals = calculateTotals(normalized);
@@ -132,6 +129,9 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
       }
       const existing = await tx.invoice.findFirst({ where: { quotationId: q.id, status: { not: 'CANCELLED' } } });
       if (existing) throw unprocessable(`Quotation already invoiced as ${existing.number}`);
+      // Quotations fulfilled through sales orders are billed per order, never directly (prevents double billing).
+      const order = await tx.salesOrder.findFirst({ where: { quotationId: q.id, status: { not: 'CANCELLED' } } });
+      if (order) throw unprocessable(`This quotation is fulfilled through sales order ${order.number}; invoice the order instead`);
       const inv = await tx.invoice.create({
         data: {
           number: await nextInvoiceNumber(tx),
@@ -146,16 +146,33 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
       await writeInvoiceItems(
         tx,
         inv.id,
-        q.items.map((i) => ({
-          description: i.description,
-          quantity: i.quantity.toString(),
-          unitPrice: i.unitPrice.toString(),
-          discountPercent: i.discountPercent.toNumber(),
-          taxRate: i.taxRate.toNumber(),
-        })),
+        copyLines(q.items),
         0,
       );
       await audit(tx, actor, { action: 'invoice.created', entityType: 'Invoice', entityId: inv.id, after: { ...inv, fromQuotation: q.number } });
+      return inv.id;
+    }
+
+    if ('salesOrderId' in input) {
+      await tx.$queryRaw`SELECT id FROM "SalesOrder" WHERE id = ${input.salesOrderId}::uuid FOR UPDATE`;
+      const o = await tx.salesOrder.findUnique({ where: { id: input.salesOrderId }, include: { items: { orderBy: { position: 'asc' } } } });
+      if (!o) throw notFound('Sales order');
+      if (o.status !== 'CONFIRMED' && o.status !== 'DELIVERED') throw unprocessable('Only confirmed or delivered orders can be invoiced');
+      const existing = await tx.invoice.findFirst({ where: { salesOrderId: o.id, status: { not: 'CANCELLED' } } });
+      if (existing) throw unprocessable(`Order already invoiced as ${existing.number}`);
+      const inv = await tx.invoice.create({
+        data: {
+          number: await nextInvoiceNumber(tx),
+          customerId: o.customerId,
+          salesOrderId: o.id,
+          salespersonId: o.ownerId,
+          currency: o.currency,
+          notes: input.notes ?? o.notes,
+          createdById: actor.user.id,
+        },
+      });
+      await writeInvoiceItems(tx, inv.id, copyLines(o.items), 0);
+      await audit(tx, actor, { action: 'invoice.created', entityType: 'Invoice', entityId: inv.id, after: { ...inv, fromSalesOrder: o.number } });
       return inv.id;
     }
 
@@ -175,6 +192,7 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
         createdById: actor.user.id,
       },
     });
+    await assertSellableProducts(tx, input.items);
     await writeInvoiceItems(tx, inv.id, input.items, settings['quotation.defaultTaxRate']);
     await audit(tx, actor, { action: 'invoice.created', entityType: 'Invoice', entityId: inv.id, after: { ...inv, items: input.items } });
     return inv.id;
@@ -221,6 +239,7 @@ export async function issueInvoice(actor: Actor, id: string, input: z.infer<type
     if (inv.total.lte(0)) throw unprocessable('Invoice total must be greater than zero');
     const settings = await getSettings(tx);
     const credit = await tx.customerCredit.findUnique({ where: { customerId: inv.customerId } });
+    const customer = await tx.customer.findUniqueOrThrow({ where: { id: inv.customerId }, include: { paymentTerm: true } });
 
     if (credit) {
       const exposure = await customerExposure(tx, inv.customerId);
@@ -234,10 +253,11 @@ export async function issueInvoice(actor: Actor, id: string, input: z.infer<type
     }
 
     const issueDate = input.issueDate ?? startOfTodayUtc();
-    const terms = credit?.paymentTermsDays ?? settings['invoice.defaultPaymentTermsDays'];
+    // Due date: the customer's payment term, else the system default (B10/B12).
+    const terms = customer.paymentTerm?.days ?? settings['invoice.defaultPaymentTermsDays'];
     const dueDate = input.dueDate ?? addDays(issueDate, terms);
     if (dueDate < issueDate) throw badRequest('Due date cannot be before the issue date');
-    await tx.invoice.update({ where: { id }, data: { status: 'ISSUED', issueDate, dueDate } });
+    await tx.invoice.update({ where: { id }, data: { status: 'ISSUED', issueDate, dueDate, paymentTermId: customer.paymentTermId } });
     await audit(tx, actor, {
       action: 'invoice.issued',
       entityType: 'Invoice',

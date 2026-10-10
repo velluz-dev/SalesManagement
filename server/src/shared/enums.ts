@@ -45,8 +45,17 @@ export const INVOICE_STATUSES = ['DRAFT', 'ISSUED', 'PARTIALLY_PAID', 'PAID', 'C
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 export const OPEN_INVOICE_STATUSES: InvoiceStatus[] = ['ISSUED', 'PARTIALLY_PAID'];
 
-export const PAYMENT_METHODS = ['BANK_TRANSFER', 'CASH', 'CHEQUE', 'CARD', 'OTHER'] as const;
+export const PAYMENT_METHODS = ['BANK_TRANSFER', 'CASH', 'CHEQUE', 'CARD', 'KPAY', 'OTHER'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const CUSTOMER_TYPES = ['DEALER', 'RETAILER', 'CORPORATE', 'OTHER'] as const;
+export type CustomerType = (typeof CUSTOMER_TYPES)[number];
+
+export const CONTRACT_STATUSES = ['ACTIVE', 'COMPLETED', 'CANCELLED'] as const;
+export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
+
+export const SALES_ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELLED'] as const;
+export type SalesOrderStatus = (typeof SALES_ORDER_STATUSES)[number];
 
 export const TARGET_PERIOD_TYPES = ['MONTH', 'QUARTER', 'YEAR'] as const;
 export type TargetPeriodType = (typeof TARGET_PERIOD_TYPES)[number];

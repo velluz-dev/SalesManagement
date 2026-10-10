@@ -1,11 +1,16 @@
-import { useFieldArray, type Control, type FieldErrors, type UseFormRegister, useWatch } from 'react-hook-form';
+import { useFieldArray, type Control, type FieldErrors, type UseFormRegister, type UseFormSetValue, useWatch } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { Input } from './ui/Form';
+import { Input, Select } from './ui/Form';
 import { documentTotals, lineTotals } from '../lib/totals';
 import { money } from '../lib/format';
+import { api, type Paged } from '../lib/api';
+import { useAuth } from '../auth/AuthProvider';
+import type { Product } from '../lib/types';
 
 export interface LineItemValues {
+  productId: string;
   description: string;
   quantity: string;
   unitPrice: string;
@@ -17,16 +22,39 @@ export interface WithItems {
   items: LineItemValues[];
 }
 
-export const emptyLine = (taxRate = '0'): LineItemValues => ({ description: '', quantity: '1', unitPrice: '', discountPercent: '0', taxRate });
+export const emptyLine = (taxRate = '0'): LineItemValues => ({ productId: '', description: '', quantity: '1', unitPrice: '', discountPercent: '0', taxRate });
 
-export function LineItemsEditor({ control, register, errors, currency, defaultTaxRate = '0' }: {
+/** Active products for line pickers (only fetched for users who can read the catalog). */
+function useSellableProducts() {
+  const { canAny } = useAuth();
+  return useQuery({
+    queryKey: ['products', 'picker'],
+    queryFn: async () => (await api.get<Paged<Product>>('/products', { pageSize: 100, sort: 'name', order: 'asc' })).data,
+    enabled: canAny('product.read', 'product.manage'),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function LineItemsEditor({ control, register, errors, currency, defaultTaxRate = '0', setValue }: {
   control: Control<WithItems>;
   register: UseFormRegister<WithItems>;
   errors?: FieldErrors<WithItems>;
   currency?: string;
   defaultTaxRate?: string;
+  /** When given, each line gets a product picker that fills description and list price. */
+  setValue?: UseFormSetValue<WithItems>;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+  const products = useSellableProducts();
+  const showProducts = !!setValue && !!products.data?.length;
+  const pickProduct = (i: number, id: string) => {
+    setValue?.(`items.${i}.productId`, id);
+    const p = products.data?.find((x) => x.id === id);
+    if (p) {
+      setValue?.(`items.${i}.description`, p.name, { shouldValidate: false });
+      setValue?.(`items.${i}.unitPrice`, String(Number(p.listPrice)), { shouldValidate: false });
+    }
+  };
   const items = useWatch({ control, name: 'items' }) ?? [];
   const totals = documentTotals(items);
   const err = (i: number, k: keyof LineItemValues) => errors?.items?.[i]?.[k]?.message;
@@ -52,6 +80,19 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
               return (
                 <tr key={f.id} className="align-top">
                   <td className="py-1.5 pr-2">
+                    {showProducts && (
+                      <Select
+                        aria-label={`Line ${i + 1} product`}
+                        className="mb-1.5"
+                        value={items[i]?.productId ?? ''}
+                        onChange={(e) => pickProduct(i, e.target.value)}
+                      >
+                        <option value="">Custom item (no product)</option>
+                        {products.data?.map((p) => (
+                          <option key={p.id} value={p.id}>{p.code} · {p.name} ({money(p.listPrice, { currency })}/{p.unit})</option>
+                        ))}
+                      </Select>
+                    )}
                     <Input aria-label={`Line ${i + 1} description`} invalid={!!err(i, 'description')} {...register(`items.${i}.description`)} />
                     {err(i, 'description') && <p className="mt-1 text-xs text-rose-600">{err(i, 'description')}</p>}
                   </td>
@@ -108,6 +149,7 @@ export function validateItems(items: LineItemValues[]): Record<string, string> {
 
 export const itemsPayload = (items: LineItemValues[]) =>
   items.map((l) => ({
+    productId: l.productId || null,
     description: l.description.trim(),
     quantity: l.quantity,
     unitPrice: l.unitPrice,

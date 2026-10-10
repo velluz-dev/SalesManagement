@@ -67,6 +67,18 @@ export const PERMISSIONS = {
   AUDIT_READ: 'audit.read',
   SETTINGS_READ: 'settings.read',
   SETTINGS_MANAGE: 'settings.manage',
+
+  PRODUCT_READ: 'product.read',
+  PRODUCT_MANAGE: 'product.manage',
+  CONTRACT_READ_OWN: 'contract.read.own',
+  CONTRACT_READ_TEAM: 'contract.read.team',
+  CONTRACT_READ_ALL: 'contract.read.all',
+  CONTRACT_MANAGE: 'contract.manage',
+  ORDER_READ_OWN: 'order.read.own',
+  ORDER_READ_TEAM: 'order.read.team',
+  ORDER_READ_ALL: 'order.read.all',
+  ORDER_CREATE: 'order.create',
+  ORDER_UPDATE: 'order.update',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -154,7 +166,33 @@ export const PERMISSION_GROUPS: { group: string; permissions: { code: Permission
       { code: 'payment.create', description: 'Record payments' },
       { code: 'payment.void', description: 'Void payments' },
       { code: 'credit.read', description: 'View customer credit information' },
-      { code: 'credit.manage', description: 'Set credit limits, terms and holds' },
+      { code: 'credit.manage', description: 'Set credit limits and holds, and manage payment terms' },
+    ],
+  },
+  {
+    group: 'Products',
+    permissions: [
+      { code: 'product.read', description: 'View the product catalog' },
+      { code: 'product.manage', description: 'Create and edit products and prices' },
+    ],
+  },
+  {
+    group: 'Contracts',
+    permissions: [
+      { code: 'contract.read.own', description: 'View own contracts' },
+      { code: 'contract.read.team', description: "View team members' contracts" },
+      { code: 'contract.read.all', description: 'View all contracts' },
+      { code: 'contract.manage', description: 'Create contracts from accepted quotations and update them within read scope' },
+    ],
+  },
+  {
+    group: 'Sales orders',
+    permissions: [
+      { code: 'order.read.own', description: 'View own sales orders' },
+      { code: 'order.read.team', description: "View team members' sales orders" },
+      { code: 'order.read.all', description: 'View all sales orders' },
+      { code: 'order.create', description: 'Create sales orders' },
+      { code: 'order.update', description: 'Edit, confirm, deliver and cancel sales orders within read scope' },
     ],
   },
   {
@@ -187,7 +225,7 @@ export const PERMISSION_GROUPS: { group: string; permissions: { code: Permission
 
 export type Scope = 'own' | 'team' | 'all';
 
-export type ScopedResource = 'customer' | 'lead' | 'opportunity' | 'activity' | 'quotation' | 'target' | 'report.sales';
+export type ScopedResource = 'customer' | 'lead' | 'opportunity' | 'activity' | 'quotation' | 'contract' | 'order' | 'target' | 'report.sales';
 
 export function resolveScope(perms: Iterable<string>, resource: ScopedResource): Scope | null {
   const set = perms instanceof Set ? (perms as Set<string>) : new Set(perms);

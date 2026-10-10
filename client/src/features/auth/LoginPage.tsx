@@ -38,10 +38,13 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-white">
-      <div className="hidden w-[44%] max-w-xl flex-col justify-between bg-brand-950 p-12 text-white lg:flex">
+      <div className="hidden w-[44%] max-w-xl flex-col justify-between bg-navy-950 p-12 text-white lg:flex">
         <div className="flex items-center gap-2.5">
           <BrandMark size="lg" />
-          <span className="text-lg font-semibold tracking-tight">SalesHub</span>
+          <span className="leading-tight">
+            <span className="block text-lg font-bold tracking-tight">SalesPro</span>
+            <span className="block text-[11px] font-medium tracking-wide text-slate-400">CRM</span>
+          </span>
         </div>
         <div className="max-w-sm">
           <h2 className="text-[2rem] leading-[1.15] font-semibold tracking-tight">Every deal, from the first call to the last payment.</h2>
@@ -51,14 +54,14 @@ export function LoginPage() {
             <li className="flex gap-3"><Wallet className="mt-0.5 size-4 shrink-0 text-marigold-300" aria-hidden />Invoices and payments followed until they are paid</li>
           </ul>
         </div>
-        <p className="text-xs text-brand-300/70">&copy; {new Date().getFullYear()} SalesHub. For internal use.</p>
+        <p className="text-xs text-brand-300/70">&copy; {new Date().getFullYear()} SalesPro. For internal use.</p>
       </div>
 
       <div className="flex flex-1 items-center justify-center px-5 py-12 sm:px-8">
         <div className="w-full max-w-[22rem]">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <BrandMark />
-            <span className="text-base font-semibold tracking-tight">SalesHub</span>
+            <span className="text-base font-bold tracking-tight">SalesPro</span>
           </div>
           <div className="mb-7">
             <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>

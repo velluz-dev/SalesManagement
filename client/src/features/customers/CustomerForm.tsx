@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { CUSTOMER_TYPES, enumLabel } from '@shared';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { Field, FormError, Input, Textarea } from '../../components/ui/Form';
+import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
 import { UserSelect } from '../../components/ui/Pickers';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
@@ -20,6 +21,7 @@ const schema = z.object({
   industry: z.string().max(80),
   address: z.string().max(400),
   taxId: z.string().max(60),
+  type: z.enum(CUSTOMER_TYPES),
   ownerId: z.string(),
 });
 type Values = z.infer<typeof schema>;
@@ -38,6 +40,7 @@ export function CustomerFormModal({ open, onClose, customer, onSaved }: { open: 
       industry: customer?.industry ?? '',
       address: customer?.address ?? '',
       taxId: customer?.taxId ?? '',
+      type: (customer?.type as Values['type']) ?? 'CORPORATE',
       ownerId: customer?.ownerId ?? me?.user.id ?? '',
     },
   });
@@ -82,6 +85,9 @@ export function CustomerFormModal({ open, onClose, customer, onSaved }: { open: 
         </Field>
         <Field label="Email" error={formState.errors.email?.message}><Input type="email" {...register('email')} /></Field>
         <Field label="Phone" error={formState.errors.phone?.message}><Input {...register('phone')} /></Field>
+        <Field label="Customer type" error={formState.errors.type?.message}>
+          <Select {...register('type')}>{CUSTOMER_TYPES.map((t) => <option key={t} value={t}>{enumLabel(t)}</option>)}</Select>
+        </Field>
         <Field label="Industry" error={formState.errors.industry?.message}><Input {...register('industry')} /></Field>
         <Field label="Tax ID" error={formState.errors.taxId?.message}><Input {...register('taxId')} /></Field>
         <Field label="Address" error={formState.errors.address?.message} className="sm:col-span-2"><Textarea {...register('address')} /></Field>

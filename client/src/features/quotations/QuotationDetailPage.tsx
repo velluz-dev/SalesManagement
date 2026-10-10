@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Ban, CheckCheck, GitBranch, Pencil, Receipt, Send, ThumbsDown, Undo2, Mail } from 'lucide-react';
+import { Ban, CheckCheck, ClipboardList, FileSignature, GitBranch, Pencil, Receipt, Send, ThumbsDown, Undo2, Mail } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button, ButtonLink } from '../../components/ui/Button';
@@ -14,6 +14,7 @@ import { api } from '../../lib/api';
 import { EMPTY, date, money } from '../../lib/format';
 import type { Quotation } from '../../lib/types';
 import { ApprovalTimeline } from '../approvals/ApprovalTimeline';
+import { CreateContractModal } from '../contracts/ContractForms';
 
 type ActionKey = 'submit' | 'withdraw' | 'send' | 'accept' | 'decline' | 'cancel' | 'revise';
 
@@ -23,6 +24,7 @@ export default function QuotationDetailPage() {
   const { can } = useAuth();
   const toast = useToast();
   const [action, setAction] = useState<ActionKey | null>(null);
+  const [creatingContract, setCreatingContract] = useState(false);
   const { data: q, isLoading, error, refetch } = useDetail<Quotation>(['quotations', id], `/quotations/${id}`);
   const run = useAction(
     async ({ key, comment }: { key: ActionKey; comment: string }) => {
@@ -54,6 +56,7 @@ export default function QuotationDetailPage() {
   const canEdit = can('quotation.update') && (s === 'DRAFT' || s === 'REJECTED');
   const latestRejection = s === 'REJECTED' ? q.approvalRequests?.find((r) => r.status === 'REJECTED') : undefined;
   const activeInvoice = q.invoices?.find((i) => i.status !== 'CANCELLED');
+  const hasOrders = !!q.salesOrders?.length;
 
   const dialogs: Record<ActionKey, { title: string; message: string; confirm: string; tone?: 'primary' | 'danger' | 'success'; reason?: string; reasonRequired?: boolean; success: string }> = {
     submit: { title: s === 'REJECTED' ? 'Resubmit for approval?' : 'Submit for approval?', message: `The approver is determined automatically from the approval rules for ${money(q.total, { currency: q.currency })}. The quotation will be locked while pending.`, confirm: 'Submit', reason: 'Comment for the approver (optional)', success: 'Submitted for approval' },
@@ -87,7 +90,19 @@ export default function QuotationDetailPage() {
               </>
             )}
             {can('quotation.update') && ['APPROVED', 'SENT', 'DECLINED'].includes(s) && !activeInvoice && <Button variant="secondary" icon={GitBranch} onClick={() => setAction('revise')}>Revise</Button>}
-            {can('invoice.create') && (s === 'ACCEPTED' || s === 'APPROVED') && !activeInvoice && <ButtonLink to={`/invoices/new?quotationId=${q.id}`} icon={Receipt}>Create invoice</ButtonLink>}
+            {can('contract.manage') && s === 'ACCEPTED' && !q.contract && !activeInvoice && (
+              <Button variant="secondary" icon={FileSignature} onClick={() => setCreatingContract(true)}>Create contract</Button>
+            )}
+            {can('order.create') && s === 'ACCEPTED' && !activeInvoice && (
+              <ButtonLink
+                to={q.contract ? `/sales-orders/new?contractId=${q.contract.id}` : `/sales-orders/new?quotationId=${q.id}`}
+                variant="secondary"
+                icon={ClipboardList}
+              >
+                Create sales order
+              </ButtonLink>
+            )}
+            {can('invoice.create') && (s === 'ACCEPTED' || s === 'APPROVED') && !activeInvoice && !hasOrders && <ButtonLink to={`/invoices/new?quotationId=${q.id}`} icon={Receipt}>Create invoice</ButtonLink>}
           </>
         }
       />
@@ -116,6 +131,15 @@ export default function QuotationDetailPage() {
                 { label: 'Currency', value: q.currency },
                 { label: 'Opportunity', value: q.opportunity ? <Link className="text-brand-600 hover:underline" to={`/opportunities/${q.opportunity.id}`}>{q.opportunity.name}</Link> : EMPTY },
                 { label: 'Previous version', value: q.parent ? <Link className="text-brand-600 hover:underline" to={`/quotations/${q.parent.id}`}>v{q.parent.version}</Link> : EMPTY },
+                { label: 'Contract', value: q.contract ? <Link className="text-brand-600 hover:underline" to={`/contracts/${q.contract.id}`}>{q.contract.number}</Link> : EMPTY },
+                {
+                  label: 'Sales orders',
+                  value: hasOrders
+                    ? q.salesOrders!.map((o, i) => (
+                        <span key={o.id}>{i > 0 && ', '}<Link className="text-brand-600 hover:underline" to={`/sales-orders/${o.id}`}>{o.number}</Link></span>
+                      ))
+                    : EMPTY,
+                },
                 { label: 'Invoice', value: activeInvoice ? (can('invoice.read') ? <Link className="text-brand-600 hover:underline" to={`/invoices/${activeInvoice.id}`}>{activeInvoice.number}</Link> : activeInvoice.number) : EMPTY },
               ]}
             />
@@ -136,7 +160,7 @@ export default function QuotationDetailPage() {
                 <tbody>
                   {q.items?.map((i) => (
                     <tr key={i.id}>
-                      <td>{i.description}</td>
+                      <td>{i.description}{i.product && <span className="block font-mono text-xs text-slate-400">{i.product.code}</span>}</td>
                       <td className="tabular text-right">{Number(i.quantity)}</td>
                       <td className="tabular text-right">{money(i.unitPrice, { currency: q.currency })}</td>
                       <td className="tabular text-right">{Number(i.discountPercent)}%</td>
@@ -165,6 +189,12 @@ export default function QuotationDetailPage() {
         </Card>
       </div>
 
+      {creatingContract && (
+        <CreateContractModal
+          quotation={{ id: q.id, number: q.number, total: q.total, currency: q.currency, terms: q.terms, customer: q.customer }}
+          onClose={() => setCreatingContract(false)}
+        />
+      )}
       {d && action && (
         <ConfirmDialog
           open

@@ -32,18 +32,27 @@ enum ActivityType {
   NOTE
 }
 
+enum CustomerType {
+  DEALER
+  RETAILER
+  CORPORATE
+  OTHER
+}
+
 model Customer {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  email     String?
-  phone     String?
-  industry  String?
-  address   String?
-  taxId     String?
-  ownerId   String   @db.Uuid
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String       @id @default(uuid()) @db.Uuid
+  name          String
+  email         String?
+  phone         String?
+  industry      String?
+  address       String?
+  taxId         String?
+  type          CustomerType @default(OTHER)
+  paymentTermId String?      @db.Uuid
+  ownerId       String       @db.Uuid
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   owner         User            @relation("CustomerOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   leads         Lead[]
@@ -52,9 +61,13 @@ model Customer {
   quotations    Quotation[]
   invoices      Invoice[]
   credit        CustomerCredit?
+  paymentTerm   PaymentTerm?    @relation(fields: [paymentTermId], references: [id], onDelete: SetNull)
+  contracts     Contract[]
+  salesOrders   SalesOrder[]
 
   @@index([ownerId])
   @@index([name])
+  @@index([paymentTermId])
 }
 
 model Lead {

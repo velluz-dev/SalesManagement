@@ -85,6 +85,43 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 | GET | `/approval-rules` | `settings.read` or `approval.read.all` | |
 | POST / PUT / DELETE | `/approval-rules[/:id]` | `settings.manage` | `{ name, minAmount, maxAmount?, approverType: TEAM_MANAGER\|ROLE, approverRoleId, priority, isActive }`. Role must hold `approval.decide`. |
 
+## Products and payment terms
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/products` | `product.read` or `product.manage` | Filters: `q`, `category`, `isActive` (managers only; others see sellable products). Sort: `name`, `code`, `listPrice`, `createdAt`. |
+| GET | `/products/categories` | same | Distinct categories. |
+| GET | `/products/:id` | same | |
+| POST / PATCH | `/products[/:id]` | `product.manage` | `{ code, name, unit, category?, description?, listPrice, isActive }`. Code is upper-cased and unique (409 on duplicates). Price changes are audited as `product.price_changed`. |
+| GET | `/payment-terms` | session | Active terms; `?all=true` includes inactive ones for `credit.manage` holders. Each term includes `customerCount`. |
+| POST / PATCH | `/payment-terms[/:id]` | `credit.manage` | `{ name, days (0–365), isActive }` |
+| DELETE | `/payment-terms/:id` | `credit.manage` | 409 if used by customers or invoices (deactivate instead). |
+
+A customer's payment term is set with `PUT /credit/:customerId` (`paymentTermId`, nullable).
+
+## Contracts
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/contracts` | `contract.read.*` | own/team/all. Filters: `status`, `customerId`, `ownerId`, `q`. |
+| GET | `/contracts/:id` | `contract.read.*` | Includes quotation and orders. |
+| POST | `/contracts` | `contract.manage` | `{ quotationId, title?, startDate?, endDate?, terms?, documentUrl? }`. Quotation must be ACCEPTED, in scope, and not already contracted. |
+| PATCH | `/contracts/:id` | `contract.manage` | ACTIVE only: `{ title?, endDate?, terms?, documentUrl? }` (http/https links only). |
+| POST | `/contracts/:id/complete` | `contract.manage` | ACTIVE → COMPLETED. |
+| POST | `/contracts/:id/cancel` | `contract.manage` | `{ reason }`. Only when all its orders are cancelled. |
+
+## Sales orders
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/sales-orders` | `order.read.*` | own/team/all. Filters: `status`, `customerId`, `contractId`, `ownerId`, `q`. |
+| GET | `/sales-orders/:id` | `order.read.*` | Items (with product code and line totals), contract, quotation, invoices. |
+| POST | `/sales-orders` | `order.create` | One of `{ contractId }`, `{ quotationId }` (ACCEPTED, not directly invoiced) or `{ customerId, items }`, plus `orderDate?`, `deliveryDate?`, `notes?`. |
+| PATCH | `/sales-orders/:id` | `order.update` | PENDING only: `{ deliveryDate?, notes?, items? }`. |
+| POST | `/sales-orders/:id/confirm` | `order.update` | Credit check; returns `warnings[]`, or 422 when blocking is configured. |
+| POST | `/sales-orders/:id/deliver` | `order.update` | CONFIRMED → DELIVERED, `{ deliveryDate? }`. |
+| POST | `/sales-orders/:id/cancel` | `order.update` | `{ reason }`. PENDING/CONFIRMED and not invoiced. |
+
 ## Targets
 
 | Method | Path | Permission | Notes |
@@ -99,7 +136,7 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 |---|---|---|---|
 | GET | `/invoices` | `invoice.read` | Filters: `status`, `customerId`, `overdue`, `unpaid`, `from`, `to`. Rows include derived `balance`, `isOverdue`, `daysOverdue`. |
 | GET | `/invoices/:id` | `invoice.read` | Items, payments, customer credit. |
-| POST | `/invoices` | `invoice.create` | `{ quotationId, notes? }` (APPROVED/ACCEPTED, not already invoiced) **or** `{ customerId, salespersonId?, items, notes? }`. Creates a DRAFT. |
+| POST | `/invoices` | `invoice.create` | `{ salesOrderId, notes? }` (CONFIRMED/DELIVERED, once), **or** `{ quotationId, notes? }` (APPROVED/ACCEPTED, not already invoiced, not fulfilled through orders), **or** `{ customerId, salespersonId?, items, notes? }`. Creates a DRAFT. Lines may carry `productId`. |
 | PATCH | `/invoices/:id` | `invoice.update` | DRAFT only. |
 | POST | `/invoices/:id/issue` | `invoice.update` | `{ issueDate?, dueDate? }`. Due date defaults from customer terms. Credit check returns `warnings[]`, or 422 if blocking is configured. |
 | POST | `/invoices/:id/cancel` | `invoice.cancel` | `{ reason }`. DRAFT or unpaid ISSUED. |

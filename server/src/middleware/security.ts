@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { env } from '../config/env';
 import { forbidden } from '../lib/errors';
@@ -17,16 +17,58 @@ export function originCheck(req: Request, _res: Response, next: NextFunction) {
 const rateLimitHandler = (_req: Request, res: Response) =>
   res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests. Please try again later.' } });
 
-export const loginLimiter = rateLimit({
+const loginIdentifier = (req: Request) => String(req.body?.identifier ?? '').trim().toLowerCase().slice(0, 100);
+const skipLoginLimits = () => env.isTest && process.env.TEST_RATE_LIMIT !== 'true';
+
+/** Failed logins for one account from one IP (10 / 15 min). */
+const loginPairLimiter = rateLimit({
   windowMs: 15 * 60_000,
   limit: 10,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  keyGenerator: (req) => `${ipKeyGenerator(req.ip ?? '')}|${String(req.body?.identifier ?? '').trim().toLowerCase().slice(0, 100)}`,
-  skip: () => env.isTest && process.env.TEST_RATE_LIMIT !== 'true',
+  keyGenerator: (req) => `pair|${ipKeyGenerator(req.ip ?? '')}|${loginIdentifier(req)}`,
+  skip: skipLoginLimits,
   handler: rateLimitHandler,
 });
+
+/** Failed logins from one IP across all accounts: stops password spraying (30 / 15 min). */
+const loginIpLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `ip|${ipKeyGenerator(req.ip ?? '')}`,
+  skip: skipLoginLimits,
+  handler: rateLimitHandler,
+});
+
+/** Failed logins for one account from all IPs: stops distributed guessing (25 / 15 min). */
+const loginAccountLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 25,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `acct|${loginIdentifier(req)}`,
+  skip: skipLoginLimits,
+  handler: rateLimitHandler,
+});
+
+/** Runs middleware in order, stopping at the first that responds or errors. */
+function chain(...handlers: RequestHandler[]): RequestHandler {
+  return (req, res, next) => {
+    const run = (i: number): void => {
+      const handler = handlers[i];
+      if (!handler) return next();
+      handler(req, res, (err?: unknown) => (err ? next(err) : run(i + 1)));
+    };
+    run(0);
+  };
+}
+
+export const loginLimiter = chain(loginIpLimiter, loginAccountLimiter, loginPairLimiter);
 
 export const sensitiveLimiter = rateLimit({
   windowMs: 15 * 60_000,

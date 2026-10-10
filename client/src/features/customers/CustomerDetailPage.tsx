@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { enumLabel } from '@shared';
 import { Link, useParams } from 'react-router-dom';
 import { Pencil, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
@@ -53,6 +54,7 @@ export default function CustomerDetailPage() {
               items={[
                 { label: 'Email', value: c.email },
                 { label: 'Phone', value: c.phone },
+                { label: 'Type', value: enumLabel(c.type) },
                 { label: 'Industry', value: c.industry },
                 { label: 'Tax ID', value: c.taxId },
                 { label: 'Address', value: c.address },
@@ -97,7 +99,7 @@ export default function CustomerDetailPage() {
                   columns={1}
                   items={[
                     { label: 'Credit limit', value: money(c.credit.creditLimit) },
-                    { label: 'Payment terms', value: `${c.credit.paymentTermsDays} days` },
+                    { label: 'Payment terms', value: c.paymentTerm ? `${c.paymentTerm.name} (${c.paymentTerm.days} days)` : 'System default' },
                     { label: 'Status', value: c.credit.onHold ? <Badge tone="red">On hold</Badge> : <Badge tone="green">Good standing</Badge> },
                   ]}
                 />
