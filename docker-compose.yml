@@ -1,13 +1,10 @@
-# Optional local PostgreSQL for development.
-#   docker compose up -d db
-#   DATABASE_URL=postgresql://crm:crm@localhost:5432/sales_crm?schema=public
 services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: crm
-      POSTGRES_PASSWORD: crm # development only
+      POSTGRES_PASSWORD: crm
       POSTGRES_DB: sales_crm
     ports:
       - '5432:5432'

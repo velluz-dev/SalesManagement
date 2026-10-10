@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Briefcase, Columns3, List, Plus } from 'lucide-react';
-import { OPPORTUNITY_STAGES, enumLabel } from '@crm/shared';
+import { OPPORTUNITY_STAGES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -15,7 +15,7 @@ import { Skeleton } from '../../components/ui/Spinner';
 import { enumOptions } from '../../components/ui/Pickers';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
-import { date, money } from '../../lib/format';
+import { EMPTY, date, money } from '../../lib/format';
 import type { Opportunity } from '../../lib/types';
 import { OpportunityFormModal } from './OpportunityForm';
 
@@ -33,7 +33,7 @@ function Board() {
   return (
     <div className="flex snap-x gap-4 overflow-x-auto pb-2">
       {data.stages.map((s) => (
-        <section key={s.stage} className="w-72 shrink-0 snap-start rounded-xl border border-slate-200 bg-slate-100/60" aria-label={enumLabel(s.stage)}>
+        <section key={s.stage} className="w-72 shrink-0 snap-start rounded-lg border border-slate-200 bg-slate-100/70" aria-label={enumLabel(s.stage)}>
           <header className="border-b border-slate-200 px-3 py-2.5">
             <div className="flex items-center justify-between">
               <StatusBadge status={s.stage} />
@@ -46,14 +46,14 @@ function Board() {
             {!s.items.length && <li className="px-2 py-6 text-center text-xs text-slate-400">No deals</li>}
             {s.items.map((o) => (
               <li key={o.id}>
-                <Link to={`/opportunities/${o.id}`} className="block rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-brand-300 hover:shadow">
+                <Link to={`/opportunities/${o.id}`} className="block rounded-md border border-slate-200 bg-white p-3 hover:border-brand-400">
                   <p className="text-sm font-medium text-slate-900">{o.name}</p>
                   <p className="mt-0.5 text-xs text-slate-500">{o.customer.name}</p>
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="tabular font-semibold text-slate-800">{money(o.amount, { compact: true })}</span>
-                    <span className="text-slate-500">{o.expectedCloseDate ? date(o.expectedCloseDate) : '—'}</span>
+                    <span className="text-slate-500">{o.expectedCloseDate ? date(o.expectedCloseDate) : EMPTY}</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-400">{o.owner.name} · {o.probability}%</p>
+                  <p className="mt-1 text-[11px] text-slate-400">{o.owner.name}, {o.probability}%</p>
                 </Link>
               </li>
             ))}
@@ -98,7 +98,7 @@ export default function OpportunitiesPage() {
         description="Sales opportunities by stage."
         actions={
           <>
-            <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 shadow-sm" role="group" aria-label="View">
+            <div className="inline-flex rounded-md border border-slate-300 bg-white p-0.5" role="group" aria-label="View">
               {(['list', 'board'] as const).map((v) => (
                 <button
                   key={v}

@@ -1,18 +1,36 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
+  --color-brand-50: #edf5f6;
+  --color-brand-100: #d5e9ec;
+  --color-brand-200: #acd2d8;
+  --color-brand-300: #84b9c2;
+  --color-brand-400: #4f97a3;
+  --color-brand-500: #2a7d8c;
+  --color-brand-600: #146070;
+  --color-brand-700: #0f4f5d;
+  --color-brand-800: #0d3f4a;
+  --color-brand-900: #10343b;
+  --color-brand-950: #0c282d;
 
-  /* Chart palette: validated categorical order (dataviz reference palette, light surface) */
+  --color-slate-50: #f4f5f3;
+  --color-slate-100: #eaedea;
+  --color-slate-200: #dde3de;
+  --color-slate-300: #c5cdc7;
+  --color-slate-400: #95a199;
+  --color-slate-500: #66746c;
+  --color-slate-600: #4d5a53;
+  --color-slate-700: #3a4640;
+  --color-slate-800: #27322d;
+  --color-slate-900: #18221e;
+  --color-slate-950: #0f1613;
+
+  --color-marigold-300: #f0c868;
+  --color-marigold-400: #e0a526;
+  --color-marigold-500: #c48a12;
+
   --color-chart-1: #2a78d6;
   --color-chart-2: #eb6834;
   --color-chart-3: #1baf7a;
@@ -23,22 +41,38 @@
     -webkit-font-smoothing: antialiased;
   }
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-slate-50 text-[15px] text-slate-900;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-lg border border-slate-200 bg-white;
   }
   .table-base th {
-    @apply bg-slate-50 px-4 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
+    @apply border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs font-medium text-slate-500;
   }
   .table-base td {
     @apply border-t border-slate-100 px-4 py-3 text-sm;
+  }
+  .table-base tbody tr:first-child td {
+    @apply border-t-0;
   }
 }
 

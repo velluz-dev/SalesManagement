@@ -19,7 +19,6 @@ export interface WithItems {
 
 export const emptyLine = (taxRate = '0'): LineItemValues => ({ description: '', quantity: '1', unitPrice: '', discountPercent: '0', taxRate });
 
-/** Editable line items with a live (display-only) totals preview. The server recalculates authoritative totals. */
 export function LineItemsEditor({ control, register, errors, currency, defaultTaxRate = '0' }: {
   control: Control<WithItems>;
   register: UseFormRegister<WithItems>;
@@ -34,10 +33,10 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <tr className="text-left text-xs font-medium text-slate-500">
               <th className="py-2 pr-2">Description</th>
               <th className="w-24 px-2 py-2">Qty</th>
               <th className="w-32 px-2 py-2">Unit price</th>
@@ -92,7 +91,6 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
   );
 }
 
-/** Shared zod-free validation for line items (keeps messages consistent with the server rules). */
 export function validateItems(items: LineItemValues[]): Record<string, string> {
   const errors: Record<string, string> = {};
   const money = /^\d{1,12}(\.\d{1,2})?$/;
@@ -102,8 +100,8 @@ export function validateItems(items: LineItemValues[]): Record<string, string> {
     if (!l.description.trim()) errors[`items.${i}.description`] = 'Description is required';
     if (!/^\d{1,10}(\.\d{1,2})?$/.test(l.quantity) || Number(l.quantity) <= 0) errors[`items.${i}.quantity`] = 'Invalid quantity';
     if (!money.test(l.unitPrice)) errors[`items.${i}.unitPrice`] = 'Invalid price';
-    if (!pct(l.discountPercent)) errors[`items.${i}.discountPercent`] = '0–100';
-    if (!pct(l.taxRate)) errors[`items.${i}.taxRate`] = '0–100';
+    if (!pct(l.discountPercent)) errors[`items.${i}.discountPercent`] = 'Use 0 to 100';
+    if (!pct(l.taxRate)) errors[`items.${i}.taxRate`] = 'Use 0 to 100';
   });
   return errors;
 }

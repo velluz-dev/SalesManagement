@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { AlarmClock, Plus, Receipt } from 'lucide-react';
-import { INVOICE_STATUSES, enumLabel } from '@crm/shared';
+import { INVOICE_STATUSES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';

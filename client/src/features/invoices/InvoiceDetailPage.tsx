@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { AlertTriangle, Ban, Send, Wallet } from 'lucide-react';
-import { PAYMENT_METHODS, enumLabel } from '@crm/shared';
+import { PAYMENT_METHODS, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button } from '../../components/ui/Button';
@@ -14,7 +14,7 @@ import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api, errorMessage } from '../../lib/api';
-import { date, dateTime, money, todayIso } from '../../lib/format';
+import { EMPTY, date, dateTime, money, todayIso } from '../../lib/format';
 import type { Invoice, Payment } from '../../lib/types';
 
 function PaymentModal({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
@@ -38,7 +38,7 @@ function PaymentModal({ invoice, onClose }: { invoice: Invoice; onClose: () => v
     <Modal
       open
       onClose={onClose}
-      title={`Record payment · ${invoice.number}`}
+      title={`Record payment for ${invoice.number}`}
       description={`Outstanding balance ${money(invoice.balance, { currency: invoice.currency })}`}
       footer={
         <>
@@ -93,7 +93,7 @@ export default function InvoiceDetailPage() {
         back={{ to: '/invoices', label: 'Invoices' }}
         title={inv.number}
         badge={<InvoiceStatusBadge status={inv.status} isOverdue={inv.isOverdue} />}
-        description={<>{inv.customer.name}{inv.salesperson && <> · Salesperson: {inv.salesperson.name}</>}</>}
+        description={<>{inv.customer.name}{inv.salesperson && <>, salesperson {inv.salesperson.name}</>}</>}
         actions={
           <>
             {can('invoice.cancel') && (inv.status === 'DRAFT' || (inv.status === 'ISSUED' && Number(inv.amountPaid) === 0)) && (
@@ -132,7 +132,7 @@ export default function InvoiceDetailPage() {
             {inv.notes && <p className="mt-5 border-t border-slate-100 pt-4 text-sm whitespace-pre-wrap text-slate-700">{inv.notes}</p>}
           </Card>
           <Card title="Line items" bodyClassName="p-0">
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="table-base w-full min-w-[600px]">
                 <thead><tr><th>Description</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Disc.</th><th className="text-right">Tax</th><th className="text-right">Total</th></tr></thead>
                 <tbody>
@@ -160,7 +160,7 @@ export default function InvoiceDetailPage() {
             {!inv.payments?.length ? (
               <p className="px-5 py-4 text-sm text-slate-500">No payments recorded.</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="table-base w-full min-w-[600px]">
                   <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Recorded by</th><th className="text-right">Amount</th><th /></tr></thead>
                   <tbody>
@@ -168,12 +168,12 @@ export default function InvoiceDetailPage() {
                       <tr key={p.id} className={p.voidedAt ? 'text-slate-400' : ''}>
                         <td>{date(p.paidAt)}</td>
                         <td>{enumLabel(p.method)}</td>
-                        <td>{p.reference ?? '—'}</td>
+                        <td>{p.reference ?? EMPTY}</td>
                         <td>{p.recordedBy.name}</td>
                         <td className={`tabular text-right ${p.voidedAt ? 'line-through' : 'font-medium'}`}>{money(p.amount, { currency: inv.currency })}</td>
                         <td className="text-right">
                           {p.voidedAt ? (
-                            <span title={`${p.voidReason ?? ''} — ${p.voidedBy?.name ?? ''}, ${dateTime(p.voidedAt)}`}><Badge>Void</Badge></span>
+                            <span title={`Voided by ${p.voidedBy?.name ?? 'unknown'} on ${dateTime(p.voidedAt)}${p.voidReason ? `: ${p.voidReason}` : ''}`}><Badge>Void</Badge></span>
                           ) : (
                             can('payment.void') && <button className="text-xs font-medium text-rose-600 hover:underline" onClick={() => setVoiding(p)}>Void</button>
                           )}

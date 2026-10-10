@@ -12,7 +12,7 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 | Pagination | `?page=1&pageSize=20` (max 100) |
 | Search / sort | `?q=text&sort=<whitelisted field>&order=asc\|desc` |
 | Errors | `{ "error": { "code", "message", "details?" } }`. Validation `details` is `[{ path, message }]`. |
-| Status codes | `200` OK · `201` created · `204` no content · `400` validation (`VALIDATION_ERROR`) · `401` not signed in · `403` missing permission / cross-site request · `404` not found **or outside your data scope** · `409` conflict (duplicate, already decided) · `413` body too large · `422` business-rule violation (`BUSINESS_RULE_VIOLATION`) · `429` rate limited |
+| Status codes | `200` OK, `201` created, `204` no content, `400` validation (`VALIDATION_ERROR`), `401` not signed in, `403` missing permission / cross-site request, `404` not found **or outside your data scope**, `409` conflict (duplicate, already decided), `413` body too large, `422` business-rule violation (`BUSINESS_RULE_VIOLATION`), `429` rate limited |
 | Strict bodies | Unknown fields are rejected with 400. Server-controlled fields (`ownerId` without `lead.assign`, `status`, totals) cannot be set by clients. |
 | CSRF | State-changing requests with a foreign `Origin` or `Sec-Fetch-Site: cross-site` are rejected (403). |
 
@@ -22,8 +22,8 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| POST | `/auth/login` | — | `{ email, password }` → sets session cookie. Rate limited (10 failures / 15 min / IP+email). Generic error on failure. |
-| POST | `/auth/logout` | — | Deletes the session. `204`. |
+| POST | `/auth/login` | None | `{ identifier, password }`, where `identifier` is an email or a username (case-insensitive). Sets the session cookie. Rate limited (10 failures / 15 min / IP+identifier). Generic error on failure. |
+| POST | `/auth/logout` | None | Deletes the session. `204`. |
 | GET | `/auth/me` | session | `{ user, roles, permissions[], managedTeamIds }`. Used by the UI to render menus and actions. |
 | POST | `/auth/change-password` | session | `{ currentPassword, newPassword }`. Signs out other sessions. |
 
@@ -31,10 +31,10 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/users` | `user.read` | Filters: `isActive`, `roleId`, `teamId`. |
+| GET | `/users` | `user.read` | Filters: `isActive`, `roleId`, `teamId`. `q` searches name, username and email. |
 | GET | `/users/:id` | `user.read` | |
-| POST | `/users` | `user.create` (+`role.assign` to pass `roleIds`) | `{ email, name, password, teamId?, roleIds?, mustChangePassword? }` |
-| PATCH | `/users/:id` | `user.update` | `{ name?, email?, teamId? }` |
+| POST | `/users` | `user.create` (+`role.assign` to pass `roleIds`) | `{ email, username, name, password, teamId?, roleIds?, mustChangePassword? }`. Usernames are 3 to 32 lowercase letters, numbers, dots or underscores. A taken email or username returns `409` with field details. |
+| PATCH | `/users/:id` | `user.update` | `{ name?, username?, email?, teamId? }` |
 | PUT | `/users/:id/roles` | `role.assign` | `{ roleIds }`. Not on yourself. Last role manager is protected (422). |
 | PATCH | `/users/:id/status` | `user.deactivate` | `{ isActive }`. Not on yourself. Deactivation revokes sessions. |
 | POST | `/users/:id/reset-password` | `user.update` | `{ password }`. Forces change at next sign-in and revokes sessions. |
@@ -74,11 +74,11 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 | POST | `/quotations` | `quotation.create` | `{ customerId, opportunityId?, validUntil?, notes?, terms?, items:[{ description, quantity, unitPrice, discountPercent?, taxRate? }] }`. Totals computed server-side. |
 | PATCH | `/quotations/:id` | `quotation.update` | DRAFT/REJECTED only (422 otherwise). Items are replaced wholesale. |
 | POST | `/quotations/:id/submit` | `quotation.submit` | `{ comment? }`. Approver resolved by approval rules. 422 if no rule or no eligible approver. |
-| POST | `/quotations/:id/withdraw` | `quotation.submit` | PENDING_APPROVAL → DRAFT. |
-| POST | `/quotations/:id/send` | `quotation.update` | APPROVED → SENT. |
+| POST | `/quotations/:id/withdraw` | `quotation.submit` | Moves PENDING_APPROVAL back to DRAFT. |
+| POST | `/quotations/:id/send` | `quotation.update` | Moves APPROVED to SENT. |
 | POST | `/quotations/:id/customer-response` | `quotation.update` | `{ outcome: ACCEPTED\|DECLINED }` from APPROVED/SENT. |
-| POST | `/quotations/:id/cancel` | `quotation.update` | DRAFT/REJECTED → CANCELLED. |
-| POST | `/quotations/:id/revise` | `quotation.update` | APPROVED/SENT/DECLINED (not invoiced) → new DRAFT version, old becomes SUPERSEDED. `201`. |
+| POST | `/quotations/:id/cancel` | `quotation.update` | Moves DRAFT or REJECTED to CANCELLED. |
+| POST | `/quotations/:id/revise` | `quotation.update` | APPROVED/SENT/DECLINED (not invoiced) becomes a new DRAFT version, old becomes SUPERSEDED. `201`. |
 | GET | `/approvals` | `approval.read.assigned` / `.all` | `view=assigned\|all`, `status`. Each row has `canDecide`. |
 | GET | `/approvals/:id` | assigned approver, requester/owner, or `approval.read.all` | Includes `canDecide` and `decisionBlocker`. |
 | POST | `/approvals/:id/decision` | `approval.decide` + assignment | `{ decision: APPROVE\|REJECT, comment? }`. A comment is required to reject. Self-approval blocked unless enabled. `409` if already decided. |
@@ -125,4 +125,4 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 | GET | `/settings/public` | session | Company name, currency, quotation defaults, demo flag. |
 | GET | `/settings` | `settings.read` | Definitions and values. |
 | PUT | `/settings` | `settings.manage` | `{ "<key>": value, … }`. Only catalogue keys are accepted, each validated by type. |
-| GET | `/health` | — | Liveness. |
+| GET | `/health` | None | Liveness. |

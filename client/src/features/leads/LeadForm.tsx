@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { LEAD_SOURCES, LEAD_STATUSES, enumLabel } from '@crm/shared';
+import { LEAD_SOURCES, LEAD_STATUSES, enumLabel } from '@shared';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';

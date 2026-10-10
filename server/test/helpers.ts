@@ -1,5 +1,5 @@
 import request from 'supertest';
-import type { RoleCode } from '@crm/shared';
+import type { RoleCode } from '../src/shared';
 import { createApp } from '../src/app';
 import { prisma } from '../src/lib/prisma';
 import { hashPassword } from '../src/lib/password';
@@ -8,7 +8,6 @@ import { seedBase } from '../prisma/seed-base';
 export const app = createApp();
 export const PASSWORD = 'TestPassw0rd!';
 
-/** Empties every table (keeps migrations) and re-creates reference data. */
 export async function resetDb() {
   const tables = await prisma.$queryRaw<{ tablename: string }[]>`
     SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
@@ -23,6 +22,7 @@ export async function createUser(email: string, role: RoleCode | null, opts: { t
   return prisma.user.create({
     data: {
       email,
+      username: email.split('@')[0]!,
       name: email.split('@')[0]!,
       passwordHash: hashed,
       teamId: opts.teamId ?? null,
@@ -32,21 +32,15 @@ export async function createUser(email: string, role: RoleCode | null, opts: { t
   });
 }
 
-/** A logged-in supertest agent (session cookie persisted across requests). */
 export async function login(email: string) {
   const agent = request.agent(app);
-  const res = await agent.post('/api/auth/login').send({ email, password: PASSWORD });
+  const res = await agent.post('/api/auth/login').send({ identifier: email, password: PASSWORD });
   if (res.status !== 200) throw new Error(`Login failed for ${email}: ${res.status} ${JSON.stringify(res.body)}`);
   return agent;
 }
 
 export type Agent = Awaited<ReturnType<typeof login>>;
 
-/**
- * Standard organisation:
- *  Team A: manager mA, salespeople sA1, sA2 · Team B: manager mB, salesperson sB1
- *  plus director, finance, admin.
- */
 export async function createOrg() {
   await resetDb();
   const teamA = await prisma.team.create({ data: { name: 'Team A' } });
@@ -75,7 +69,6 @@ export const item = (unitPrice: number, quantity = 1, extra: Record<string, unkn
   ...extra,
 });
 
-/** Creates a customer owned by the agent's user and returns its id. */
 export async function createCustomer(agent: Agent, name = 'Customer Co') {
   const res = await agent.post('/api/customers').send({ name });
   if (res.status !== 201) throw new Error(`createCustomer: ${res.status} ${JSON.stringify(res.body)}`);
@@ -88,7 +81,6 @@ export async function createQuotation(agent: Agent, customerId: string, items = 
   return res.body.data as { id: string; total: string; status: string; number: string; version: number };
 }
 
-/** Logs in several users at once, preserving tuple types for destructuring. */
 export function loginAll<const T extends readonly string[]>(...emails: T) {
   return Promise.all(emails.map(login)) as Promise<{ [K in keyof T]: Agent }>;
 }

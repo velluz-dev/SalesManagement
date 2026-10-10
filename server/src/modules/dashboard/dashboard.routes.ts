@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { resolveScope } from '@crm/shared';
+import { resolveScope } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { getActor, type Actor } from '../../lib/auth-context';
 import { startOfTodayUtc } from '../../lib/dates';
@@ -12,7 +12,6 @@ import { targetScopeWhere, withProgress } from '../targets/targets.service';
 
 export const dashboardRouter = Router();
 
-/** Owners for the sales widgets: the actor's widest opportunity/lead read scope. */
 function salesOwners(actor: Actor): string[] | null | undefined {
   const scope = resolveScope(actor.permissions, 'opportunity') ?? resolveScope(actor.permissions, 'report.sales');
   if (!scope) return undefined;

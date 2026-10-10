@@ -19,7 +19,6 @@ export interface Totals {
 
 const round2 = (d: Prisma.Decimal) => d.toDecimalPlaces(2, D.ROUND_HALF_UP);
 
-/** Per-line amounts. Each line is rounded to cents so that sum(lines) == document totals. */
 export function calculateLine(line: LineInput) {
   const gross = round2(new D(line.quantity).mul(line.unitPrice));
   const discount = round2(gross.mul(line.discountPercent ?? 0).div(100));
@@ -28,10 +27,6 @@ export function calculateLine(line: LineInput) {
   return { gross, discount, net, tax, total: net.add(tax) };
 }
 
-/**
- * Single source of truth for document totals (quotations and invoices).
- * subtotal = Σ gross, discountTotal = Σ discount, taxTotal = Σ tax, total = subtotal − discount + tax.
- */
 export function calculateTotals(lines: LineInput[]): Totals {
   let subtotal = new D(0);
   let discountTotal = new D(0);

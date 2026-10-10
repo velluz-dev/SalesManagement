@@ -8,8 +8,6 @@ export function notFoundHandler(_req: Request, res: Response) {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found' } });
 }
 
-/** Maps all errors to `{ error: { code, message, details? } }`. Never leaks internals in production. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     return res.status(err.status).json({ error: { code: err.code, message: err.message, details: err.details } });
@@ -36,7 +34,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       return res.status(409).json({ error: { code: 'CONFLICT', message: 'The record is referenced by other data' } });
     }
   }
-  // Body parser errors (malformed JSON / payload too large)
   const e = err as { type?: string; status?: number };
   if (e?.type === 'entity.parse.failed') {
     return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Malformed JSON body' } });

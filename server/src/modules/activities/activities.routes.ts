@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ACTIVITY_TYPES } from '@crm/shared';
+import { ACTIVITY_TYPES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { requireAnyPermission, requirePermission } from '../../middleware/auth';
 import { getActor, ownerWhere, type Actor } from '../../lib/auth-context';
@@ -37,7 +37,6 @@ const activitySchema = z.strictObject({
   completed: z.boolean().optional(),
 });
 
-/** Linked records must themselves be visible to the actor. */
 async function assertLinks(tx: Prisma.TransactionClient, actor: Actor, input: Partial<z.infer<typeof activitySchema>>) {
   if (input.customerId && !(await tx.customer.findFirst({ where: { id: input.customerId, ...customerScope(actor) } })))
     throw badRequest('Customer not found or not accessible');

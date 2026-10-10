@@ -48,7 +48,7 @@ export default function ApprovalsPage() {
       cell: (r) => (
         <span className="flex flex-wrap items-center gap-1.5">
           <StatusBadge status={r.status} />
-          {r.status === 'PENDING' && r.canDecide && <Badge tone="indigo" dot={false}>Action needed</Badge>}
+          {r.status === 'PENDING' && r.canDecide && <Badge tone="indigo">Action needed</Badge>}
         </span>
       ),
     },

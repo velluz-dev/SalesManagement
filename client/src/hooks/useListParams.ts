@@ -1,10 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-/**
- * Table state (page, pageSize, q, sort, order + arbitrary filters) stored in the URL so lists are
- * shareable/bookmarkable and survive refresh. Changing any filter resets to page 1.
- */
 export function useListParams<F extends string = never>(defaults: { sort?: string; order?: 'asc' | 'desc'; pageSize?: number } & Partial<Record<F, string>> = {}) {
   const [params, setParams] = useSearchParams();
 
@@ -25,7 +21,6 @@ export function useListParams<F extends string = never>(defaults: { sort?: strin
       order: (get('order', defaults.order ?? 'desc') as 'asc' | 'desc'),
       filters,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   const update = useCallback(

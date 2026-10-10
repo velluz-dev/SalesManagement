@@ -6,7 +6,6 @@ import { Button } from './Button';
 import { Field, FormError, Textarea } from './Form';
 import { errorMessage } from '../../lib/api';
 
-/** Accessible modal dialog: focus moves in on open, Escape closes, focus returns on close, Tab is trapped. */
 export function Modal({
   open,
   onClose,
@@ -64,16 +63,16 @@ export function Modal({
   const widths = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-slate-950/45" onClick={onClose} aria-hidden />
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={cn('relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl', widths[size])}
+        className={cn('relative flex max-h-[92vh] w-full flex-col rounded-t-xl bg-white shadow-xl sm:rounded-lg', widths[size])}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 id={titleId} className="text-base font-semibold text-slate-900">{title}</h2>
             {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
@@ -83,17 +82,13 @@ export function Modal({
           </button>
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-5 py-3">{footer}</div>}
+        {footer && <div className="flex flex-wrap justify-end gap-2 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3">{footer}</div>}
       </div>
     </div>,
     document.body,
   );
 }
 
-/**
- * Confirmation for important actions. With `reason`, a text input is shown and (if `reasonRequired`)
- * must be filled before confirming; the value is passed to onConfirm.
- */
 export function ConfirmDialog({
   open,
   onClose,

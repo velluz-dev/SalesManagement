@@ -3,15 +3,16 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { LockKeyhole } from 'lucide-react';
+import { FileCheck2, LogIn, Users, Wallet } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { Button } from '../../components/ui/Button';
-import { Field, FormError, Input } from '../../components/ui/Form';
+import { Field, FormError, Input, PasswordInput } from '../../components/ui/Form';
+import { BrandMark } from '../../components/ui/Layout';
 import { errorMessage } from '../../lib/api';
 
 const schema = z.object({
-  email: z.string().trim().min(1, 'Email is required').pipe(z.email('Enter a valid email address')),
-  password: z.string().min(1, 'Password is required'),
+  identifier: z.string().trim().min(1, 'Enter your email or username').max(254),
+  password: z.string().min(1, 'Enter your password'),
 });
 type Values = z.infer<typeof schema>;
 
@@ -28,7 +29,7 @@ export function LoginPage() {
   const onSubmit = async (v: Values) => {
     setError(null);
     try {
-      await login(v.email, v.password);
+      await login(v.identifier, v.password);
       navigate(from, { replace: true });
     } catch (e) {
       setError(errorMessage(e));
@@ -36,47 +37,54 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="hidden flex-1 flex-col justify-between bg-slate-900 p-12 text-white lg:flex">
+    <div className="flex min-h-screen bg-white">
+      <div className="hidden w-[44%] max-w-xl flex-col justify-between bg-brand-950 p-12 text-white lg:flex">
         <div className="flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-brand-600">
-            <svg viewBox="0 0 32 32" className="size-5" aria-hidden>
-              <path d="M7 22l6-7 5 4 7-9" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="text-lg font-semibold">SalesHub CRM</span>
+          <BrandMark size="lg" />
+          <span className="text-lg font-semibold tracking-tight">SalesHub</span>
         </div>
-        <div className="max-w-md">
-          <h2 className="text-3xl leading-tight font-semibold">From first contact to final payment — one secure workspace.</h2>
-          <p className="mt-4 text-slate-400">
-            Leads, pipeline, quotations with approval workflows, invoicing and collections, governed by role-based access control.
-          </p>
+        <div className="max-w-sm">
+          <h2 className="text-[2rem] leading-[1.15] font-semibold tracking-tight">Every deal, from the first call to the last payment.</h2>
+          <ul className="mt-8 space-y-4 text-sm text-brand-100/80">
+            <li className="flex gap-3"><Users className="mt-0.5 size-4 shrink-0 text-marigold-300" aria-hidden />Leads, customers and pipeline for the whole team</li>
+            <li className="flex gap-3"><FileCheck2 className="mt-0.5 size-4 shrink-0 text-marigold-300" aria-hidden />Quotations routed to the right approver</li>
+            <li className="flex gap-3"><Wallet className="mt-0.5 size-4 shrink-0 text-marigold-300" aria-hidden />Invoices and payments followed until they are paid</li>
+          </ul>
         </div>
-        <p className="text-xs text-slate-500">© {new Date().getFullYear()} SalesHub. Internal use only.</p>
+        <p className="text-xs text-brand-300/70">&copy; {new Date().getFullYear()} SalesHub. For internal use.</p>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-4 py-12 sm:px-8">
-        <div className="w-full max-w-sm">
-          <div className="mb-8">
-            <div className="mb-4 inline-flex rounded-xl bg-brand-50 p-3 text-brand-600">
-              <LockKeyhole className="size-6" aria-hidden />
-            </div>
+      <div className="flex flex-1 items-center justify-center px-5 py-12 sm:px-8">
+        <div className="w-full max-w-[22rem]">
+          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+            <BrandMark />
+            <span className="text-base font-semibold tracking-tight">SalesHub</span>
+          </div>
+          <div className="mb-7">
             <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-            <p className="mt-1 text-sm text-slate-500">Use your company account to continue.</p>
+            <p className="mt-1.5 text-sm text-slate-600">Use your work email or username.</p>
           </div>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <FormError message={error} />
-            <Field label="Email" error={formState.errors.email?.message}>
-              <Input type="email" autoComplete="username" autoFocus {...register('email')} />
+            <Field label="Email or username" error={formState.errors.identifier?.message}>
+              <Input
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                autoFocus
+                placeholder="you@gmail.com or your username"
+                className="h-10"
+                {...register('identifier')}
+              />
             </Field>
             <Field label="Password" error={formState.errors.password?.message}>
-              <Input type="password" autoComplete="current-password" {...register('password')} />
+              <PasswordInput autoComplete="current-password" placeholder="Enter your password" className="h-10" {...register('password')} />
             </Field>
-            <Button type="submit" className="w-full" loading={formState.isSubmitting}>
+            <Button type="submit" icon={LogIn} className="h-10 w-full" loading={formState.isSubmitting}>
               Sign in
             </Button>
           </form>
-
+          <p className="mt-6 text-xs leading-relaxed text-slate-500">Forgot your password? Ask your administrator to reset it.</p>
         </div>
       </div>
     </div>

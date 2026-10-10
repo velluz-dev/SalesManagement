@@ -1,4 +1,6 @@
-import { enumLabel } from '@crm/shared';
+import { enumLabel } from '@shared';
+
+export const EMPTY = 'N/A';
 
 let currency = 'USD';
 export const setCurrency = (c: string) => {
@@ -23,24 +25,23 @@ function moneyFormatter(cur: string, compact: boolean) {
 }
 
 export function money(v: string | number | null | undefined, opts: { compact?: boolean; currency?: string } = {}) {
-  if (v === null || v === undefined || v === '') return '—';
+  if (v === null || v === undefined || v === '') return EMPTY;
   return moneyFormatter(opts.currency ?? currency, !!opts.compact).format(Number(v));
 }
 
 export function number(v: number | string | null | undefined) {
-  if (v === null || v === undefined) return '—';
+  if (v === null || v === undefined) return EMPTY;
   return new Intl.NumberFormat().format(Number(v));
 }
 
 export function date(v: string | Date | null | undefined) {
-  if (!v) return '—';
+  if (!v) return EMPTY;
   const d = typeof v === 'string' ? new Date(v) : v;
-  // Date-only values come as UTC midnight; format in UTC to avoid off-by-one.
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 export function dateTime(v: string | Date | null | undefined) {
-  if (!v) return '—';
+  if (!v) return EMPTY;
   return new Date(v).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
@@ -55,7 +56,7 @@ export function relativeTime(v: string | Date) {
   return date(v);
 }
 
-export const label = (v: string | null | undefined) => (v ? enumLabel(v) : '—');
+export const label = (v: string | null | undefined) => (v ? enumLabel(v) : EMPTY);
 
 export const todayIso = () => new Date().toISOString().slice(0, 10);
 

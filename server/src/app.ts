@@ -46,7 +46,6 @@ export function createApp() {
   api.use(apiLimiter);
   api.use('/auth', authRouter);
 
-  // Everything below requires an authenticated session.
   const secured = Router();
   secured.use(authenticate);
   secured.use('/users', usersRouter);

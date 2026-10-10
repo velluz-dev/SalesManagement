@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PAYMENT_METHODS } from '@crm/shared';
+import { PAYMENT_METHODS } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { requirePermission } from '../../middleware/auth';
 import { getActor } from '../../lib/auth-context';
@@ -33,7 +33,6 @@ const createPaymentSchema = z.strictObject({
 
 const voidPaymentSchema = z.strictObject({ reason: requiredText(500, 'Void reason') });
 
-/** Invoice status implied by amount paid. */
 function statusFor(total: Prisma.Decimal, paid: Prisma.Decimal) {
   if (paid.lte(0)) return 'ISSUED' as const;
   if (paid.gte(total)) return 'PAID' as const;
@@ -71,7 +70,6 @@ paymentsRouter.post('/', requirePermission('payment.create'), async (req, res) =
   const input = createPaymentSchema.parse(req.body);
   if (input.paidAt > startOfTodayUtc()) throw badRequest('Payment date cannot be in the future');
   const payment = await prisma.$transaction(async (tx) => {
-    // Lock the invoice so concurrent payments cannot over-pay it.
     await tx.$queryRaw`SELECT id FROM "Invoice" WHERE id = ${input.invoiceId}::uuid FOR UPDATE`;
     const inv = await tx.invoice.findUnique({ where: { id: input.invoiceId } });
     if (!inv) throw notFound('Invoice');

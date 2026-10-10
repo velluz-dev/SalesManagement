@@ -8,15 +8,10 @@ import { opportunityScope } from '../opportunities/opportunities.service';
 import { forbidden } from '../../lib/errors';
 import { uuid } from '../../lib/validation';
 
-/** Lightweight, scope-aware pickers used by forms. Never return more than the actor may see. */
 export const lookupsRouter = Router();
 
 const searchQuery = z.object({ q: z.string().trim().max(100).optional(), customerId: uuid.optional() });
 
-/**
- * Users the actor may pick (e.g. as record owner or target assignee):
- * everyone for holders of user.read or any *.read.all scope; otherwise their team (or just themself).
- */
 lookupsRouter.get('/users', async (req, res) => {
   const actor = getActor(req);
   const { q } = searchQuery.parse(req.query);
@@ -67,7 +62,6 @@ lookupsRouter.get('/opportunities', async (req, res) => {
 
 lookupsRouter.get('/teams', async (req, res) => {
   const actor = getActor(req);
-  // Admins and company-wide viewers see every team; managers see the teams they manage.
   const seesAll = actor.permissions.has('team.manage') || actor.permissions.has('target.read.all');
   const teams = await prisma.team.findMany({
     where: seesAll ? {} : { id: { in: actor.managedTeamIds } },

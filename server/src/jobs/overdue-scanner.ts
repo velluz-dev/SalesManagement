@@ -2,10 +2,6 @@ import { prisma } from '../lib/prisma';
 import { notify, usersWithPermission } from '../lib/notify';
 import { overdueWhere } from '../modules/invoices/invoices.service';
 
-/**
- * Notifies finance users (payment.create holders) and the responsible salesperson about overdue invoices.
- * Each user is notified once per invoice (dedupeKey), so the scan is safe to run repeatedly.
- */
 export async function scanOverdueInvoices() {
   const overdue = await prisma.invoice.findMany({
     where: overdueWhere(),

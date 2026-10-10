@@ -38,7 +38,7 @@ export default function CustomerDetailPage() {
         back={{ to: '/customers', label: 'Customers' }}
         title={c.name}
         badge={c.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}
-        description={[c.industry, `Owner: ${c.owner.name}`].filter(Boolean).join(' · ')}
+        description={[c.industry, `Owner: ${c.owner.name}`].filter(Boolean).join('. ')}
         actions={
           <>
             {can('customer.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>Edit</Button>}

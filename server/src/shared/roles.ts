@@ -10,11 +10,6 @@ export const ROLE_CODES = {
 
 export type RoleCode = (typeof ROLE_CODES)[keyof typeof ROLE_CODES];
 
-/**
- * Default permission sets seeded into the database. They are editable at runtime by holders
- * of `role.manage`; the database (not this map) is authoritative after seeding.
- * Note: SYSTEM_ADMIN intentionally has no business-approval or financial-write authority.
- */
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, { name: string; description: string; permissions: Permission[] }> = {
   SALESPERSON: {
     name: 'Salesperson',

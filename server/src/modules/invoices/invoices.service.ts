@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { INVOICE_STATUSES } from '@crm/shared';
+import { INVOICE_STATUSES } from '../../shared';
 import { prisma, Prisma, type Db } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -43,7 +43,6 @@ export const issueInvoiceSchema = z.strictObject({
 
 export const cancelInvoiceSchema = z.strictObject({ reason: requiredText(500, 'Cancellation reason') });
 
-/** Balance and overdue state are derived, never stored (rule B8). */
 export function deriveInvoiceState(inv: { status: string; total: Prisma.Decimal; amountPaid: Prisma.Decimal; dueDate: Date | null }, today = startOfTodayUtc()) {
   const balance = inv.status === 'CANCELLED' || inv.status === 'DRAFT' ? ZERO : inv.total.sub(inv.amountPaid);
   const open = inv.status === 'ISSUED' || inv.status === 'PARTIALLY_PAID';
@@ -100,7 +99,6 @@ export async function getInvoice(id: string) {
   };
 }
 
-/** Same consistency strategy as quotations: items and cached totals are written together (rule B6). */
 async function writeInvoiceItems(tx: Prisma.TransactionClient, invoiceId: string, items: LineItemInput[], defaultTaxRate: number) {
   const normalized = items.map((i, idx) => ({
     position: idx + 1,
@@ -207,7 +205,6 @@ export async function updateInvoice(actor: Actor, id: string, input: z.infer<typ
   return getInvoice(id);
 }
 
-/** Outstanding balance across a customer's open invoices (credit exposure, rule B10). */
 export async function customerExposure(db: Db, customerId: string) {
   const r = await db.invoice.aggregate({
     _sum: { total: true, amountPaid: true },
@@ -225,7 +222,6 @@ export async function issueInvoice(actor: Actor, id: string, input: z.infer<type
     const settings = await getSettings(tx);
     const credit = await tx.customerCredit.findUnique({ where: { customerId: inv.customerId } });
 
-    // Credit check (rule B10): warn, or block when configured.
     if (credit) {
       const exposure = await customerExposure(tx, inv.customerId);
       if (credit.onHold) warnings.push('Customer is on credit hold');

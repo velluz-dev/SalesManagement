@@ -25,13 +25,11 @@ const creditSchema = z.strictObject({
   notes: optionalText(1000),
 });
 
-/** Customers visible to the actor; credit holders without a customer read scope fall back to all. */
 function scopedCustomers(actor: Actor): Prisma.CustomerWhereInput {
   const hasCustomerScope = ['customer.read.own', 'customer.read.team', 'customer.read.all'].some((p) => actor.permissions.has(p));
   return hasCustomerScope ? customerScope(actor) : {};
 }
 
-/** Exposure (open balance) and overdue amounts per customer, computed from invoices. */
 async function exposureByCustomer(customerIds: string[]) {
   const [open, overdue] = await Promise.all([
     prisma.invoice.groupBy({
@@ -84,7 +82,6 @@ creditRouter.get('/', requirePermission('credit.read'), async (req, res) => {
   const { open, overdue } = await exposureByCustomer(rows.map((r) => r.id));
   let data = rows.map((c) => ({ ...c, ...summarize(c.credit, open.get(c.id) ?? ZERO, overdue.get(c.id) ?? ZERO) }));
   if (all) {
-    // overLimit is derived, so it is filtered after computing exposure.
     data = data.filter((d) => d.overLimit === q.overLimit);
     const start = (q.page - 1) * q.pageSize;
     return res.json(paged(data.slice(start, start + q.pageSize), data.length, q));

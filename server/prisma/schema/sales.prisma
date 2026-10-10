@@ -1,0 +1,134 @@
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  EVENT
+  COLD_CALL
+  PARTNER
+  OTHER
+}
+
+enum OpportunityStage {
+  PROSPECTING
+  QUALIFICATION
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ActivityType {
+  CALL
+  MEETING
+  EMAIL
+  TASK
+  NOTE
+}
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  industry  String?
+  address   String?
+  taxId     String?
+  ownerId   String   @db.Uuid
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner         User            @relation("CustomerOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  leads         Lead[]
+  opportunities Opportunity[]
+  activities    Activity[]
+  quotations    Quotation[]
+  invoices      Invoice[]
+  credit        CustomerCredit?
+
+  @@index([ownerId])
+  @@index([name])
+}
+
+model Lead {
+  id                  String     @id @default(uuid()) @db.Uuid
+  title               String
+  contactName         String
+  company             String?
+  email               String?
+  phone               String?
+  source              LeadSource @default(OTHER)
+  status              LeadStatus @default(NEW)
+  estimatedValue      Decimal?   @db.Decimal(14, 2)
+  notes               String?
+  ownerId             String     @db.Uuid
+  convertedCustomerId String?    @db.Uuid
+  convertedAt         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  owner             User          @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  convertedCustomer Customer?     @relation(fields: [convertedCustomerId], references: [id], onDelete: SetNull)
+  opportunities     Opportunity[]
+  activities        Activity[]
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+model Opportunity {
+  id                String           @id @default(uuid()) @db.Uuid
+  name              String
+  customerId        String           @db.Uuid
+  leadId            String?          @db.Uuid
+  ownerId           String           @db.Uuid
+  stage             OpportunityStage @default(PROSPECTING)
+  amount            Decimal          @db.Decimal(14, 2)
+  probability       Int              @default(10)
+  expectedCloseDate DateTime?        @db.Date
+  closedAt          DateTime?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  lead       Lead?       @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  owner      User        @relation("OpportunityOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  quotations Quotation[]
+  activities Activity[]
+
+  @@index([ownerId])
+  @@index([customerId])
+  @@index([stage])
+  @@index([closedAt])
+}
+
+model Activity {
+  id            String       @id @default(uuid()) @db.Uuid
+  type          ActivityType
+  subject       String
+  description   String?
+  dueAt         DateTime?
+  completedAt   DateTime?
+  ownerId       String       @db.Uuid
+  customerId    String?      @db.Uuid
+  leadId        String?      @db.Uuid
+  opportunityId String?      @db.Uuid
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  owner       User         @relation("ActivityOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  customer    Customer?    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([dueAt])
+}

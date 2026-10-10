@@ -16,11 +16,7 @@
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:reset": "prisma migrate reset --force"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
-    "@crm/shared": "1.0.0",
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "6.19.3",
     "cookie-parser": "^1.4.7",

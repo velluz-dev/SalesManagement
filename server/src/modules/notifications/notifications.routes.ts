@@ -6,7 +6,6 @@ import { notFound } from '../../lib/errors';
 import { pageArgs, paged, paginationQuery } from '../../lib/pagination';
 import { booleanQuery, idParams } from '../../lib/validation';
 
-/** Notifications are always restricted to the current user. */
 export const notificationsRouter = Router();
 
 const listQuery = paginationQuery.extend({ unread: booleanQuery });

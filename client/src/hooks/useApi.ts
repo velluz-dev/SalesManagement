@@ -4,7 +4,6 @@ import { useToast } from '../components/ui/Toast';
 
 type Query = Record<string, string | number | boolean | undefined | null>;
 
-/** Paginated list endpoint. Keeps previous page visible while the next one loads. */
 export function useList<T>(resource: string, query: Query, opts: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: [resource, 'list', query],
@@ -14,7 +13,6 @@ export function useList<T>(resource: string, query: Query, opts: { enabled?: boo
   });
 }
 
-/** Single `{ data }` endpoint. */
 export function useDetail<T>(key: QueryKey, path: string, opts: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: key,
@@ -23,10 +21,6 @@ export function useDetail<T>(key: QueryKey, path: string, opts: { enabled?: bool
   });
 }
 
-/**
- * Mutation that shows a success/error toast and invalidates the given query-key prefixes.
- * Notifications and dashboard are always refreshed because most actions affect them.
- */
 export function useAction<TVars, TResult = unknown>(
   fn: (vars: TVars) => Promise<TResult>,
   opts: { success?: string | ((r: TResult) => string); invalidate?: string[]; onSuccess?: (r: TResult) => void; silentError?: boolean } = {},

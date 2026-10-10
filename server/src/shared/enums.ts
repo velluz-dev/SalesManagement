@@ -1,5 +1,3 @@
-/** Enum values mirrored from the Prisma schema so the client can render labels and filters. */
-
 export const LEAD_STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED'] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
@@ -63,7 +61,6 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
-/** Human readable label for any SCREAMING_SNAKE enum value. */
 export function enumLabel(value: string): string {
   return value
     .toLowerCase()

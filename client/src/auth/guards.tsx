@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import type { Permission } from '@crm/shared';
+import type { Permission } from '@shared';
 import { useAuth } from './AuthProvider';
 import { FullPageSpinner } from '../components/ui/Spinner';
 import { EmptyState } from '../components/ui/EmptyState';

@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleSlash, GitBranch, Send, XCircle } from 'lucide-react';
-import { enumLabel } from '@crm/shared';
+import { enumLabel } from '@shared';
 import { StatusBadge } from '../../components/ui/Badge';
 import { dateTime, money } from '../../lib/format';
 import { cn } from '../../lib/cn';
@@ -13,7 +13,6 @@ const ICONS = {
   REVISED: { icon: GitBranch, cls: 'bg-violet-100 text-violet-700' },
 } as const;
 
-/** Full approval history: who requested, who it was routed to, every decision with timestamps and comments. */
 export function ApprovalTimeline({ requests, currency }: { requests: ApprovalRequest[]; currency?: string }) {
   if (!requests.length) return <p className="text-sm text-slate-500">This quotation has not been submitted for approval yet.</p>;
   return (
@@ -22,7 +21,7 @@ export function ApprovalTimeline({ requests, currency }: { requests: ApprovalReq
         <div key={r.id} className="rounded-lg border border-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm">
             <span className="font-medium">
-              Version {r.quotationVersion} · {money(r.amount, { currency })}
+              Version {r.quotationVersion}, {money(r.amount, { currency })}
             </span>
             <StatusBadge status={r.status} />
           </div>

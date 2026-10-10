@@ -1,7 +1,6 @@
 import type { FieldValues, Path, UseFormSetError } from 'react-hook-form';
 import { ApiError, errorMessage } from './api';
 
-/** Maps server validation errors onto form fields; returns a general message for anything else. */
 export function applyServerErrors<T extends FieldValues>(e: unknown, setError: UseFormSetError<T>): string {
   if (e instanceof ApiError) {
     const fields = e.fieldErrors;
@@ -11,7 +10,6 @@ export function applyServerErrors<T extends FieldValues>(e: unknown, setError: U
   return errorMessage(e);
 }
 
-/** Converts empty strings to undefined so optional fields are omitted from the payload. */
 export function clean<T extends Record<string, unknown>>(v: T): Partial<T> {
   return Object.fromEntries(Object.entries(v).filter(([, x]) => x !== '' && x !== undefined)) as Partial<T>;
 }

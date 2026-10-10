@@ -1,9 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
-import type { Permission } from '@crm/shared';
+import type { Permission } from '../shared';
 import { resolveSession, SESSION_COOKIE, clearSessionCookie } from '../lib/session';
 import { forbidden, unauthorized } from '../lib/errors';
 
-/** Requires a valid session; populates `req.auth`. */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const token: unknown = req.cookies?.[SESSION_COOKIE];
   if (typeof token !== 'string' || !token) return next(unauthorized());
@@ -16,7 +15,6 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   next();
 }
 
-/** Requires ALL listed permissions. */
 export function requirePermission(...perms: Permission[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth) return next(unauthorized());
@@ -26,7 +24,6 @@ export function requirePermission(...perms: Permission[]) {
   };
 }
 
-/** Requires AT LEAST ONE of the listed permissions (e.g. any read scope). */
 export function requireAnyPermission(...perms: Permission[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth) return next(unauthorized());

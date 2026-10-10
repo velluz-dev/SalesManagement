@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Prisma } from '@prisma/client';
-import { resolveScope, DEFAULT_ROLE_PERMISSIONS } from '@crm/shared';
+import { resolveScope, DEFAULT_ROLE_PERMISSIONS } from '../../src/shared';
 import { calculateLine, calculateTotals } from '../../src/lib/money';
 import { isSelfApproval, selectRule } from '../../src/modules/approvals/approval-engine';
 import { deriveInvoiceState } from '../../src/modules/invoices/invoices.service';
@@ -16,13 +16,13 @@ describe('calculateTotals', () => {
     ]);
     expect(t.subtotal.toFixed(2)).toBe('250.00');
     expect(t.discountTotal.toFixed(2)).toBe('20.00');
-    expect(t.taxTotal.toFixed(2)).toBe('12.60'); // 7% of 180
+    expect(t.taxTotal.toFixed(2)).toBe('12.60');
     expect(t.total.toFixed(2)).toBe('242.60');
   });
 
   it('rounds each line half-up to cents so lines always sum to the document total', () => {
     const line = calculateLine({ quantity: '3', unitPrice: '0.335', discountPercent: 0, taxRate: 0 });
-    expect(line.gross.toFixed(2)).toBe('1.01'); // 1.005 → 1.01
+    expect(line.gross.toFixed(2)).toBe('1.01');
     const t = calculateTotals([{ quantity: 1, unitPrice: '10.005' }, { quantity: 1, unitPrice: '10.005' }]);
     expect(t.total.toFixed(2)).toBe('20.02');
   });

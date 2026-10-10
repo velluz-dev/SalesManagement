@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowRightLeft, Pencil } from 'lucide-react';
-import { enumLabel } from '@crm/shared';
+import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button } from '../../components/ui/Button';
@@ -137,7 +137,7 @@ export default function LeadDetailPage() {
         back={{ to: '/leads', label: 'Leads' }}
         title={lead.title}
         badge={<StatusBadge status={lead.status} />}
-        description={`${lead.contactName}${lead.company ? ` · ${lead.company}` : ''} · Owner: ${lead.owner.name}`}
+        description={`${lead.contactName}${lead.company ? ` at ${lead.company}` : ''}, owned by ${lead.owner.name}`}
         actions={
           !converted && (
             <>

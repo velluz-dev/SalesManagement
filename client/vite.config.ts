@@ -1,14 +1,16 @@
-/// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: { '@shared': fileURLToPath(new URL('../server/src/shared/index.ts', import.meta.url)) },
+  },
   server: {
     port: 5180,
     strictPort: true,
-    // Same-origin API in development: cookies stay first-party and SameSite applies.
     proxy: { '/api': { target: 'http://localhost:4000', changeOrigin: false } },
   },
   test: {

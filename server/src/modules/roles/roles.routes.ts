@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PERMISSION_GROUPS } from '@crm/shared';
+import { PERMISSION_GROUPS } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { requirePermission } from '../../middleware/auth';
 import { sensitiveLimiter } from '../../middleware/security';
@@ -32,7 +32,6 @@ rolesRouter.get('/', requirePermission('role.read'), async (_req, res) => {
   res.json({ data: roles.map(toRoleDto) });
 });
 
-/** Permission catalogue, grouped, for the role editor. */
 rolesRouter.get('/permissions', requirePermission('role.read'), (_req, res) => {
   res.json({ data: PERMISSION_GROUPS });
 });
@@ -50,7 +49,7 @@ async function resolvePermissionIds(codes: string[]) {
 }
 
 const createRoleSchema = z.strictObject({
-  code: z.string().trim().regex(/^[A-Z][A-Z0-9_]{2,40}$/, 'Use UPPER_SNAKE_CASE (3–40 chars)'),
+  code: z.string().trim().regex(/^[A-Z][A-Z0-9_]{2,40}$/, 'Use UPPER_SNAKE_CASE, 3 to 40 characters'),
   name: requiredText(80, 'Name'),
   description: optionalText(300),
   permissions: permissionCodes.default([]),
@@ -82,7 +81,6 @@ const updateRoleSchema = z.strictObject({
   permissions: permissionCodes.optional(),
 });
 
-/** Anti-escalation: nobody may edit the permission set of a role they currently hold. */
 function assertNotOwnRole(actor: Actor, roleCode: string) {
   if (actor.roles.includes(roleCode)) throw forbidden('You cannot modify a role that is assigned to you');
 }

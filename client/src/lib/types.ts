@@ -1,5 +1,3 @@
-/** Response shapes used by the client (money values are decimal strings from the API). */
-
 export interface UserRef {
   id: string;
   name: string;
@@ -222,6 +220,7 @@ export interface SalesTarget {
 export interface AdminUser {
   id: string;
   email: string;
+  username: string;
   name: string;
   isActive: boolean;
   mustChangePassword: boolean;

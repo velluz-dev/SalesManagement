@@ -9,7 +9,6 @@ const server = app.listen(env.PORT, () => {
 });
 const stopScanner = startOverdueScanner(env.OVERDUE_SCAN_MINUTES);
 
-// Periodically purge expired sessions.
 const sessionSweep = setInterval(() => {
   prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } }).catch(() => undefined);
 }, 60 * 60_000);

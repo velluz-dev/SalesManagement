@@ -18,7 +18,6 @@ function cookieOptions(): CookieOptions {
   };
 }
 
-/** Creates a session row (storing only the token hash) and sets the cookie. */
 export async function createSession(res: Response, userId: string, meta: { ip?: string; userAgent?: string }) {
   const token = crypto.randomBytes(32).toString('base64url');
   const session = await prisma.session.create({
@@ -39,10 +38,6 @@ export function clearSessionCookie(res: Response) {
   res.clearCookie(SESSION_COOKIE, opts);
 }
 
-/**
- * Resolves a raw session token into an AuthContext, enforcing absolute expiry, idle timeout and
- * account status. Returns null for any invalid/expired session.
- */
 export async function resolveSession(token: string): Promise<AuthContext | null> {
   const session = await prisma.session.findUnique({
     where: { tokenHash: hashToken(token) },
@@ -64,7 +59,6 @@ export async function resolveSession(token: string): Promise<AuthContext | null>
     return null;
   }
 
-  // Throttle lastSeen writes to once a minute.
   if (now - session.lastSeenAt.getTime() > 60_000) {
     await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } });
   }
@@ -81,6 +75,7 @@ export async function resolveSession(token: string): Promise<AuthContext | null>
     user: {
       id: user.id,
       email: user.email,
+      username: user.username,
       name: user.name,
       teamId: user.teamId,
       mustChangePassword: user.mustChangePassword,

@@ -55,7 +55,7 @@ export default function NotificationsPage() {
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium text-slate-900">{n.title}</span>
-                      <Badge dot={false} tone={n.type === 'INVOICE_OVERDUE' ? 'red' : n.type === 'APPROVAL_REQUESTED' ? 'amber' : 'gray'}>{label(n.type)}</Badge>
+                      <Badge tone={n.type === 'INVOICE_OVERDUE' ? 'red' : n.type === 'APPROVAL_REQUESTED' ? 'amber' : 'gray'}>{label(n.type)}</Badge>
                     </span>
                     <span className="mt-0.5 block text-sm text-slate-600">{n.message}</span>
                     <span className="mt-1 block text-xs text-slate-400">{dateTime(n.createdAt)}</span>

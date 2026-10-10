@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { EDITABLE_QUOTATION_STATUSES, type QuotationStatus } from '@crm/shared';
+import { EDITABLE_QUOTATION_STATUSES, type QuotationStatus } from '../../shared';
 import { prisma, Prisma, type Db } from '../../lib/prisma';
 import { ownerWhere, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -45,7 +45,6 @@ const detailInclude = {
 
 type QuotationDetail = Prisma.QuotationGetPayload<{ include: typeof detailInclude }>;
 
-/** Adds per-line computed amounts (not stored) to the response. */
 function withLineTotals(q: QuotationDetail) {
   return {
     ...q,
@@ -80,12 +79,10 @@ export async function getQuotation(actor: Actor, id: string) {
   return withLineTotals(q);
 }
 
-/** Loads a quotation inside the actor's scope with a row lock, for state transitions. */
 async function lockQuotation(tx: Prisma.TransactionClient, actor: Actor, id: string) {
   const q = await tx.quotation.findFirst({ where: { id, ...quotationScope(actor) } });
   if (!q) throw notFound('Quotation');
   await tx.$queryRaw`SELECT id FROM "Quotation" WHERE id = ${id}::uuid FOR UPDATE`;
-  // Re-read after acquiring the lock so we act on the latest state.
   return tx.quotation.findUniqueOrThrow({ where: { id } });
 }
 
@@ -95,10 +92,6 @@ function assertStatus(current: QuotationStatus, allowed: QuotationStatus[], acti
   }
 }
 
-/**
- * Replaces all items and recalculates cached totals in the same transaction (consistency rule B6).
- * This is the ONLY code path that writes quotation items or totals.
- */
 async function writeItems(tx: Prisma.TransactionClient, quotationId: string, items: LineItemInput[], defaultTaxRate: number) {
   const normalized = items.map((i, idx) => ({
     position: idx + 1,
@@ -182,7 +175,6 @@ export async function updateQuotation(actor: Actor, id: string, input: UpdateQuo
   return getQuotation(actor, id);
 }
 
-/** Submits (or re-submits after rejection) for approval; the approver is resolved by rules. */
 export async function submitQuotation(actor: Actor, id: string, comment?: string | null) {
   await prisma.$transaction(async (tx) => {
     const q = await lockQuotation(tx, actor, id);
@@ -222,7 +214,6 @@ export async function submitQuotation(actor: Actor, id: string, comment?: string
   return getQuotation(actor, id);
 }
 
-/** Requester/owner withdraws a pending submission; the quotation returns to DRAFT. */
 export async function withdrawQuotation(actor: Actor, id: string, comment?: string | null) {
   await prisma.$transaction(async (tx) => {
     const q = await lockQuotation(tx, actor, id);
@@ -257,10 +248,6 @@ export const recordCustomerResponse = (actor: Actor, id: string, outcome: 'ACCEP
 
 export const cancelQuotation = (actor: Actor, id: string) => transition(actor, id, ['DRAFT', 'REJECTED'], 'CANCELLED', 'cancel');
 
-/**
- * Controlled revision of an approved/sent/declined quotation: creates version N+1 as a DRAFT copy and
- * marks version N as SUPERSEDED. The approved version stays read-only for the audit trail (rule B5).
- */
 export async function reviseQuotation(actor: Actor, id: string, comment?: string | null) {
   const newId = await prisma.$transaction(async (tx) => {
     const q = await lockQuotation(tx, actor, id);

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OPPORTUNITY_STAGES } from '@crm/shared';
+import { OPPORTUNITY_STAGES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { ownerWhere, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -56,7 +56,6 @@ export async function listOpportunities(actor: Actor, q: z.infer<typeof listOppo
   return paged(rows, total, q);
 }
 
-/** Pipeline grouped by stage: count, total and probability-weighted value. */
 export async function pipeline(actor: Actor, ownerId?: string) {
   const where: Prisma.OpportunityWhereInput = { AND: [opportunityScope(actor), ownerId ? { ownerId } : {}] };
   const rows = await prisma.opportunity.findMany({

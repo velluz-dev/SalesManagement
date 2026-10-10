@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { FileText, Plus } from 'lucide-react';
-import { QUOTATION_STATUSES, enumLabel } from '@crm/shared';
+import { QUOTATION_STATUSES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';

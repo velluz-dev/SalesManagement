@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { SETTING_DEFINITIONS, type SettingDefinition } from '@crm/shared';
+import { SETTING_DEFINITIONS, type SettingDefinition } from '../../shared';
 import { prisma } from '../../lib/prisma';
 import { requirePermission } from '../../middleware/auth';
 import { getActor } from '../../lib/auth-context';
@@ -10,10 +10,8 @@ import { getSettings } from '../../lib/settings';
 
 export const settingsRouter = Router();
 
-/** Public, non-sensitive settings every signed-in user needs (e.g. currency for formatting). */
 settingsRouter.get('/public', async (_req, res) => {
   const s = await getSettings(prisma);
-  // Set only by the development seed; drives the "demo data" banner in the UI.
   const demo = await prisma.systemSetting.findUnique({ where: { key: 'system.demoData' } });
   res.json({
     data: {

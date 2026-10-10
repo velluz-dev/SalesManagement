@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CalendarCheck, Plus } from 'lucide-react';
-import { ACTIVITY_TYPES, enumLabel } from '@crm/shared';
+import { ACTIVITY_TYPES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';

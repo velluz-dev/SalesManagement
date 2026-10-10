@@ -25,7 +25,6 @@ if (!parsed.success) {
 
 export const env = {
   ...parsed.data,
-  // Cookies are always Secure in production regardless of COOKIE_SECURE.
   COOKIE_SECURE: parsed.data.NODE_ENV === 'production' ? true : parsed.data.COOKIE_SECURE,
   isProd: parsed.data.NODE_ENV === 'production',
   isTest: parsed.data.NODE_ENV === 'test',

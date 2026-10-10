@@ -11,7 +11,7 @@ import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
-import { date, money } from '../../lib/format';
+import { EMPTY, date, money } from '../../lib/format';
 import type { Quotation } from '../../lib/types';
 import { ApprovalTimeline } from '../approvals/ApprovalTimeline';
 
@@ -72,7 +72,7 @@ export default function QuotationDetailPage() {
         back={{ to: '/quotations', label: 'Quotations' }}
         title={<>{q.number} <span className="text-lg font-normal text-slate-400">v{q.version}</span></>}
         badge={<StatusBadge status={s} />}
-        description={<><Link to={`/customers/${q.customer.id}`} className="hover:underline">{q.customer.name}</Link> · Owner: {q.owner.name}</>}
+        description={<><Link to={`/customers/${q.customer.id}`} className="hover:underline">{q.customer.name}</Link>, owned by {q.owner.name}</>}
         actions={
           <>
             {canEdit && <ButtonLink to={`/quotations/${q.id}/edit`} variant="secondary" icon={Pencil}>Edit</ButtonLink>}
@@ -114,14 +114,14 @@ export default function QuotationDetailPage() {
                 { label: 'Issue date', value: date(q.issueDate) },
                 { label: 'Valid until', value: date(q.validUntil) },
                 { label: 'Currency', value: q.currency },
-                { label: 'Opportunity', value: q.opportunity ? <Link className="text-brand-600 hover:underline" to={`/opportunities/${q.opportunity.id}`}>{q.opportunity.name}</Link> : '—' },
-                { label: 'Previous version', value: q.parent ? <Link className="text-brand-600 hover:underline" to={`/quotations/${q.parent.id}`}>v{q.parent.version}</Link> : '—' },
-                { label: 'Invoice', value: activeInvoice ? (can('invoice.read') ? <Link className="text-brand-600 hover:underline" to={`/invoices/${activeInvoice.id}`}>{activeInvoice.number}</Link> : activeInvoice.number) : '—' },
+                { label: 'Opportunity', value: q.opportunity ? <Link className="text-brand-600 hover:underline" to={`/opportunities/${q.opportunity.id}`}>{q.opportunity.name}</Link> : EMPTY },
+                { label: 'Previous version', value: q.parent ? <Link className="text-brand-600 hover:underline" to={`/quotations/${q.parent.id}`}>v{q.parent.version}</Link> : EMPTY },
+                { label: 'Invoice', value: activeInvoice ? (can('invoice.read') ? <Link className="text-brand-600 hover:underline" to={`/invoices/${activeInvoice.id}`}>{activeInvoice.number}</Link> : activeInvoice.number) : EMPTY },
               ]}
             />
           </Card>
           <Card title="Line items" bodyClassName="p-0">
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="table-base w-full min-w-[640px]">
                 <thead>
                   <tr>
@@ -156,7 +156,7 @@ export default function QuotationDetailPage() {
           </Card>
           {(q.notes || q.terms) && (
             <Card title="Notes & terms">
-              <DescriptionList items={[{ label: 'Notes', value: <span className="whitespace-pre-wrap">{q.notes ?? '—'}</span> }, { label: 'Terms', value: <span className="whitespace-pre-wrap">{q.terms ?? '—'}</span> }]} />
+              <DescriptionList items={[{ label: 'Notes', value: <span className="whitespace-pre-wrap">{q.notes ?? EMPTY}</span> }, { label: 'Terms', value: <span className="whitespace-pre-wrap">{q.terms ?? EMPTY}</span> }]} />
             </Card>
           )}
         </div>

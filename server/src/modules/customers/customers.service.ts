@@ -25,7 +25,6 @@ const customerFields = {
 export const createCustomerSchema = z.strictObject({ ...customerFields, ownerId: uuid.optional() });
 export const updateCustomerSchema = createCustomerSchema.partial().extend({ isActive: z.boolean().optional() });
 
-/** Scoped `where` for customers visible to the actor. */
 export const customerScope = (actor: Actor): Prisma.CustomerWhereInput => ownerWhere(actor, 'customer');
 
 export async function listCustomers(actor: Actor, q: z.infer<typeof listCustomersQuery>) {

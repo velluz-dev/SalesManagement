@@ -9,12 +9,12 @@ import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components
 import { Modal } from '../../components/ui/Modal';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { DescriptionList } from '../../components/ui/Layout';
-import { dateTime } from '../../lib/format';
+import { EMPTY, dateTime } from '../../lib/format';
 import type { AuditLog } from '../../lib/types';
 
 function Json({ value }: { value: unknown }) {
-  if (value === null || value === undefined) return <p className="text-sm text-slate-400">—</p>;
-  return <pre className="max-h-72 overflow-auto rounded-lg bg-slate-900 p-3 text-xs leading-relaxed text-slate-100">{JSON.stringify(value, null, 2)}</pre>;
+  if (value === null || value === undefined) return <p className="text-sm text-slate-400">{EMPTY}</p>;
+  return <pre className="max-h-72 overflow-auto rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-800">{JSON.stringify(value, null, 2)}</pre>;
 }
 
 export default function AuditLogPage() {
@@ -28,7 +28,7 @@ export default function AuditLogPage() {
     { key: 'actor', header: 'Actor', cell: (l) => l.actor?.name ?? <span className="text-slate-400">System / anonymous</span> },
     { key: 'action', header: 'Action', cell: (l) => <code className={`rounded px-1.5 py-0.5 text-xs ${l.action.includes('failed') ? 'bg-rose-50 text-rose-700' : 'bg-slate-100'}`}>{l.action}</code> },
     { key: 'entity', header: 'Entity', cell: (l) => <span className="text-xs">{l.entityType}{l.entityId && <span className="block text-slate-400">{l.entityId.slice(0, 8)}…</span>}</span>, hideOnMobile: true },
-    { key: 'ip', header: 'IP', cell: (l) => <span className="text-xs text-slate-500">{l.ip ?? '—'}</span>, hideOnMobile: true },
+    { key: 'ip', header: 'IP', cell: (l) => <span className="text-xs text-slate-500">{l.ip ?? EMPTY}</span>, hideOnMobile: true },
   ];
 
   return (
@@ -66,13 +66,13 @@ export default function AuditLogPage() {
                 { label: 'Actor', value: selected.actor ? `${selected.actor.name} (${selected.actor.email})` : 'System / anonymous' },
                 { label: 'IP address', value: selected.ip },
                 { label: 'Entity', value: selected.entityType },
-                { label: 'Entity ID', value: <code className="text-xs">{selected.entityId ?? '—'}</code> },
-                { label: 'User agent', value: <span className="text-xs">{selected.userAgent ?? '—'}</span> },
+                { label: 'Entity ID', value: <code className="text-xs">{selected.entityId ?? EMPTY}</code> },
+                { label: 'User agent', value: <span className="text-xs">{selected.userAgent ?? EMPTY}</span> },
               ]}
             />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div><p className="mb-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">Before</p><Json value={selected.before} /></div>
-              <div><p className="mb-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">After</p><Json value={selected.after} /></div>
+              <div><p className="mb-1.5 text-xs font-medium text-slate-500">Before</p><Json value={selected.before} /></div>
+              <div><p className="mb-1.5 text-xs font-medium text-slate-500">After</p><Json value={selected.after} /></div>
             </div>
           </div>
         )}

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
-import { enumLabel } from '@crm/shared';
+import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
-import { money, monthLabel } from '../../lib/format';
+import { EMPTY, money, monthLabel } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, StatCard, Tabs } from '../../components/ui/Layout';
 import { ErrorState } from '../../components/ui/EmptyState';
@@ -29,13 +29,11 @@ interface FinanceReport {
   topDebtors: { customerId: string; name: string; outstanding: string; overdue: string }[];
 }
 
-/** Client-side CSV export of report tables (values are already authorized for this user). */
 function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   if (!rows.length) return;
   const headers = Object.keys(rows[0]!);
   const esc = (v: unknown) => {
     const s = String(v ?? '');
-    // Neutralize spreadsheet formula injection and quote fields.
     const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
     return `"${safe.replace(/"/g, '""')}"`;
   };
@@ -68,7 +66,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
       <p className="text-sm text-slate-500">Scope: <strong>{data.scope === 'all' ? 'Company-wide' : data.scope === 'team' ? 'Your team' : 'Your own records'}</strong></p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Won revenue" value={money(won, { compact: true })} sub={`${wonCount} deals`} />
-        <StatCard label="Win rate" value={wonCount + lost ? `${Math.round((wonCount / (wonCount + lost)) * 100)}%` : '—'} sub={`${wonCount} won · ${lost} lost`} tone="green" />
+        <StatCard label="Win rate" value={wonCount + lost ? `${Math.round((wonCount / (wonCount + lost)) * 100)}%` : EMPTY} sub={`${wonCount} won, ${lost} lost`} tone="green" />
         <StatCard label="Open pipeline" value={money(open, { compact: true })} tone="teal" />
         <StatCard label="Quotations issued" value={data.bySalesperson.reduce((s, r) => s + r.quotations, 0)} tone="amber" />
       </div>
@@ -85,7 +83,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
         bodyClassName="p-0"
         actions={<Button size="sm" variant="secondary" icon={Download} onClick={() => downloadCsv(`sales-report-${range.from}-${range.to}.csv`, data.bySalesperson)}>Export CSV</Button>}
       >
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="table-base w-full min-w-[760px]">
             <thead>
               <tr>
@@ -99,7 +97,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
                   <td className="font-medium">{r.name}</td>
                   <td className="tabular text-right">{money(r.wonAmount)}</td>
                   <td className="tabular text-right">{r.wonCount}</td>
-                  <td className="tabular text-right">{r.winRate === null ? '—' : `${r.winRate}%`}</td>
+                  <td className="tabular text-right">{r.winRate === null ? EMPTY : `${r.winRate}%`}</td>
                   <td className="tabular text-right">{money(r.openAmount)}</td>
                   <td className="tabular text-right">{r.quotations}</td>
                   <td className="tabular text-right">{r.quotationsApproved}</td>

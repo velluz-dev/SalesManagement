@@ -10,13 +10,25 @@ import { DataTable, Pagination, type Column } from '../../components/ui/DataTabl
 import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
-import { Checkbox, Field, FormError, Input, Select } from '../../components/ui/Form';
+import { Checkbox, Field, FormError, Input, PasswordInput, Select } from '../../components/ui/Form';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
-import { relativeTime } from '../../lib/format';
+import { applyServerErrors } from '../../lib/forms';
+import { EMPTY, relativeTime } from '../../lib/format';
 import type { AdminUser, Role, Team } from '../../lib/types';
 
 const PASSWORD_RULE = (p: string) => p.length >= 10 && /[A-Za-z]/.test(p) && /\d/.test(p);
+const USERNAME_RULE = /^[a-z0-9]+(?:[._][a-z0-9]+)*$/;
+
+interface UserFormValues {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  teamId: string;
+  roleIds: string[];
+  mustChangePassword: boolean;
+}
 
 function useRoles(enabled: boolean) {
   return useQuery({ queryKey: ['roles'], queryFn: async () => (await api.get<{ data: Role[] }>('/roles')).data, enabled });
@@ -30,8 +42,8 @@ function UserForm({ user, onClose }: { user?: AdminUser; onClose: () => void }) 
   const roles = useRoles(can('role.read'));
   const teams = useTeams(can('team.read'));
   const [error, setError] = useState<string | null>(null);
-  const { register, handleSubmit, formState, watch, setValue } = useForm({
-    defaultValues: { name: user?.name ?? '', email: user?.email ?? '', password: '', teamId: user?.teamId ?? '', roleIds: [] as string[], mustChangePassword: true },
+  const { register, handleSubmit, formState, watch, setValue, setError: setFieldError } = useForm<UserFormValues>({
+    defaultValues: { name: user?.name ?? '', username: user?.username ?? '', email: user?.email ?? '', password: '', teamId: user?.teamId ?? '', roleIds: [], mustChangePassword: true },
   });
   const save = useAction((body: unknown) => (user ? api.patch(`/users/${user.id}`, body) : api.post('/users', body)), {
     invalidate: ['users', 'roles', 'teams', 'lookups'],
@@ -40,19 +52,20 @@ function UserForm({ user, onClose }: { user?: AdminUser; onClose: () => void }) 
   });
   const roleIds = watch('roleIds');
 
-  const onSubmit = async (v: { name: string; email: string; password: string; teamId: string; roleIds: string[]; mustChangePassword: boolean }) => {
+  const onSubmit = async (v: UserFormValues) => {
     setError(null);
-    if (!v.name.trim() || !v.email.trim()) return setError('Name and email are required');
+    const username = v.username.trim().toLowerCase();
+    if (!v.name.trim() || !username || !v.email.trim()) return setError('Name, username and email are required');
+    if (username.length < 3 || username.length > 32 || !USERNAME_RULE.test(username)) {
+      return setFieldError('username', { message: 'Use 3 to 32 letters, numbers, dots or underscores' });
+    }
     if (!user && !PASSWORD_RULE(v.password)) return setError('Temporary password must be at least 10 characters with letters and numbers');
+    const identity = { name: v.name.trim(), username, email: v.email.trim(), teamId: v.teamId || null };
     try {
-      await save.mutateAsync(
-        user
-          ? { name: v.name.trim(), email: v.email.trim(), teamId: v.teamId || null }
-          : { name: v.name.trim(), email: v.email.trim(), password: v.password, teamId: v.teamId || null, roleIds: v.roleIds, mustChangePassword: v.mustChangePassword },
-      );
+      await save.mutateAsync(user ? identity : { ...identity, password: v.password, roleIds: v.roleIds, mustChangePassword: v.mustChangePassword });
       onClose();
     } catch (e) {
-      setError(errorMessage(e));
+      setError(applyServerErrors(e, setFieldError));
     }
   };
 
@@ -71,11 +84,16 @@ function UserForm({ user, onClose }: { user?: AdminUser; onClose: () => void }) 
     >
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <div className="sm:col-span-2"><FormError message={error} /></div>
-        <Field label="Full name" required><Input {...register('name')} /></Field>
-        <Field label="Email" required><Input type="email" autoComplete="off" {...register('email')} /></Field>
+        <Field label="Full name" required><Input placeholder="Jane Doe" {...register('name')} /></Field>
+        <Field label="Username" required error={formState.errors.username?.message} hint="Lowercase letters, numbers, dots or underscores.">
+          <Input autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="jane.doe" {...register('username')} />
+        </Field>
+        <Field label="Email" required error={formState.errors.email?.message}>
+          <Input type="email" autoComplete="off" placeholder="jane.doe@gmail.com" {...register('email')} />
+        </Field>
         {!user && (
           <Field label="Temporary password" required hint="Min. 10 characters, letters and numbers.">
-            <Input type="password" autoComplete="new-password" {...register('password')} />
+            <PasswordInput autoComplete="new-password" {...register('password')} />
           </Field>
         )}
         <Field label="Team">
@@ -118,7 +136,7 @@ function RolesForm({ user, onClose }: { user: AdminUser; onClose: () => void }) 
     <Modal
       open
       onClose={onClose}
-      title={`Roles · ${user.name}`}
+      title={`Roles for ${user.name}`}
       description="Changes take effect on the user's next request. Administrators do not gain business approval authority from the admin role."
       footer={
         <>
@@ -164,7 +182,7 @@ function ResetPasswordForm({ user, onClose }: { user: AdminUser; onClose: () => 
     <Modal
       open
       onClose={onClose}
-      title={`Reset password · ${user.name}`}
+      title={`Reset password for ${user.name}`}
       description="All of the user's sessions are signed out."
       size="sm"
       footer={
@@ -188,7 +206,7 @@ function ResetPasswordForm({ user, onClose }: { user: AdminUser; onClose: () => 
       }
     >
       <FormError message={error} />
-      <Field label="Temporary password" className="mt-2"><Input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+      <Field label="Temporary password" className="mt-2"><PasswordInput autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
     </Modal>
   );
 }
@@ -240,12 +258,12 @@ export default function UsersPage() {
       cell: (u) => (
         <div>
           <p className="font-medium text-slate-900">{u.name} {u.id === me?.user.id && <span className="text-xs text-slate-400">(you)</span>}</p>
-          <p className="text-xs text-slate-500">{u.email}</p>
+          <p className="text-xs text-slate-500">@{u.username} <span className="text-slate-400">{u.email}</span></p>
         </div>
       ),
     },
-    { key: 'roles', header: 'Roles', cell: (u) => <div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <Badge key={r.id} tone="indigo" dot={false}>{r.name}</Badge>) : <span className="text-xs text-slate-400">No roles</span>}</div> },
-    { key: 'team', header: 'Team', cell: (u) => u.team?.name ?? '—', hideOnMobile: true },
+    { key: 'roles', header: 'Roles', cell: (u) => <div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <Badge key={r.id} tone="indigo">{r.name}</Badge>) : <span className="text-xs text-slate-400">No roles</span>}</div> },
+    { key: 'team', header: 'Team', cell: (u) => u.team?.name ?? EMPTY, hideOnMobile: true },
     { key: 'status', header: 'Status', cell: (u) => (u.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>) },
     { key: 'lastLoginAt', header: 'Last sign-in', sortKey: 'lastLoginAt', cell: (u) => (u.lastLoginAt ? relativeTime(u.lastLoginAt) : 'Never'), hideOnMobile: true },
     { key: 'actions', header: <span className="sr-only">Actions</span>, align: 'right', cell: (u) => <RowMenu user={u} onAction={(kind) => setModal({ kind, user: u })} /> },
@@ -260,7 +278,7 @@ export default function UsersPage() {
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search name or email…" className="sm:w-72" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search name, username or email…" className="sm:w-72" />
           <FilterSelect label="Status" value={lp.filters.isActive ?? ''} onChange={(v) => lp.setFilter('isActive', v)} options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]} />
           <FilterSelect label="Role" value={lp.filters.roleId ?? ''} onChange={(v) => lp.setFilter('roleId', v)} options={(roles.data ?? []).map((r) => ({ value: r.id, label: r.name }))} />
         </Toolbar>

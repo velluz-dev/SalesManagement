@@ -1,10 +1,3 @@
-/**
- * DEVELOPMENT / DEMO SEED — fictional sample data only.
- * Refuses to run in production. All emails use the reserved `.local` / `example.com` domains,
- * and the `system.demoData` flag makes the UI show a "Demo data" banner.
- *
- *   npm run db:seed            # base data + demo data (wipes existing business data first)
- */
 import { PrismaClient, Prisma, type OpportunityStage, type QuotationStatus } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
 import { seedBase } from './seed-base';
@@ -18,7 +11,6 @@ if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-dem
   process.exit(1);
 }
 
-// Deterministic PRNG so every developer gets the same dataset.
 let seed = 42;
 const rand = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 const pick = <T,>(arr: readonly T[]) => arr[Math.floor(rand() * arr.length)]!;
@@ -30,7 +22,6 @@ const daysAgo = (n: number) => new Date(today.getTime() - n * DAY);
 const daysAhead = (n: number) => new Date(today.getTime() + n * DAY);
 
 async function wipe() {
-  // Business data only; reference data (roles/permissions/settings) is upserted.
   await prisma.$transaction([
     prisma.notification.deleteMany(),
     prisma.auditLog.deleteMany(),
@@ -67,7 +58,7 @@ async function main() {
 
   const passwordHash = await hash(DEMO_PASSWORD, { memoryCost: 19_456, timeCost: 2, parallelism: 1 });
   const mkUser = (email: string, name: string, roleIds: string[]) =>
-    prisma.user.create({ data: { email, name, passwordHash, roles: { create: roleIds.map((roleId) => ({ roleId })) } } });
+    prisma.user.create({ data: { email, username: email.split('@')[0]!, name, passwordHash, roles: { create: roleIds.map((roleId) => ({ roleId })) } } });
 
   const admin = await mkUser('admin@crm.local', 'Alex Admin', [roles.SYSTEM_ADMIN]);
   const director = await mkUser('director@crm.local', 'Dana Director', [roles.DIRECTOR]);
@@ -90,7 +81,6 @@ async function main() {
   await prisma.user.updateMany({ where: { id: { in: [sales[2]!.id, sales[3]!.id, manager2.id] } }, data: { teamId: smb.id } });
   const sellers = [...sales, manager];
 
-  // Customers
   const companies = [
     ['Northwind Logistics', 'Logistics'], ['Bluebird Retail', 'Retail'], ['Summit Healthcare', 'Healthcare'],
     ['Orion Manufacturing', 'Manufacturing'], ['Pioneer Foods', 'Food & Beverage'], ['Vertex Software', 'Technology'],
@@ -127,7 +117,6 @@ async function main() {
     }
   }
 
-  // Leads
   const leadTitles = ['Fleet tracking rollout', 'POS upgrade', 'Warehouse automation', 'Annual support renewal', 'Cloud migration', 'Office fit-out', 'Training program', 'Security audit', 'Data platform', 'Field service app'];
   const leadStatuses = ['NEW', 'NEW', 'CONTACTED', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED'] as const;
   const people = ['Chris Morgan', 'Pat Rivera', 'Jamie Chen', 'Robin Patel', 'Avery Brooks', 'Quinn Foster', 'Drew Santos', 'Sky Walker', 'Reese Adams', 'Logan Price'];
@@ -135,7 +124,7 @@ async function main() {
     const owner = sellers[i % sellers.length]!;
     await prisma.lead.create({
       data: {
-        title: `${pick(leadTitles)} – ${pick(['Q', 'Phase ', 'Wave '])}${between(1, 4)}`,
+        title: `${pick(leadTitles)}, ${pick(['Q', 'Phase ', 'Wave '])}${between(1, 4)}`,
         contactName: pick(people),
         company: `${pick(['Apex', 'Nova', 'Zenith', 'Prime', 'Bright', 'Core'])} ${pick(['Systems', 'Group', 'Partners', 'Holdings', 'Labs'])}`,
         email: `contact${i}@lead.example.com`,
@@ -149,7 +138,6 @@ async function main() {
     });
   }
 
-  // Opportunities (closed ones spread over the last 6 months for charts)
   const stages: OpportunityStage[] = ['PROSPECTING', 'QUALIFICATION', 'PROPOSAL', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_WON', 'CLOSED_LOST'];
   const probability: Record<OpportunityStage, number> = { PROSPECTING: 10, QUALIFICATION: 25, PROPOSAL: 50, NEGOTIATION: 75, CLOSED_WON: 100, CLOSED_LOST: 0 };
   const opportunities = [];
@@ -161,7 +149,7 @@ async function main() {
     opportunities.push(
       await prisma.opportunity.create({
         data: {
-          name: `${customer.name} – ${pick(leadTitles)}`,
+          name: `${pick(leadTitles)} for ${customer.name}`,
           customerId: customer.id,
           ownerId: customer.ownerId,
           stage,
@@ -175,7 +163,6 @@ async function main() {
     );
   }
 
-  // Activities
   for (let i = 0; i < 30; i++) {
     const opp = opportunities[i % opportunities.length]!;
     const done = rand() > 0.5;
@@ -192,7 +179,6 @@ async function main() {
     });
   }
 
-  // Quotations with approval history
   const products = [
     ['Implementation services (days)', 1200], ['Annual software license', 18000], ['Hardware bundle', 4500],
     ['Premium support plan', 6000], ['Training workshop', 2500], ['Integration package', 9500],
@@ -212,12 +198,12 @@ async function main() {
   const accepted: { id: string; customerId: string; ownerId: string; items: Prisma.QuotationItemCreateManyQuotationInput[]; total: Prisma.Decimal }[] = [];
 
   for (const [i, flow] of flows.entries()) {
-    const owner = sellers[i % sales.length]!; // salespeople own quotations
+    const owner = sellers[i % sales.length]!;
     const ownerCustomers = customers.filter((c) => c.ownerId === owner.id);
     const customer = ownerCustomers[i % Math.max(1, ownerCustomers.length)] ?? customers[0]!;
     const opp = opportunities.find((o) => o.customerId === customer.id);
     const n = between(1, 4);
-    const big = i % 5 === 4; // some high-value quotes go to the director
+    const big = i % 5 === 4;
     const items = Array.from({ length: n }, (_, idx) => {
       const [description, price] = pick(products);
       return {
@@ -291,7 +277,6 @@ async function main() {
     if (flow.status === 'ACCEPTED') accepted.push({ id: q.id, customerId: customer.id, ownerId: owner.id, items, total: totals.total });
   }
 
-  // Invoices for accepted quotations: paid, partially paid, overdue, current, draft
   const invoicePlans = ['PAID', 'PAID', 'PARTIAL', 'OVERDUE', 'OVERDUE_PARTIAL', 'DRAFT'] as const;
   for (const [i, q] of accepted.entries()) {
     const plan = invoicePlans[i % invoicePlans.length]!;
@@ -332,7 +317,6 @@ async function main() {
     }
   }
 
-  // A couple of manual invoices for payment-history depth in earlier months
   for (let m = 1; m <= 5; m++) {
     const customer = customers[m]!;
     const items = [{ position: 1, description: 'Monthly managed service (demo)', quantity: new Prisma.Decimal(1), unitPrice: new Prisma.Decimal(between(6, 20) * 1000), discountPercent: new Prisma.Decimal(0), taxRate: new Prisma.Decimal(0) }];
@@ -358,11 +342,9 @@ async function main() {
     });
   }
 
-  // Keep sequences ahead of seeded numbers.
   await prisma.$executeRawUnsafe(`SELECT setval('quotation_number_seq', ${qSeq + 1000})`);
   await prisma.$executeRawUnsafe(`SELECT setval('invoice_number_seq', ${invSeq + 1000})`);
 
-  // Targets: current month for each salesperson, current quarter for each team
   const mStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   const mEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0));
   const qIdx = Math.floor(today.getUTCMonth() / 3);
@@ -381,13 +363,13 @@ async function main() {
 
   console.log('\nDemo accounts (password for all: %s)', DEMO_PASSWORD);
   console.table([
-    { role: 'System Administrator', email: 'admin@crm.local' },
-    { role: 'Approver / Director', email: 'director@crm.local' },
-    { role: 'Finance Officer', email: 'finance@crm.local' },
-    { role: 'Sales Manager (Enterprise)', email: 'manager@crm.local' },
-    { role: 'Sales Manager (SMB)', email: 'manager2@crm.local' },
-    { role: 'Salesperson (Enterprise)', email: 'sales@crm.local' },
-    { role: 'Salesperson', email: 'sales2@crm.local / sales3@crm.local / sales4@crm.local' },
+    { role: 'System Administrator', username: 'admin', email: 'admin@crm.local' },
+    { role: 'Approver / Director', username: 'director', email: 'director@crm.local' },
+    { role: 'Finance Officer', username: 'finance', email: 'finance@crm.local' },
+    { role: 'Sales Manager (Enterprise)', username: 'manager', email: 'manager@crm.local' },
+    { role: 'Sales Manager (SMB)', username: 'manager2', email: 'manager2@crm.local' },
+    { role: 'Salesperson (Enterprise)', username: 'sales', email: 'sales@crm.local' },
+    { role: 'Salesperson', username: 'sales2 / sales3 / sales4', email: 'sales2@crm.local / sales3@crm.local / sales4@crm.local' },
   ]);
 }
 

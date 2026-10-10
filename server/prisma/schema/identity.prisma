@@ -1,0 +1,123 @@
+model User {
+  id                 String    @id @default(uuid()) @db.Uuid
+  email              String    @unique
+  username           String    @unique
+  name               String
+  passwordHash       String
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  lastLoginAt        DateTime?
+  teamId             String?   @db.Uuid
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  team         Team?      @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
+  managedTeams Team[]     @relation("TeamManager")
+  roles        UserRole[] @relation("UserRoles")
+  rolesGranted UserRole[] @relation("RoleGrantor")
+  sessions     Session[]
+
+  customers             Customer[]        @relation("CustomerOwner")
+  leads                 Lead[]            @relation("LeadOwner")
+  opportunities         Opportunity[]     @relation("OpportunityOwner")
+  activities            Activity[]        @relation("ActivityOwner")
+  quotations            Quotation[]       @relation("QuotationOwner")
+  approvalRequests      ApprovalRequest[] @relation("ApprovalRequester")
+  approvalAssignments   ApprovalRequest[] @relation("ApprovalAssignee")
+  approvalDecisions     ApprovalRequest[] @relation("ApprovalDecider")
+  approvalHistory       ApprovalHistory[]
+  targets               SalesTarget[]     @relation("TargetUser")
+  targetsSet            SalesTarget[]     @relation("TargetSetter")
+  invoicesAsSalesperson Invoice[]         @relation("InvoiceSalesperson")
+  invoicesCreated       Invoice[]         @relation("InvoiceCreator")
+  paymentsRecorded      Payment[]         @relation("PaymentRecorder")
+  paymentsVoided        Payment[]         @relation("PaymentVoider")
+  creditUpdates         CustomerCredit[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+  settingsUpdated       SystemSetting[]
+
+  @@index([teamId])
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users         UserRole[]
+  permissions   RolePermission[]
+  approvalRules ApprovalRule[]
+  approvalReqs  ApprovalRequest[]
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  description String
+  group       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roles RolePermission[]
+}
+
+model UserRole {
+  userId      String   @db.Uuid
+  roleId      String   @db.Uuid
+  grantedById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  user      User  @relation("UserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  role      Role  @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  grantedBy User? @relation("RoleGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       String   @db.Uuid
+  permissionId String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model Team {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  managerId String?  @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager User?         @relation("TeamManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members User[]        @relation("TeamMembers")
+  targets SalesTarget[]
+
+  @@index([managerId])
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  tokenHash  String   @unique
+  userId     String   @db.Uuid
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

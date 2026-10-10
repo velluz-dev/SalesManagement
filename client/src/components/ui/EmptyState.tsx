@@ -15,10 +15,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="mb-3 rounded-full bg-slate-100 p-3">
-        <Icon className="size-6 text-slate-400" aria-hidden />
-      </div>
+    <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+      <Icon className="mb-3 size-7 text-slate-300" aria-hidden />
       <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
@@ -30,7 +28,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   return (
     <EmptyState
       icon={AlertTriangle}
-      title="Could not load data"
+      title="This page could not load"
       description={errorMessage(error)}
       action={onRetry && <Button variant="secondary" size="sm" onClick={onRetry}>Try again</Button>}
     />

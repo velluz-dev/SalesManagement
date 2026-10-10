@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { listQuery } from '../../lib/pagination';
-import { booleanQuery, email, password, requiredText, uuid } from '../../lib/validation';
+import { booleanQuery, email, password, requiredText, username, uuid } from '../../lib/validation';
 
-export const listUsersQuery = listQuery(['createdAt', 'name', 'email', 'lastLoginAt'] as const).extend({
+export const listUsersQuery = listQuery(['createdAt', 'name', 'username', 'email', 'lastLoginAt'] as const).extend({
   isActive: booleanQuery,
   roleId: uuid.optional(),
   teamId: uuid.optional(),
@@ -11,6 +11,7 @@ export type ListUsersQuery = z.infer<typeof listUsersQuery>;
 
 export const createUserSchema = z.strictObject({
   email,
+  username,
   name: requiredText(120, 'Name'),
   password,
   teamId: uuid.nullable().optional(),
@@ -21,6 +22,7 @@ export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export const updateUserSchema = z.strictObject({
   email: email.optional(),
+  username: username.optional(),
   name: requiredText(120, 'Name').optional(),
   teamId: uuid.nullable().optional(),
 });

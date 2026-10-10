@@ -1,16 +1,10 @@
-/**
- * Permission catalogue. Permissions (not role names) are the unit of authorization
- * on both the server (endpoint guards + data scoping) and the client (menus/buttons).
- */
 export const PERMISSIONS = {
-  // Customers
   CUSTOMER_READ_OWN: 'customer.read.own',
   CUSTOMER_READ_TEAM: 'customer.read.team',
   CUSTOMER_READ_ALL: 'customer.read.all',
   CUSTOMER_CREATE: 'customer.create',
   CUSTOMER_UPDATE: 'customer.update',
 
-  // Leads
   LEAD_READ_OWN: 'lead.read.own',
   LEAD_READ_TEAM: 'lead.read.team',
   LEAD_READ_ALL: 'lead.read.all',
@@ -19,20 +13,17 @@ export const PERMISSIONS = {
   LEAD_CONVERT: 'lead.convert',
   LEAD_ASSIGN: 'lead.assign',
 
-  // Opportunities
   OPPORTUNITY_READ_OWN: 'opportunity.read.own',
   OPPORTUNITY_READ_TEAM: 'opportunity.read.team',
   OPPORTUNITY_READ_ALL: 'opportunity.read.all',
   OPPORTUNITY_CREATE: 'opportunity.create',
   OPPORTUNITY_UPDATE: 'opportunity.update',
 
-  // Activities
   ACTIVITY_READ_OWN: 'activity.read.own',
   ACTIVITY_READ_TEAM: 'activity.read.team',
   ACTIVITY_READ_ALL: 'activity.read.all',
   ACTIVITY_MANAGE: 'activity.manage',
 
-  // Quotations
   QUOTATION_READ_OWN: 'quotation.read.own',
   QUOTATION_READ_TEAM: 'quotation.read.team',
   QUOTATION_READ_ALL: 'quotation.read.all',
@@ -40,18 +31,15 @@ export const PERMISSIONS = {
   QUOTATION_UPDATE: 'quotation.update',
   QUOTATION_SUBMIT: 'quotation.submit',
 
-  // Approvals
   APPROVAL_READ_ASSIGNED: 'approval.read.assigned',
   APPROVAL_READ_ALL: 'approval.read.all',
   APPROVAL_DECIDE: 'approval.decide',
 
-  // Targets
   TARGET_READ_OWN: 'target.read.own',
   TARGET_READ_TEAM: 'target.read.team',
   TARGET_READ_ALL: 'target.read.all',
   TARGET_MANAGE: 'target.manage',
 
-  // Finance
   INVOICE_READ: 'invoice.read',
   INVOICE_CREATE: 'invoice.create',
   INVOICE_UPDATE: 'invoice.update',
@@ -62,13 +50,11 @@ export const PERMISSIONS = {
   CREDIT_READ: 'credit.read',
   CREDIT_MANAGE: 'credit.manage',
 
-  // Reports
   REPORT_SALES_OWN: 'report.sales.own',
   REPORT_SALES_TEAM: 'report.sales.team',
   REPORT_SALES_ALL: 'report.sales.all',
   REPORT_FINANCE: 'report.finance',
 
-  // Administration
   USER_READ: 'user.read',
   USER_CREATE: 'user.create',
   USER_UPDATE: 'user.update',
@@ -201,10 +187,8 @@ export const PERMISSION_GROUPS: { group: string; permissions: { code: Permission
 
 export type Scope = 'own' | 'team' | 'all';
 
-/** Resource families that support own/team/all data scoping. */
 export type ScopedResource = 'customer' | 'lead' | 'opportunity' | 'activity' | 'quotation' | 'target' | 'report.sales';
 
-/** Returns the widest scope the permission set grants for a resource, or null when none. */
 export function resolveScope(perms: Iterable<string>, resource: ScopedResource): Scope | null {
   const set = perms instanceof Set ? (perms as Set<string>) : new Set(perms);
   if (set.has(`${resource}.read.all`) || (resource === 'report.sales' && set.has('report.sales.all'))) return 'all';

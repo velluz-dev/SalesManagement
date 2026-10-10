@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LEAD_SOURCES, LEAD_STATUSES } from '@crm/shared';
+import { LEAD_SOURCES, LEAD_STATUSES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { ownerWhere, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -116,7 +116,6 @@ export async function updateLead(actor: Actor, id: string, input: z.infer<typeof
   });
 }
 
-/** Converts a lead into a customer (new or existing) and optionally an opportunity, atomically. */
 export async function convertLead(actor: Actor, id: string, input: z.infer<typeof convertLeadSchema>) {
   return prisma.$transaction(async (tx) => {
     const lead = await tx.lead.findFirst({ where: { id, ...leadScope(actor) } });

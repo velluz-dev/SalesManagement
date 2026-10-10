@@ -37,8 +37,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             role={t.tone === 'error' ? 'alert' : 'status'}
             className={cn(
-              'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border bg-white px-4 py-3 text-sm shadow-lg',
-              t.tone === 'success' ? 'border-emerald-200' : 'border-rose-200',
+              'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-md border border-l-[3px] border-slate-200 bg-white px-4 py-3 text-sm shadow-[0_6px_24px_-8px_rgb(24_34_30/0.25)]',
+              t.tone === 'success' ? 'border-l-emerald-600' : 'border-l-rose-600',
             )}
           >
             {t.tone === 'success' ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" /> : <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />}

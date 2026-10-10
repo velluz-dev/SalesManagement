@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const uuid = z.uuid('Invalid identifier');
 export const idParams = z.object({ id: uuid });
 
-/** Money input: number or numeric string, ≥ 0, max 2 decimals, fits NUMERIC(14,2). Output: string. */
 export const money = z
   .union([z.number(), z.string().trim()])
   .transform((v) => (typeof v === 'number' ? v.toString() : v))
@@ -18,7 +17,6 @@ export const quantity = z
   .transform((v) => (typeof v === 'number' ? v.toString() : v))
   .refine((v) => /^\d{1,10}(\.\d{1,2})?$/.test(v) && Number(v) > 0, 'Quantity must be greater than zero (max 2 decimals)');
 
-/** Calendar date as YYYY-MM-DD → Date (UTC midnight). */
 export const dateOnly = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
@@ -39,13 +37,20 @@ export const requiredText = (max: number, label = 'This field') =>
 
 export const email = z.string().trim().toLowerCase().pipe(z.email('Invalid email address')).pipe(z.string().max(254));
 
+export const username = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Username must be at least 3 characters')
+  .max(32, 'Username must be at most 32 characters')
+  .regex(/^[a-z0-9]+(?:[._][a-z0-9]+)*$/, 'Use letters, numbers, dots or underscores, starting and ending with a letter or number');
+
 export const optionalEmail = z
   .union([z.literal(''), email])
   .optional()
   .nullable()
   .transform((v) => (v ? v : null));
 
-/** Password policy: 10–128 chars with at least one letter and one digit. */
 export const password = z
   .string()
   .min(10, 'Password must be at least 10 characters')

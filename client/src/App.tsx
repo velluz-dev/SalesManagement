@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import type { Permission } from '@crm/shared';
+import type { Permission } from '@shared';
 import { RequireAuth, RequirePermission } from './auth/guards';
 import { AppLayout } from './components/layout/AppLayout';
 import { FullPageSpinner } from './components/ui/Spinner';
@@ -8,7 +8,6 @@ import { EmptyState } from './components/ui/EmptyState';
 import { LoginPage } from './features/auth/LoginPage';
 import { ProfilePage } from './features/auth/ProfilePage';
 
-// Route-level code splitting keeps the initial bundle small.
 const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage'));
 const CustomersPage = lazy(() => import('./features/customers/CustomersPage'));
 const CustomerDetailPage = lazy(() => import('./features/customers/CustomerDetailPage'));

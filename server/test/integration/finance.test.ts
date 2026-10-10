@@ -11,7 +11,7 @@ beforeAll(async () => {
   await createOrg();
   [sA1, mA, finance, director] = await loginAll('sa1@test.local', 'ma@test.local', 'finance@test.local', 'director@test.local');
   customerId = await createCustomer(sA1);
-  const q = await createQuotation(sA1, customerId, [item(1000, 3)]); // 3,000
+  const q = await createQuotation(sA1, customerId, [item(1000, 3)]);
   quotationId = q.id;
   await sA1.post(`/api/quotations/${q.id}/submit`).send({}).expect(200);
   const req = await prisma.approvalRequest.findFirstOrThrow({ where: { quotationId: q.id } });
@@ -40,7 +40,6 @@ describe('invoices and payments', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('ISSUED');
     expect(res.body.data.warnings[0]).toMatch(/Credit limit exceeded/);
-    // Due date = issue date + customer terms (15 days)
     const inv = res.body.data;
     expect((new Date(inv.dueDate).getTime() - new Date(inv.issueDate).getTime()) / 86_400_000).toBe(15);
   });
@@ -54,7 +53,7 @@ describe('invoices and payments', () => {
     await prisma.systemSetting.update({ where: { key: 'credit.blockOnExceed' }, data: { value: false } });
   });
 
-  it('rejects overpayment and tracks partial → paid → void transitions', async () => {
+  it('rejects overpayment and tracks partial, paid and void transitions', async () => {
     const over = await finance.post('/api/payments').send({ invoiceId, amount: '3000.01', method: 'CASH', paidAt: new Date().toISOString().slice(0, 10) });
     expect(over.status).toBe(422);
 
@@ -69,7 +68,7 @@ describe('invoices and payments', () => {
     expect(inv.status).toBe('PAID');
     expect(inv.balance).toBe('0.00');
 
-    expect((await finance.post(`/api/payments/${p2.body.data.id}/void`).send({})).status).toBe(400); // reason required
+    expect((await finance.post(`/api/payments/${p2.body.data.id}/void`).send({})).status).toBe(400);
     await finance.post(`/api/payments/${p2.body.data.id}/void`).send({ reason: 'Card chargeback' }).expect(200);
     inv = (await finance.get(`/api/invoices/${invoiceId}`)).body.data;
     expect(inv.status).toBe('PARTIALLY_PAID');
@@ -86,7 +85,6 @@ describe('invoices and payments', () => {
   });
 
   it('prevents revising a quotation that has been invoiced', async () => {
-    // Quotation is ACCEPTED and invoiced – revise is not allowed from ACCEPTED anyway, and invoice guard also applies.
     expect((await sA1.post(`/api/quotations/${quotationId}/revise`).send({})).status).toBe(422);
   });
 
@@ -105,7 +103,7 @@ describe('invoices and payments', () => {
     await scanOverdueInvoices();
     await scanOverdueInvoices();
     const notes = await prisma.notification.count({ where: { type: 'INVOICE_OVERDUE', dedupeKey: `invoice-overdue:${invoiceId}` } });
-    expect(notes).toBe(2); // finance officer + salesperson, not duplicated by the second scan
+    expect(notes).toBe(2);
   });
 
   it('reports credit exposure from outstanding balances', async () => {

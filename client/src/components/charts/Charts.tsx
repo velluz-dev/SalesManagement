@@ -5,15 +5,13 @@ import {
 import { BarChart3, Table2 } from 'lucide-react';
 import { money } from '../../lib/format';
 
-/** Validated categorical order (see index.css); text always uses ink tokens, never series colors. */
 export const SERIES = ['#2a78d6', '#eb6834', '#1baf7a'] as const;
-const AXIS = { fontSize: 12, fill: '#64748b' };
-const GRID = '#eef2f6';
+const AXIS = { fontSize: 12, fill: '#66746c' };
+const GRID = '#eaedea';
 
 export interface SeriesDef {
   key: string;
   label: string;
-  /** Formatter for values (default: compact money). */
   format?: (v: number) => string;
 }
 
@@ -28,7 +26,7 @@ interface TooltipContentProps {
 function ChartTooltip({ active, payload, label, series, labelFormat }: TooltipContentProps & { series: SeriesDef[]; labelFormat?: (l: string) => string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
       <p className="mb-1 font-medium text-slate-900">{labelFormat ? labelFormat(String(label)) : String(label)}</p>
       {payload.map((p) => {
         const def = series.find((s) => s.key === p.dataKey);
@@ -43,7 +41,6 @@ function ChartTooltip({ active, payload, label, series, labelFormat }: TooltipCo
   );
 }
 
-/** Wraps a chart with a "view as table" toggle so the data is never available only visually. */
 export function ChartFrame<T extends Record<string, unknown>>({
   rows,
   xKey,
@@ -75,7 +72,7 @@ export function ChartFrame<T extends Record<string, unknown>>({
         </button>
       </div>
       {table ? (
-        <div className="overflow-x-auto" style={{ maxHeight: height }}>
+        <div className="relative overflow-x-auto" style={{ maxHeight: height }}>
           <table className="table-base w-full">
             <thead>
               <tr>
@@ -106,7 +103,6 @@ export function ChartFrame<T extends Record<string, unknown>>({
   );
 }
 
-/** Vertical bars: one series = no legend (the card title names it); 2+ series = grouped with legend. */
 export function BarsChart<T extends Record<string, unknown>>({
   rows,
   xKey,
@@ -129,10 +125,10 @@ export function BarsChart<T extends Record<string, unknown>>({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }} barGap={2} barCategoryGap="28%">
           <CartesianGrid vertical={false} stroke={GRID} />
-          <XAxis dataKey={xKey as never} tick={AXIS} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tickFormatter={xFormat} interval="preserveStartEnd" />
+          <XAxis dataKey={xKey as never} tick={AXIS} tickLine={false} axisLine={{ stroke: '#dde3de' }} tickFormatter={xFormat} interval="preserveStartEnd" />
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(v) => yFormat(Number(v))} width={64} />
-          <Tooltip cursor={{ fill: 'rgba(148,163,184,0.12)' }} content={<ChartTooltip series={series} labelFormat={xFormat} />} />
-          {series.length > 1 && <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12, color: '#475569' }} />}
+          <Tooltip cursor={{ fill: 'rgba(102,116,108,0.1)' }} content={<ChartTooltip series={series} labelFormat={xFormat} />} />
+          {series.length > 1 && <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12, color: '#4d5a53' }} />}
           {series.map((s, i) => (
             <Bar key={s.key} dataKey={s.key} name={s.label} fill={SERIES[i]} radius={[4, 4, 0, 0]} maxBarSize={36} />
           ))}
@@ -142,7 +138,6 @@ export function BarsChart<T extends Record<string, unknown>>({
   );
 }
 
-/** Horizontal bars for ranked categories with long labels (single series). */
 export function HBarsChart<T extends Record<string, unknown>>({
   rows,
   yKey,
@@ -167,7 +162,7 @@ export function HBarsChart<T extends Record<string, unknown>>({
           <CartesianGrid horizontal={false} stroke={GRID} />
           <XAxis type="number" tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(Number(v))} />
           <YAxis type="category" dataKey={yKey as never} tick={AXIS} tickLine={false} axisLine={false} width={120} tickFormatter={yFormat} />
-          <Tooltip cursor={{ fill: 'rgba(148,163,184,0.12)' }} content={<ChartTooltip series={[series]} labelFormat={yFormat} />} />
+          <Tooltip cursor={{ fill: 'rgba(102,116,108,0.1)' }} content={<ChartTooltip series={[series]} labelFormat={yFormat} />} />
           <Bar dataKey={series.key} name={series.label} fill={SERIES[0]} radius={[0, 4, 4, 0]} maxBarSize={22} />
         </BarChart>
       </ResponsiveContainer>

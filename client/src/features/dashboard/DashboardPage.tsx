@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   AlarmClock, Briefcase, CheckSquare, Contact, FileText, KeyRound, ShieldCheck, Trophy, Users, Wallet, Receipt, Activity,
 } from 'lucide-react';
-import { enumLabel } from '@crm/shared';
+import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
 import { date, money, monthLabel, relativeTime } from '../../lib/format';
@@ -63,7 +63,7 @@ function TargetsCard({ targets, basis }: { targets: SalesTarget[]; basis: string
   return (
     <Card
       title="Target progress"
-      description={`Current period · counted on ${basis === 'INVOICED' ? 'invoiced amount' : 'won opportunities'}`}
+      description={`Current period, counted on ${basis === 'INVOICED' ? 'invoiced amount' : 'won opportunities'}`}
       actions={<Link to="/targets" className="text-sm font-medium text-brand-600 hover:text-brand-700">View all</Link>}
     >
       {!targets.length ? (
@@ -72,15 +72,15 @@ function TargetsCard({ targets, basis }: { targets: SalesTarget[]; basis: string
         <ul className="space-y-4">
           {targets.map((t) => (
             <li key={t.id}>
-              <div className="mb-1.5 flex items-baseline justify-between gap-2 text-sm">
-                <span className="font-medium text-slate-900">
-                  {t.user?.name ?? t.team?.name}
-                  <span className="ml-2 text-xs font-normal text-slate-500">{enumLabel(t.periodType)} · ends {date(t.periodEnd)}</span>
-                </span>
-                <span className="tabular text-slate-600">
-                  {money(t.achieved, { compact: true })} / {money(t.amount, { compact: true })}
-                  <span className="ml-2 font-semibold text-slate-900">{t.percent}%</span>
-                </span>
+              <div className="mb-2 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-900">{t.user?.name ?? t.team?.name}</p>
+                  <p className="text-xs text-slate-500">{enumLabel(t.periodType)}, ends {date(t.periodEnd)}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="tabular text-sm font-semibold text-slate-900">{t.percent}%</p>
+                  <p className="tabular text-xs text-slate-500">{money(t.achieved, { compact: true })} of {money(t.amount, { compact: true })}</p>
+                </div>
               </div>
               <ProgressBar value={t.percent} label={`${t.user?.name ?? t.team?.name} target progress`} />
             </li>
@@ -124,7 +124,7 @@ function SalesSection({ s }: { s: NonNullable<Dashboard['sales']> }) {
                 <li key={q.status} className="flex items-center justify-between py-2.5 text-sm">
                   <Link to={`/quotations?status=${q.status}`} className="hover:underline"><StatusBadge status={q.status} /></Link>
                   <span className="tabular text-slate-600">
-                    {q.count} · <span className="font-medium text-slate-900">{money(q.amount)}</span>
+                    {q.count} {q.count === 1 ? 'quote' : 'quotes'}<span className="ml-3 font-medium text-slate-900">{money(q.amount)}</span>
                   </span>
                 </li>
               ))}
@@ -152,9 +152,9 @@ function ApprovalsSection({ a }: { a: NonNullable<Dashboard['approvals']> }) {
               <Link to={`/approvals/${r.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-slate-50">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900">
-                    {r.quotation.number} v{r.quotation.version} · {r.quotation.customer.name}
+                    {r.quotation.number} v{r.quotation.version} for {r.quotation.customer.name}
                   </p>
-                  <p className="text-xs text-slate-500">Requested by {r.requestedBy.name} · {relativeTime(r.createdAt)}</p>
+                  <p className="text-xs text-slate-500">Requested by {r.requestedBy.name}, {relativeTime(r.createdAt)}</p>
                 </div>
                 <span className="tabular text-sm font-semibold">{money(r.amount, { currency: r.quotation.currency })}</span>
               </Link>
@@ -176,7 +176,7 @@ function FinanceSection({ f }: { f: NonNullable<Dashboard['finance']> }) {
         <StatCard
           label="Credit exposure"
           value={money(f.credit.totalExposure, { compact: true })}
-          sub={`of ${money(f.credit.totalLimit, { compact: true })} limits · ${f.credit.customersOverLimit} over limit · ${f.credit.customersOnHold} on hold`}
+          sub={`of ${money(f.credit.totalLimit, { compact: true })} in limits. ${f.credit.customersOverLimit} over limit, ${f.credit.customersOnHold} on hold`}
           icon={ShieldCheck}
           tone="amber"
         />
@@ -200,14 +200,14 @@ function FinanceSection({ f }: { f: NonNullable<Dashboard['finance']> }) {
       </div>
       <Card title="Most overdue invoices" actions={<Link to="/overdue" className="text-sm font-medium text-brand-600 hover:text-brand-700">All overdue</Link>}>
         {!f.overdueInvoices.length ? (
-          <EmptyState title="No overdue invoices" description="Great — every issued invoice is within terms." />
+          <EmptyState title="No overdue invoices" description="Every issued invoice is still within its payment terms." />
         ) : (
           <ul className="divide-y divide-slate-100">
             {f.overdueInvoices.map((i) => (
               <li key={i.id}>
                 <Link to={`/invoices/${i.id}`} className="flex items-center justify-between gap-4 py-3 hover:bg-slate-50">
                   <div>
-                    <p className="text-sm font-medium">{i.number} · {i.customer.name}</p>
+                    <p className="text-sm font-medium">{i.number}, {i.customer.name}</p>
                     <p className="text-xs text-rose-600">Due {date(i.dueDate)}</p>
                   </div>
                   <span className="tabular text-sm font-semibold">{money(i.balance)}</span>
@@ -225,7 +225,7 @@ function AdminSection({ a }: { a: NonNullable<Dashboard['admin']> }) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Users" value={a.users.total} sub={`${a.users.active} active · ${a.users.inactive} inactive`} icon={Users} />
+        <StatCard label="Users" value={a.users.total} sub={`${a.users.active} active, ${a.users.inactive} inactive`} icon={Users} />
         <StatCard label="Active sessions" value={a.activeSessions} icon={Activity} tone="teal" />
         <StatCard label="Roles" value={a.roles.length} icon={KeyRound} tone="slate" />
         <StatCard label="Failed sign-ins (7d)" value={a.logins.reduce((n, l) => n + l.failed, 0)} icon={ShieldCheck} tone="red" />

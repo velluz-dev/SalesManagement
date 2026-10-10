@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { APPROVER_TYPES } from '@crm/shared';
+import { APPROVER_TYPES } from '../../shared';
 import { prisma } from '../../lib/prisma';
 import { requireAnyPermission, requirePermission } from '../../middleware/auth';
 import { getActor } from '../../lib/auth-context';
@@ -15,7 +15,6 @@ approvalsRouter.get('/', requireAnyPermission('approval.read.assigned', 'approva
   res.json(await svc.listApprovals(getActor(req), svc.listApprovalsQuery.parse(req.query)));
 });
 
-// Requesters may also open their own requests, so the permission check happens in the service.
 approvalsRouter.get('/:id', async (req, res) => {
   const { id } = idParams.parse(req.params);
   res.json({ data: await svc.getApproval(getActor(req), id) });
@@ -25,8 +24,6 @@ approvalsRouter.post('/:id/decision', requirePermission('approval.decide'), asyn
   const { id } = idParams.parse(req.params);
   res.json({ data: await svc.decide(getActor(req), id, svc.decisionSchema.parse(req.body)) });
 });
-
-// ───────────── Approval rules (configuration) ─────────────
 
 export const approvalRulesRouter = Router();
 
@@ -45,7 +42,6 @@ const ruleSchema = z
     path: ['maxAmount'],
   });
 
-/** The target role must carry approval authority – prevents routing approvals to e.g. administrators. */
 async function assertApproverRole(roleId: string) {
   const role = await prisma.role.findFirst({
     where: { id: roleId, permissions: { some: { permission: { code: 'approval.decide' } } } },

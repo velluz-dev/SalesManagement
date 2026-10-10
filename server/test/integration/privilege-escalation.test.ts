@@ -12,7 +12,6 @@ beforeAll(async () => {
   org = await createOrg();
   [admin, sA1, mA] = await loginAll('admin@test.local', 'sa1@test.local', 'ma@test.local');
   roles = Object.fromEntries((await prisma.role.findMany()).map((r) => [r.code, r.id]));
-  // A second administrator, so role edits by someone who does not hold the edited role can be exercised.
   await createUser('admin2@test.local', 'SYSTEM_ADMIN');
   a2 = await login('admin2@test.local');
 });
@@ -39,28 +38,23 @@ describe('privilege escalation protections', () => {
   });
 
   it('keeps at least one active user with role-management permission', async () => {
-    // A delegated "user admin" can assign roles / deactivate users but cannot manage roles.
     const perms = await prisma.permission.findMany({ where: { code: { in: ['user.read', 'user.deactivate', 'role.assign', 'role.read'] } } });
     const delegated = await prisma.role.create({
       data: { code: 'USER_ADMIN', name: 'User admin', permissions: { create: perms.map((p) => ({ permissionId: p.id })) } },
     });
     const hash = (await prisma.user.findUniqueOrThrow({ where: { id: org.users.admin.id } })).passwordHash;
-    await prisma.user.create({ data: { email: 'useradmin@test.local', name: 'useradmin', passwordHash: hash, roles: { create: { roleId: delegated.id } } } });
+    await prisma.user.create({ data: { email: 'useradmin@test.local', username: 'useradmin', name: 'useradmin', passwordHash: hash, roles: { create: { roleId: delegated.id } } } });
     const ua = await login('useradmin@test.local');
 
-    // Make org.users.admin the only active role.manage holder for this check.
     await prisma.user.update({ where: { email: 'admin2@test.local' }, data: { isActive: false } });
-    // Removing or deactivating the last role manager is refused.
     expect((await ua.patch(`/api/users/${org.users.admin.id}/status`).send({ isActive: false })).status).toBe(422);
     expect((await ua.put(`/api/users/${org.users.admin.id}/roles`).send({ roleIds: [] })).status).toBe(422);
-    // Nothing changed (transaction rolled back).
     expect(await prisma.userRole.count({ where: { userId: org.users.admin.id } })).toBe(1);
     expect((await prisma.user.findUniqueOrThrow({ where: { id: org.users.admin.id } })).isActive).toBe(true);
     await prisma.user.update({ where: { email: 'admin2@test.local' }, data: { isActive: true } });
   });
 
   it('permission changes take effect on the next request', async () => {
-    // Grant finance invoice rights to the salesperson role and verify immediately, then revert.
     const before = (await a2.get('/api/roles')).body.data.find((r: { code: string }) => r.code === 'SALESPERSON').permissions as string[];
     expect((await sA1.get('/api/invoices')).status).toBe(403);
     await a2.patch(`/api/roles/${roles.SALESPERSON}`).send({ permissions: [...before, 'invoice.read'] }).expect(200);
@@ -78,7 +72,6 @@ describe('privilege escalation protections', () => {
     expect(other.status).toBe(403);
     const ok = await mA.post('/api/targets').send({ userId: org.users.sA1.id, periodType: 'MONTH', year, period: 1, amount: '1000' });
     expect(ok.status).toBe(201);
-    // The salesperson can see it but not change it
     expect((await sA1.get('/api/targets')).body.data).toHaveLength(1);
     expect((await sA1.delete(`/api/targets/${ok.body.data.id}`)).status).toBe(403);
   });

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { QUOTATION_STATUSES } from '@crm/shared';
+import { QUOTATION_STATUSES } from '../../shared';
 import { listQuery } from '../../lib/pagination';
 import { booleanQuery, dateOnly, money, optionalText, percent, quantity, requiredText, uuid } from '../../lib/validation';
 

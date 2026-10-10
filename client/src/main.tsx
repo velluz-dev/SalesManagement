@@ -13,7 +13,6 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 30_000,
       refetchOnWindowFocus: false,
-      // Do not retry authorization/validation failures.
       retry: (count, err) => !(err instanceof ApiError && err.status < 500) && count < 2,
     },
   },

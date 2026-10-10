@@ -3,13 +3,12 @@ import {
   LayoutDashboard, Users, Briefcase, FileText, CheckSquare, Trophy, Receipt, Wallet, ShieldCheck,
   AlarmClock, BarChart3, UserCog, KeyRound, Network, ScrollText, Settings, CalendarCheck, Contact,
 } from 'lucide-react';
-import type { Permission } from '@crm/shared';
+import type { Permission } from '@shared';
 
 export interface NavItem {
   to: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  /** Visible when the user holds ANY of these permissions (empty = always). */
   any: Permission[];
 }
 
@@ -18,7 +17,6 @@ export interface NavSection {
   items: NavItem[];
 }
 
-/** Single source of truth for menus. Pages are additionally guarded by route-level permission checks. */
 export const NAVIGATION: NavSection[] = [
   {
     title: 'Overview',

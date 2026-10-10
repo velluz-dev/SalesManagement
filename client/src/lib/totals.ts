@@ -1,7 +1,3 @@
-/**
- * Client-side preview of document totals, mirroring server/src/lib/money.ts (each line rounded to cents).
- * Display only — the server recalculates and is authoritative.
- */
 export interface LineLike {
   quantity: string | number;
   unitPrice: string | number;

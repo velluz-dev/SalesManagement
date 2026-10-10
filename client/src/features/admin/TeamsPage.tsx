@@ -117,7 +117,7 @@ export default function TeamsPage() {
                 <ul className="space-y-2">
                   {t.members.map((m) => (
                     <li key={m.id} className="flex items-center justify-between text-sm">
-                      <span>{m.name}{m.id === t.managerId && <Badge tone="indigo" dot={false} className="ml-2">Manager</Badge>}</span>
+                      <span>{m.name}{m.id === t.managerId && <Badge tone="indigo" className="ml-2">Manager</Badge>}</span>
                       {!m.isActive && <Badge>Inactive</Badge>}
                     </li>
                   ))}

@@ -30,7 +30,6 @@ export default function InvoiceCreatePage() {
   const [mode, setMode] = useState<'quotation' | 'manual'>(params.get('customerId') ? 'manual' : 'quotation');
   const [error, setError] = useState<string | null>(null);
 
-  // Invoiceable quotations: accepted or approved (rule B7). Already-invoiced ones are rejected by the server.
   const quotes = useQuery({
     queryKey: ['quotations', 'invoiceable'],
     queryFn: async () => {
@@ -115,7 +114,7 @@ export default function InvoiceCreatePage() {
                 <option value="">{quotes.isLoading ? 'Loading…' : 'Select a quotation…'}</option>
                 {quotes.data?.map((q) => (
                   <option key={q.id} value={q.id}>
-                    {q.number} v{q.version} · {q.customer.name} · {money(q.total, { currency: q.currency })} ({q.status.toLowerCase()})
+                    {q.number} v{q.version}, {q.customer.name}, {money(q.total, { currency: q.currency })} ({q.status.toLowerCase()})
                   </option>
                 ))}
               </Select>

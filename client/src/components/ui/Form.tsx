@@ -1,17 +1,41 @@
-import { cloneElement, isValidElement, useId, type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
 const control =
-  'block w-full rounded-lg border bg-white px-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:bg-slate-50 disabled:text-slate-500';
+  'block w-full rounded-md border bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/25 disabled:bg-slate-50 disabled:text-slate-500';
 const controlState = (invalid?: boolean) => (invalid ? 'border-rose-400 focus:border-rose-500' : 'border-slate-300 focus:border-brand-500');
 
 export function Input({ className, invalid, ...rest }: ComponentProps<'input'> & { invalid?: boolean }) {
-  return <input className={cn(control, controlState(invalid), 'h-10', className)} aria-invalid={invalid || undefined} {...rest} />;
+  return <input className={cn(control, controlState(invalid), 'h-9', className)} aria-invalid={invalid || undefined} {...rest} />;
+}
+
+export function PasswordInput({ className, invalid, ...rest }: Omit<ComponentProps<'input'>, 'type'> & { invalid?: boolean }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={visible ? 'text' : 'password'}
+        className={cn(control, controlState(invalid), 'h-9 pr-10', className)}
+        aria-invalid={invalid || undefined}
+        {...rest}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-slate-400 hover:text-slate-700"
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        aria-pressed={visible}
+      >
+        {visible ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+      </button>
+    </div>
+  );
 }
 
 export function Select({ className, invalid, children, ...rest }: ComponentProps<'select'> & { invalid?: boolean }) {
   return (
-    <select className={cn(control, controlState(invalid), 'h-10 pr-8', className)} aria-invalid={invalid || undefined} {...rest}>
+    <select className={cn(control, controlState(invalid), 'h-9 pr-8', className)} aria-invalid={invalid || undefined} {...rest}>
       {children}
     </select>
   );
@@ -30,10 +54,6 @@ export function Checkbox({ label, className, ...rest }: ComponentProps<'input'> 
   );
 }
 
-/**
- * Label + control + error/hint wiring. The child control receives id, aria-describedby and invalid
- * automatically so errors are announced by screen readers.
- */
 export function Field({
   label,
   error,
@@ -56,7 +76,7 @@ export function Field({
     : children;
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">
         {label}
         {required && <span className="ml-0.5 text-rose-500" aria-hidden>*</span>}
       </label>
@@ -77,7 +97,7 @@ export function Field({
 export function FormError({ message }: { message?: string | null }) {
   if (!message) return null;
   return (
-    <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+    <div role="alert" className="rounded-md border-l-[3px] border-rose-600 bg-rose-50 px-3 py-2 text-sm text-rose-800">
       {message}
     </div>
   );

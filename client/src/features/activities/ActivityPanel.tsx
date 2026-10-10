@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CalendarCheck, CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
-import { ACTIVITY_TYPES, enumLabel } from '@crm/shared';
+import { ACTIVITY_TYPES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useList } from '../../hooks/useApi';
 import { Card } from '../../components/ui/Layout';
@@ -78,9 +78,9 @@ export function ActivityRow({ a, canManage }: { a: Activity; canManage: boolean 
       <div className="min-w-0 flex-1">
         <p className={cn('text-sm font-medium', a.completedAt && 'text-slate-400 line-through')}>{a.subject}</p>
         <p className="text-xs text-slate-500">
-          <Badge dot={false} className="mr-1.5">{enumLabel(a.type)}</Badge>
+          <Badge className="mr-1.5">{enumLabel(a.type)}</Badge>
           {a.dueAt && <span className={cn(overdue && 'font-medium text-rose-600')}>Due {dateTime(a.dueAt)}</span>}
-          {a.owner && <span> · {a.owner.name}</span>}
+          {a.owner && <span className="ml-2">{a.owner.name}</span>}
         </p>
         {a.description && <p className="mt-1 text-sm text-slate-600">{a.description}</p>}
       </div>
@@ -94,7 +94,6 @@ export function ActivityRow({ a, canManage }: { a: Activity; canManage: boolean 
   );
 }
 
-/** Activities attached to a record; hidden entirely for roles without activity access. */
 export function ActivityPanel({ filter, link }: { filter: Link; link: Link }) {
   const { can, canAny } = useAuth();
   const [adding, setAdding] = useState(false);

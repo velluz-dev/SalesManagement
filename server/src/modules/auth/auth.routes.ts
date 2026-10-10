@@ -8,17 +8,20 @@ import { hashPassword, verifyPassword, getDummyHash } from '../../lib/password';
 import { getActor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { unauthorized, badRequest } from '../../lib/errors';
-import { email, password } from '../../lib/validation';
+import { password } from '../../lib/validation';
 
 export const authRouter = Router();
 
-const loginSchema = z.object({ email, password: z.string().min(1).max(128) });
+const loginSchema = z.object({
+  identifier: z.string().trim().toLowerCase().min(1, 'Enter your email or username').max(254),
+  password: z.string().min(1, 'Enter your password').max(128),
+});
 
 authRouter.post('/login', loginLimiter, async (req, res) => {
   const input = loginSchema.parse(req.body);
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
+  const where = input.identifier.includes('@') ? { email: input.identifier } : { username: input.identifier };
+  const user = await prisma.user.findUnique({ where });
 
-  // Always run a hash verification to avoid user-enumeration via timing.
   const ok = user ? await verifyPassword(user.passwordHash, input.password) : (await verifyPassword(await getDummyHash(), input.password), false);
 
   if (!user || !ok || !user.isActive) {
@@ -26,9 +29,9 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
       action: 'auth.login_failed',
       entityType: 'User',
       entityId: user?.id,
-      after: { email: input.email, reason: !user ? 'unknown_user' : !ok ? 'bad_password' : 'inactive' },
+      after: { identifier: input.identifier, reason: !user ? 'unknown_user' : !ok ? 'bad_password' : 'inactive' },
     });
-    throw unauthorized('Invalid email or password');
+    throw unauthorized('Incorrect email, username or password');
   }
 
   await createSession(res, user.id, { ip: req.ip, userAgent: req.get('user-agent')?.slice(0, 255) });
@@ -42,7 +45,6 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
 });
 
 authRouter.post('/logout', async (req, res) => {
-  // Logout is idempotent and does not require a valid session.
   const token = req.cookies?.[SESSION_COOKIE];
   if (typeof token === 'string' && token) {
     await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
@@ -81,7 +83,6 @@ authRouter.post('/change-password', authenticate, sensitiveLimiter, async (req, 
     where: { id: user.id },
     data: { passwordHash: await hashPassword(input.newPassword), mustChangePassword: false },
   });
-  // Invalidate all other sessions after a password change.
   await revokeUserSessions(user.id, actor.sessionId);
   await audit(prisma, actor, { action: 'auth.password_changed', entityType: 'User', entityId: user.id });
   res.json({ data: { ok: true } });

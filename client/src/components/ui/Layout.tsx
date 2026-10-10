@@ -1,7 +1,16 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { EMPTY } from '../../lib/format';
+
+export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
+  return (
+    <span className={cn('flex shrink-0 items-center justify-center rounded-md bg-marigold-400 text-brand-950', size === 'lg' ? 'size-8' : 'size-7')}>
+      <TrendingUp className={size === 'lg' ? 'size-5' : 'size-[18px]'} strokeWidth={2.5} aria-hidden />
+    </span>
+  );
+}
 
 export function PageHeader({
   title,
@@ -26,10 +35,10 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+            <h1 className="text-[1.65rem] leading-tight font-semibold tracking-tight text-slate-900">{title}</h1>
             {badge}
           </div>
-          {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+          {description && <p className="mt-1.5 max-w-3xl text-sm text-slate-600">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -48,10 +57,10 @@ export function Card({ title, description, actions, children, className, bodyCla
   return (
     <section className={cn('card', className)}>
       {(title || actions) && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-3">
           <div>
-            {title && <h2 className="text-sm font-semibold text-slate-900">{title}</h2>}
-            {description && <p className="text-xs text-slate-500">{description}</p>}
+            {title && <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>}
+            {description && <p className="mt-0.5 text-xs text-slate-500">{description}</p>}
           </div>
           {actions}
         </div>
@@ -75,34 +84,30 @@ export function StatCard({
   tone?: 'brand' | 'green' | 'amber' | 'red' | 'slate' | 'teal';
 }) {
   const tones = {
-    brand: 'bg-brand-50 text-brand-600',
-    green: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-    red: 'bg-rose-50 text-rose-600',
-    slate: 'bg-slate-100 text-slate-600',
-    teal: 'bg-teal-50 text-teal-600',
+    brand: 'border-l-brand-600 text-brand-600',
+    green: 'border-l-emerald-600 text-emerald-700',
+    amber: 'border-l-marigold-400 text-marigold-500',
+    red: 'border-l-rose-600 text-rose-700',
+    slate: 'border-l-slate-400 text-slate-500',
+    teal: 'border-l-teal-600 text-teal-700',
   };
   return (
-    <div className="card flex items-start gap-4 p-5">
-      {Icon && (
-        <div className={cn('rounded-lg p-2.5', tones[tone])}>
-          <Icon className="size-5" aria-hidden />
-        </div>
-      )}
-      <div className="min-w-0">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="tabular mt-1 truncate text-2xl font-semibold text-slate-900">{value}</p>
-        {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
-      </div>
+    <div className={cn('card min-w-0 border-l-[3px] px-5 py-4', tones[tone])}>
+      <p className="flex items-center gap-2 text-sm text-slate-600">
+        {Icon && <Icon className="size-4 shrink-0" aria-hidden />}
+        <span className="truncate">{label}</span>
+      </p>
+      <p className="tabular mt-2 truncate text-[1.75rem] leading-none font-semibold tracking-tight text-slate-900">{value}</p>
+      {sub && <p className="mt-2 text-xs text-slate-500">{sub}</p>}
     </div>
   );
 }
 
 export function ProgressBar({ value, className, label }: { value: number; className?: string; label?: string }) {
   const pct = Math.max(0, Math.min(100, value));
-  const color = value >= 100 ? 'bg-emerald-500' : value >= 60 ? 'bg-brand-500' : value >= 30 ? 'bg-amber-500' : 'bg-rose-500';
+  const color = value >= 100 ? 'bg-emerald-600' : value >= 60 ? 'bg-brand-500' : value >= 30 ? 'bg-marigold-400' : 'bg-rose-500';
   return (
-    <div className={cn('h-2 w-full overflow-hidden rounded-full bg-slate-100', className)} role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+    <div className={cn('h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70', className)} role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
       <div className={cn('h-full rounded-full transition-all', color)} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -114,15 +119,14 @@ export function DescriptionList({ items, columns = 2 }: { items: { label: string
     <dl className={cn('grid grid-cols-1 gap-x-6 gap-y-4', cols[columns])}>
       {items.map((i) => (
         <div key={i.label} className="min-w-0">
-          <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase">{i.label}</dt>
-          <dd className="mt-1 text-sm break-words text-slate-900">{i.value ?? '—'}</dd>
+          <dt className="text-xs text-slate-500">{i.label}</dt>
+          <dd className="mt-1 text-sm break-words text-slate-900">{i.value ?? EMPTY}</dd>
         </div>
       ))}
     </dl>
   );
 }
 
-/** Debounced search box. */
 export function SearchInput({ value, onChange, placeholder = 'Search…', className }: { value: string; onChange: (v: string) => void; placeholder?: string; className?: string }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
@@ -140,7 +144,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search…', classN
         onChange={(e) => setText(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-10 w-full rounded-lg border border-slate-300 bg-white pr-3 pl-9 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
+        className="h-9 w-full rounded-md border border-slate-300 bg-white pr-3 pl-9 text-sm placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 focus:outline-none"
       />
     </div>
   );
@@ -158,7 +162,7 @@ export function FilterSelect({ label, value, onChange, options, allLabel = 'All'
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-10 rounded-lg border border-slate-300 bg-white px-3 pr-8 text-sm shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
+      className="h-9 rounded-md border border-slate-300 bg-white px-3 pr-8 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 focus:outline-none"
     >
       <option value="">{label}: {allLabel}</option>
       {options.map((o) => (
@@ -183,7 +187,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { valu
           )}
         >
           {t.label}
-          {t.count !== undefined && <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-xs text-slate-600">{t.count}</span>}
+          {t.count !== undefined && <span className="tabular ml-1.5 rounded bg-slate-100 px-1.5 text-xs text-slate-600">{t.count}</span>}
         </button>
       ))}
     </div>
@@ -191,5 +195,5 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { valu
 }
 
 export function Toolbar({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-2 border-b border-slate-100 p-4 sm:flex-row sm:flex-wrap sm:items-center">{children}</div>;
+  return <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">{children}</div>;
 }

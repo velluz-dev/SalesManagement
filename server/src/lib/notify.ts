@@ -6,7 +6,6 @@ export interface NotificationInput {
   title: string;
   message: string;
   link?: string;
-  /** When set, a user receives at most one notification with this key. */
   dedupeKey?: string;
 }
 
@@ -19,7 +18,6 @@ export async function notify(db: Db, userIds: string[], n: NotificationInput) {
   });
 }
 
-/** Active users holding the given permission (optionally restricted to a role). */
 export async function usersWithPermission(db: Db, permission: string, roleId?: string) {
   const users = await db.user.findMany({
     where: {

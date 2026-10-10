@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { APPROVAL_STATUSES } from '@crm/shared';
+import { APPROVAL_STATUSES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -23,7 +23,6 @@ export const decisionSchema = z
     path: ['comment'],
   });
 
-/** Requests the actor is (or would be) allowed to decide: assigned to them, or pooled to one of their roles. */
 function assignedWhere(actor: Actor): Prisma.ApprovalRequestWhereInput {
   return {
     OR: [
@@ -50,7 +49,6 @@ const include = {
 
 type RequestRow = Prisma.ApprovalRequestGetPayload<{ include: typeof include }>;
 
-/** Single source of truth for "may this actor decide this request?" – used by list, detail and decide. */
 export function decisionBlocker(actor: Actor, r: Pick<RequestRow, 'status' | 'assignedToId' | 'requestedById' | 'approverRole'> & { quotation: { ownerId: string; status: string } }, allowSelf: boolean): string | null {
   if (!actor.permissions.has('approval.decide')) return 'You do not have approval authority';
   if (r.status !== 'PENDING') return 'This request has already been decided';
@@ -96,7 +94,6 @@ export async function getApproval(actor: Actor, id: string) {
 
 export async function decide(actor: Actor, id: string, input: z.infer<typeof decisionSchema>) {
   await prisma.$transaction(async (tx) => {
-    // Lock the request row to serialize concurrent decisions.
     await tx.$queryRaw`SELECT id FROM "ApprovalRequest" WHERE id = ${id}::uuid FOR UPDATE`;
     const r = await tx.approvalRequest.findUnique({ where: { id }, include });
     if (!r) throw notFound('Approval request');

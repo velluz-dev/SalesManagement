@@ -13,7 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, Textarea } from '../../components/ui/Form';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
-import { money } from '../../lib/format';
+import { EMPTY, money } from '../../lib/format';
 import type { CustomerCredit, UserRef } from '../../lib/types';
 
 interface CreditRow {
@@ -43,7 +43,7 @@ function CreditForm({ row, onClose }: { row: CreditRow; onClose: () => void }) {
     setError(null);
     if (!/^\d{1,12}(\.\d{1,2})?$/.test(v.creditLimit)) return setError('Enter a valid credit limit');
     const days = Number(v.paymentTermsDays);
-    if (!Number.isInteger(days) || days < 0 || days > 365) return setError('Payment terms must be 0–365 days');
+    if (!Number.isInteger(days) || days < 0 || days > 365) return setError('Payment terms must be between 0 and 365 days');
     try {
       await save.mutateAsync({ creditLimit: v.creditLimit, paymentTermsDays: days, onHold: v.onHold, notes: v.notes || null });
       onClose();
@@ -55,7 +55,7 @@ function CreditForm({ row, onClose }: { row: CreditRow; onClose: () => void }) {
     <Modal
       open
       onClose={onClose}
-      title={`Credit terms · ${row.name}`}
+      title={`Credit terms for ${row.name}`}
       description={`Current exposure ${money(row.exposure)}`}
       footer={
         <>
@@ -93,7 +93,7 @@ export default function CreditPage() {
         </div>
       ),
     },
-    { key: 'limit', header: 'Limit', align: 'right', cell: (r) => <span className="tabular">{r.credit ? money(r.credit.creditLimit) : '—'}</span> },
+    { key: 'limit', header: 'Limit', align: 'right', cell: (r) => <span className="tabular">{r.credit ? money(r.credit.creditLimit) : EMPTY}</span> },
     { key: 'exposure', header: 'Exposure', align: 'right', cell: (r) => <span className="tabular font-medium">{money(r.exposure)}</span> },
     { key: 'overdue', header: 'Overdue', align: 'right', cell: (r) => <span className={`tabular ${Number(r.overdue) > 0 ? 'font-medium text-rose-600' : ''}`}>{money(r.overdue)}</span>, hideOnMobile: true },
     {

@@ -2,14 +2,15 @@ import { useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { enumLabel } from '@crm/shared';
+import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { Button } from '../../components/ui/Button';
-import { Field, FormError, Input } from '../../components/ui/Form';
+import { Field, FormError, PasswordInput } from '../../components/ui/Form';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { useToast } from '../../components/ui/Toast';
 import { api, ApiError, errorMessage } from '../../lib/api';
 import { useState } from 'react';
+import { EMPTY } from '../../lib/format';
 
 const schema = z
   .object({
@@ -59,9 +60,10 @@ export function ProfilePage() {
           <DescriptionList
             items={[
               { label: 'Name', value: me.user.name },
+              { label: 'Username', value: me.user.username },
               { label: 'Email', value: me.user.email },
-              { label: 'Roles', value: me.roles.map(enumLabel).join(', ') || '—' },
-              { label: 'Team', value: me.user.team?.name ?? '—' },
+              { label: 'Roles', value: me.roles.map(enumLabel).join(', ') || EMPTY },
+              { label: 'Team', value: me.user.team?.name ?? EMPTY },
             ]}
           />
         </Card>
@@ -69,13 +71,13 @@ export function ProfilePage() {
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-sm space-y-4" noValidate>
             <FormError message={error} />
             <Field label="Current password" error={formState.errors.currentPassword?.message} required>
-              <Input type="password" autoComplete="current-password" {...register('currentPassword')} />
+              <PasswordInput autoComplete="current-password" {...register('currentPassword')} />
             </Field>
             <Field label="New password" error={formState.errors.newPassword?.message} required>
-              <Input type="password" autoComplete="new-password" {...register('newPassword')} />
+              <PasswordInput autoComplete="new-password" {...register('newPassword')} />
             </Field>
             <Field label="Confirm new password" error={formState.errors.confirm?.message} required>
-              <Input type="password" autoComplete="new-password" {...register('confirm')} />
+              <PasswordInput autoComplete="new-password" {...register('confirm')} />
             </Field>
             <Button type="submit" loading={formState.isSubmitting}>Update password</Button>
           </form>

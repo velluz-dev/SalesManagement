@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Pencil, Plus } from 'lucide-react';
-import { OPPORTUNITY_STAGES, enumLabel } from '@crm/shared';
+import { OPPORTUNITY_STAGES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button, ButtonLink } from '../../components/ui/Button';
@@ -11,7 +11,7 @@ import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
-import { date, dateTime, money } from '../../lib/format';
+import { EMPTY, date, dateTime, money } from '../../lib/format';
 import type { Opportunity } from '../../lib/types';
 import { OpportunityFormModal } from './OpportunityForm';
 import { ActivityPanel } from '../activities/ActivityPanel';
@@ -36,7 +36,7 @@ export default function OpportunityDetailPage() {
         back={{ to: '/opportunities', label: 'Pipeline' }}
         title={o.name}
         badge={<StatusBadge status={o.stage} />}
-        description={<><Link to={`/customers/${o.customer.id}`} className="hover:underline">{o.customer.name}</Link> · Owner: {o.owner.name}</>}
+        description={<><Link to={`/customers/${o.customer.id}`} className="hover:underline">{o.customer.name}</Link>, owned by {o.owner.name}</>}
         actions={
           <>
             {can('opportunity.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>Edit</Button>}
@@ -77,8 +77,8 @@ export default function OpportunityDetailPage() {
                 { label: 'Probability', value: `${o.probability}%` },
                 { label: 'Weighted value', value: money((Number(o.amount) * o.probability) / 100) },
                 { label: 'Expected close', value: date(o.expectedCloseDate) },
-                { label: 'Closed at', value: o.closedAt ? dateTime(o.closedAt) : '—' },
-                { label: 'Source lead', value: o.lead ? <Link className="text-brand-600 hover:underline" to={`/leads/${o.lead.id}`}>{o.lead.title}</Link> : '—' },
+                { label: 'Closed at', value: o.closedAt ? dateTime(o.closedAt) : EMPTY },
+                { label: 'Source lead', value: o.lead ? <Link className="text-brand-600 hover:underline" to={`/leads/${o.lead.id}`}>{o.lead.title}</Link> : EMPTY },
               ]}
             />
             {o.notes && <p className="mt-5 border-t border-slate-100 pt-4 text-sm whitespace-pre-wrap text-slate-700">{o.notes}</p>}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DEFAULT_ROLE_PERMISSIONS } from '@crm/shared';
+import { DEFAULT_ROLE_PERMISSIONS } from '@shared';
 import { NAVIGATION } from '../components/layout/navigation';
 import { StatusBadge, InvoiceStatusBadge } from '../components/ui/Badge';
 

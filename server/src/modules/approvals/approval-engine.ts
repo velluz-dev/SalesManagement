@@ -3,10 +3,6 @@ import type { Db } from '../../lib/prisma';
 import { unprocessable } from '../../lib/errors';
 import { getSetting } from '../../lib/settings';
 
-/**
- * Picks the approval rule for an amount: active rules where minAmount ≤ amount < maxAmount (null = ∞),
- * highest priority first, then the most specific (highest minAmount). Pure function – unit tested.
- */
 export function selectRule<R extends Pick<ApprovalRule, 'minAmount' | 'maxAmount' | 'priority' | 'isActive'>>(
   rules: R[],
   amount: Prisma.Decimal,
@@ -16,7 +12,6 @@ export function selectRule<R extends Pick<ApprovalRule, 'minAmount' | 'maxAmount
     .sort((a, b) => b.priority - a.priority || Number(b.minAmount.sub(a.minAmount)))[0];
 }
 
-/** Whether the actor would be approving their own work. */
 export function isSelfApproval(approverId: string, requestedById: string, ownerId: string) {
   return approverId === requestedById || approverId === ownerId;
 }
@@ -24,13 +19,10 @@ export function isSelfApproval(approverId: string, requestedById: string, ownerI
 export interface ApproverAssignment {
   rule: ApprovalRule;
   approverRole: Role;
-  /** Specific approver, or null when any eligible holder of approverRole may decide. */
   assignedToId: string | null;
-  /** Users who will be notified / can decide. */
   eligibleUserIds: string[];
 }
 
-/** Active users holding `roleId` who have approval.decide and are not excluded. */
 async function eligibleHolders(db: Db, roleId: string, exclude: string[]) {
   const users = await db.user.findMany({
     where: {
@@ -43,10 +35,6 @@ async function eligibleHolders(db: Db, roleId: string, exclude: string[]) {
   return users.map((u) => u.id);
 }
 
-/**
- * Resolves who must approve a quotation, according to configurable rules (docs B1–B3).
- * Throws a 422 when no rule matches or nobody is eligible, so a request is never orphaned.
- */
 export async function resolveApprover(
   db: Db,
   q: { total: Prisma.Decimal; ownerId: string; requestedById: string },
@@ -67,13 +55,11 @@ export async function resolveApprover(
     });
     const managerId = owner?.team?.managerId;
     if (managerId && !exclude.includes(managerId)) {
-      // The manager must currently hold the rule's approver role with approval.decide.
       const holders = await eligibleHolders(db, rule.approverRoleId, []);
       if (holders.includes(managerId)) {
         return { rule, approverRole: rule.approverRole, assignedToId: managerId, eligibleUserIds: [managerId] };
       }
     }
-    // Fallback: no eligible team manager → route to the configured fallback role pool (B2).
     const fallbackCode = await getSetting(db, 'approval.fallbackRoleCode');
     const fallbackRole = await db.role.findUnique({ where: { code: fallbackCode } });
     if (!fallbackRole) throw unprocessable(`Fallback approval role "${fallbackCode}" does not exist`);

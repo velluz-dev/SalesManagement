@@ -7,6 +7,4 @@ export default defineConfig({
   platform: 'node',
   sourcemap: true,
   clean: true,
-  // Bundle the workspace package (TypeScript source); keep real npm deps external.
-  noExternal: ['@crm/shared'],
 });

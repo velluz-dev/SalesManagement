@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
-import type { SettingDefinition } from '@crm/shared';
+import type { SettingDefinition } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction } from '../../hooks/useApi';
 import { api, errorMessage } from '../../lib/api';
@@ -60,7 +60,7 @@ function SettingsForm({ definitions, values, editable }: { definitions: SettingD
               <Field label={d.label} hint={d.description}>
                 {d.type === 'enum' ? (
                   <Select value={String(draft[d.key] ?? '')} disabled={!editable} onChange={(e) => setDraft((x) => ({ ...x, [d.key]: e.target.value }))}>
-                    {d.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                    {d.options.map((o) => <option key={o} value={o}>{d.optionLabels?.[o] ?? o}</option>)}
                   </Select>
                 ) : d.type === 'number' ? (
                   <Input type="number" min={d.min} max={d.max} value={String(draft[d.key] ?? '')} disabled={!editable} onChange={(e) => setDraft((x) => ({ ...x, [d.key]: e.target.value === '' ? '' : Number(e.target.value) }))} />
@@ -149,14 +149,14 @@ export default function SettingsPage() {
         actions={editable && roles.data && <Button size="sm" icon={Plus} onClick={() => setEditingRule('new')}>Add rule</Button>}
         bodyClassName="p-0"
       >
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="table-base w-full min-w-[640px]">
             <thead><tr><th>Rule</th><th>Amount range</th><th>Approver</th><th className="text-center">Priority</th><th>Status</th>{editable && <th />}</tr></thead>
             <tbody>
               {rules.data?.map((r) => (
                 <tr key={r.id}>
                   <td className="font-medium">{r.name}</td>
-                  <td className="tabular">{money(r.minAmount)} – {r.maxAmount ? `< ${money(r.maxAmount)}` : 'no limit'}</td>
+                  <td className="tabular">{money(r.minAmount)} to {r.maxAmount ? `under ${money(r.maxAmount)}` : 'no limit'}</td>
                   <td>{r.approverType === 'TEAM_MANAGER' ? `Team manager (${r.approverRole.name})` : `Any ${r.approverRole.name}`}</td>
                   <td className="text-center">{r.priority}</td>
                   <td>{r.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}</td>
@@ -170,7 +170,7 @@ export default function SettingsPage() {
                   )}
                 </tr>
               ))}
-              {!rules.data?.length && <tr><td colSpan={6} className="py-8 text-center text-slate-500">No rules configured — quotations cannot be submitted until a rule exists.</td></tr>}
+              {!rules.data?.length && <tr><td colSpan={6} className="py-8 text-center text-slate-500">No rules yet. Quotations can't be submitted until you add one.</td></tr>}
             </tbody>
           </table>
         </div>

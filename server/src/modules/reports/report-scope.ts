@@ -1,9 +1,8 @@
-import { resolveScope } from '@crm/shared';
+import { resolveScope } from '../../shared';
 import { Prisma } from '../../lib/prisma';
 import type { AuthContext } from '../../lib/auth-context';
 import { forbidden } from '../../lib/errors';
 
-/** Owner ids covered by the actor's sales-report scope, or null for company-wide. */
 export function reportOwners(actor: AuthContext): string[] | null {
   const scope = resolveScope(actor.permissions, 'report.sales');
   if (!scope) throw forbidden();
@@ -11,13 +10,8 @@ export function reportOwners(actor: AuthContext): string[] | null {
   return scope === 'team' ? actor.teamMemberIds : [actor.user.id];
 }
 
-/** Columns allowed in ownerSql. Prisma.raw inlines text, so this must stay a closed set of code literals. */
 type OwnerColumn = 'ownerId' | 'salespersonId';
 
-/**
- * SQL fragment `AND <column> = ANY(owners)` or nothing for company-wide scope.
- * The column name comes only from the OwnerColumn literal type; owner ids are bound parameters.
- */
 export function ownerSql(owners: string[] | null, column: OwnerColumn) {
   return owners ? Prisma.sql`AND ${Prisma.raw(`"${column}"`)} = ANY(${owners}::uuid[])` : Prisma.empty;
 }
@@ -29,7 +23,6 @@ export function monthsBack(n: number) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - (n - 1), 1));
 }
 
-/** Fills missing months with zero so charts have a continuous axis. */
 export function fillMonths<T extends Record<string, unknown>>(rows: (T & { month: string })[], from: Date, count: number, empty: Omit<T, 'month'>) {
   const map = new Map(rows.map((r) => [r.month, r]));
   return Array.from({ length: count }, (_, i) => {

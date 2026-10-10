@@ -1,0 +1,79 @@
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApprovalAction {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+  REVISED
+}
+
+enum ApproverType {
+  TEAM_MANAGER
+  ROLE
+}
+
+model ApprovalRule {
+  id             String       @id @default(uuid()) @db.Uuid
+  name           String
+  minAmount      Decimal      @db.Decimal(14, 2)
+  maxAmount      Decimal?     @db.Decimal(14, 2)
+  approverType   ApproverType
+  approverRoleId String       @db.Uuid
+  priority       Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  approverRole Role              @relation(fields: [approverRoleId], references: [id], onDelete: Restrict)
+  requests     ApprovalRequest[]
+}
+
+model ApprovalRequest {
+  id               String         @id @default(uuid()) @db.Uuid
+  quotationId      String         @db.Uuid
+  quotationVersion Int
+  amount           Decimal        @db.Decimal(14, 2)
+  requestedById    String         @db.Uuid
+  ruleId           String?        @db.Uuid
+  approverRoleId   String         @db.Uuid
+  assignedToId     String?        @db.Uuid
+  status           ApprovalStatus @default(PENDING)
+  decidedById      String?        @db.Uuid
+  decidedAt        DateTime?
+  decisionComment  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  quotation    Quotation         @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  requestedBy  User              @relation("ApprovalRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  rule         ApprovalRule?     @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  approverRole Role              @relation(fields: [approverRoleId], references: [id], onDelete: Restrict)
+  assignedTo   User?             @relation("ApprovalAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  decidedBy    User?             @relation("ApprovalDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  history      ApprovalHistory[]
+
+  @@index([quotationId])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([approverRoleId])
+}
+
+model ApprovalHistory {
+  id                String         @id @default(uuid()) @db.Uuid
+  approvalRequestId String         @db.Uuid
+  action            ApprovalAction
+  actorId           String         @db.Uuid
+  comment           String?
+  createdAt         DateTime       @default(now())
+
+  approvalRequest ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  actor           User            @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([approvalRequestId])
+}

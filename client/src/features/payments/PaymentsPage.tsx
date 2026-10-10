@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Wallet } from 'lucide-react';
-import { PAYMENT_METHODS, enumLabel } from '@crm/shared';
+import { PAYMENT_METHODS, enumLabel } from '@shared';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
 import { DataTable, Pagination, type Column } from '../../components/ui/DataTable';
 import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { date, money } from '../../lib/format';
+import { EMPTY, date, money } from '../../lib/format';
 import type { Payment } from '../../lib/types';
 
 export default function PaymentsPage() {
@@ -27,7 +27,7 @@ export default function PaymentsPage() {
       ),
     },
     { key: 'method', header: 'Method', cell: (p) => enumLabel(p.method), hideOnMobile: true },
-    { key: 'reference', header: 'Reference', cell: (p) => p.reference ?? '—', hideOnMobile: true },
+    { key: 'reference', header: 'Reference', cell: (p) => p.reference ?? EMPTY, hideOnMobile: true },
     { key: 'recordedBy', header: 'Recorded by', cell: (p) => p.recordedBy.name, hideOnMobile: true },
     {
       key: 'amount',

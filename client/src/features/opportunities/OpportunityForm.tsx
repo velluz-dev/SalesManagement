@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { OPPORTUNITY_STAGES, enumLabel } from '@crm/shared';
+import { OPPORTUNITY_STAGES, enumLabel } from '@shared';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
@@ -19,7 +19,7 @@ const schema = z.object({
   customerId: z.string().min(1, 'Select a customer'),
   stage: z.enum(OPPORTUNITY_STAGES),
   amount: z.string().regex(/^\d{1,12}(\.\d{1,2})?$/, 'Enter an amount, e.g. 25000'),
-  probability: z.coerce.number<string>().int().min(0, '0–100').max(100, '0–100'),
+  probability: z.coerce.number<string>().int().min(0, 'Use 0 to 100').max(100, 'Use 0 to 100'),
   expectedCloseDate: z.string(),
   notes: z.string().max(2000),
   ownerId: z.string(),

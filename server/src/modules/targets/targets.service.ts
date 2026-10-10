@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TARGET_PERIOD_TYPES } from '@crm/shared';
+import { TARGET_PERIOD_TYPES } from '../../shared';
 import { prisma, Prisma, type Db } from '../../lib/prisma';
 import { scopeFor, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
@@ -29,7 +29,7 @@ export const targetSchema = z
     notes: optionalText(1000),
   })
   .refine((v) => !!v.userId !== !!v.teamId, { message: 'Choose either a salesperson or a team', path: ['userId'] })
-  .refine((v) => v.periodType !== 'QUARTER' || v.period <= 4, { message: 'Quarter must be 1–4', path: ['period'] });
+  .refine((v) => v.periodType !== 'QUARTER' || v.period <= 4, { message: 'Quarter must be between 1 and 4', path: ['period'] });
 
 export function targetScopeWhere(actor: Actor): Prisma.SalesTargetWhereInput {
   const scope = scopeFor(actor, 'target');
@@ -38,7 +38,6 @@ export function targetScopeWhere(actor: Actor): Prisma.SalesTargetWhereInput {
   return { userId: actor.user.id };
 }
 
-/** Actual achievement for a set of users in a period, using the configured basis (rule B11). */
 export async function achievedAmount(db: Db, userIds: string[], start: Date, end: Date): Promise<Prisma.Decimal> {
   if (!userIds.length) return new Prisma.Decimal(0);
   const basis = await getSetting(db, 'targets.achievementBasis');
@@ -91,7 +90,6 @@ export async function listTargets(actor: Actor, q: z.infer<typeof listTargetsQue
   return paged(await Promise.all(rows.map((r) => withProgress(prisma, r))), total, q);
 }
 
-/** Target setters may only target their own teams/team members (or anyone with company-wide scope), never themselves. */
 async function assertCanManage(db: Db, actor: Actor, input: { userId?: string | null; teamId?: string | null }) {
   const scope = scopeFor(actor, 'target');
   if (input.userId === actor.user.id) throw forbidden('You cannot set your own sales target');

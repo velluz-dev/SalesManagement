@@ -2,7 +2,6 @@ import type { Db } from './prisma';
 
 const REDACTED_KEYS = new Set(['passwordHash', 'password', 'tokenHash', 'currentPassword', 'newPassword']);
 
-/** Converts Decimals/Dates to JSON primitives and strips secrets. */
 export function toAuditJson(value: unknown): unknown {
   if (value === undefined || value === null) return undefined;
   return JSON.parse(
@@ -18,10 +17,6 @@ export interface AuditEntry {
   after?: unknown;
 }
 
-/**
- * Writes an audit record. Pass the transaction client so the log commits or rolls back
- * together with the change it describes.
- */
 export async function audit(db: Db, actor: { user: { id: string }; ip?: string; userAgent?: string } | null, entry: AuditEntry) {
   await db.auditLog.create({
     data: {

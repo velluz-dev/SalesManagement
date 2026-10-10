@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Contact, Plus } from 'lucide-react';
-import { LEAD_SOURCES, LEAD_STATUSES, enumLabel } from '@crm/shared';
+import { LEAD_SOURCES, LEAD_STATUSES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -30,7 +30,7 @@ export default function LeadsPage() {
       cell: (l) => (
         <div>
           <p className="font-medium text-slate-900">{l.title}</p>
-          <p className="text-xs text-slate-500">{l.contactName}{l.company ? ` · ${l.company}` : ''}</p>
+          <p className="text-xs text-slate-500">{l.contactName}{l.company ? ` at ${l.company}` : ''}</p>
         </div>
       ),
     },

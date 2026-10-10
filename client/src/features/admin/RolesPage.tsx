@@ -74,7 +74,7 @@ export default function RolesPage() {
           </ul>
         </Card>
         <Card
-          title={<span className="flex items-center gap-2">{role.name} {role.isSystem && <Badge dot={false}>System role</Badge>}</span>}
+          title={<span className="flex items-center gap-2">{role.name} {role.isSystem && <Badge>System role</Badge>}</span>}
           description={role.description ?? undefined}
           actions={editable && <Button icon={Save} disabled={!dirty} onClick={() => setConfirm(true)}>Save changes</Button>}
         >
@@ -86,7 +86,7 @@ export default function RolesPage() {
           <div className="space-y-6">
             {catalogue.data?.map((g) => (
               <fieldset key={g.group}>
-                <legend className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">{g.group}</legend>
+                <legend className="mb-2 text-sm font-semibold text-slate-800">{g.group}</legend>
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {g.permissions.map((p) => (
                     <label

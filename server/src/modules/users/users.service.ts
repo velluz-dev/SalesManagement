@@ -3,13 +3,14 @@ import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { hashPassword } from '../../lib/password';
 import { revokeUserSessions } from '../../lib/session';
-import { badRequest, forbidden, notFound, unprocessable } from '../../lib/errors';
+import { badRequest, conflict, forbidden, notFound, unprocessable } from '../../lib/errors';
 import { pageArgs, paged, contains } from '../../lib/pagination';
 import type { CreateUserInput, ListUsersQuery, UpdateUserInput } from './users.schemas';
 
 export const userSelect = {
   id: true,
   email: true,
+  username: true,
   name: true,
   isActive: true,
   mustChangePassword: true,
@@ -27,7 +28,7 @@ export const toUserDto = (u: UserRow) => ({ ...u, roles: u.roles.map((r) => r.ro
 
 export async function listUsers(q: ListUsersQuery) {
   const where: Prisma.UserWhereInput = {
-    ...(q.q ? { OR: [{ name: contains(q.q) }, { email: contains(q.q) }] } : {}),
+    ...(q.q ? { OR: [{ name: contains(q.q) }, { username: contains(q.q) }, { email: contains(q.q) }] } : {}),
     ...(q.isActive !== undefined ? { isActive: q.isActive } : {}),
     ...(q.roleId ? { roles: { some: { roleId: q.roleId } } } : {}),
     ...(q.teamId ? { teamId: q.teamId } : {}),
@@ -45,10 +46,6 @@ export async function getUser(id: string) {
   return toUserDto(u);
 }
 
-/**
- * Ensures at least one active user keeps `role.manage` after a change, so the system can never be
- * locked out of administration.
- */
 async function assertAdminRemains(db: Db) {
   const count = await db.user.count({
     where: {
@@ -57,6 +54,21 @@ async function assertAdminRemains(db: Db) {
     },
   });
   if (count < 1) throw unprocessable('At least one active user must keep role-management permission');
+}
+
+async function assertIdentityAvailable(db: Db, input: { email?: string; username?: string }, exceptId?: string) {
+  const taken = await db.user.findMany({
+    where: {
+      OR: [...(input.email ? [{ email: input.email }] : []), ...(input.username ? [{ username: input.username }] : [])],
+      ...(exceptId ? { id: { not: exceptId } } : {}),
+    },
+    select: { email: true, username: true },
+  });
+  const details = [
+    ...(input.email && taken.some((u) => u.email === input.email) ? [{ path: 'email', message: 'This email is already in use' }] : []),
+    ...(input.username && taken.some((u) => u.username === input.username) ? [{ path: 'username', message: 'This username is already taken' }] : []),
+  ];
+  if (details.length) throw conflict('Email or username is already in use', details);
 }
 
 async function assertRolesExist(db: Db, roleIds: string[]) {
@@ -70,10 +82,12 @@ export async function createUser(actor: Actor, input: CreateUserInput) {
   }
   const passwordHash = await hashPassword(input.password);
   return prisma.$transaction(async (tx) => {
+    await assertIdentityAvailable(tx, input);
     if (input.roleIds.length) await assertRolesExist(tx, input.roleIds);
     const user = await tx.user.create({
       data: {
         email: input.email,
+        username: input.username,
         name: input.name,
         passwordHash,
         teamId: input.teamId ?? null,
@@ -92,11 +106,13 @@ export async function updateUser(actor: Actor, id: string, input: UpdateUserInpu
   return prisma.$transaction(async (tx) => {
     const before = await tx.user.findUnique({ where: { id }, select: userSelect });
     if (!before) throw notFound('User');
+    if (input.email !== undefined || input.username !== undefined) await assertIdentityAvailable(tx, input, id);
     const user = await tx.user.update({
       where: { id },
       data: {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.email !== undefined ? { email: input.email } : {}),
+        ...(input.username !== undefined ? { username: input.username } : {}),
         ...(input.teamId !== undefined ? { teamId: input.teamId } : {}),
       },
       select: userSelect,
@@ -127,7 +143,6 @@ export async function setUserRoles(actor: Actor, id: string, roleIds: string[]) 
       before: { roles: toUserDto(before).roles.map((r) => r.code) },
       after: { roles: after.roles.map((r) => r.code) },
     });
-    // Permission changes take effect on the next request (permissions are resolved per request).
     return after;
   });
 }

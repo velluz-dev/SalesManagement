@@ -9,7 +9,7 @@ import { DataTable, Pagination, type Column } from '../../components/ui/DataTabl
 import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { date } from '../../lib/format';
+import { EMPTY, date } from '../../lib/format';
 import type { Customer } from '../../lib/types';
 import { CustomerFormModal } from './CustomerForm';
 
@@ -28,11 +28,11 @@ export default function CustomersPage() {
       cell: (c) => (
         <div>
           <p className="font-medium text-slate-900">{c.name}</p>
-          <p className="text-xs text-slate-500">{c.email ?? '—'}</p>
+          <p className="text-xs text-slate-500">{c.email ?? EMPTY}</p>
         </div>
       ),
     },
-    { key: 'industry', header: 'Industry', cell: (c) => c.industry ?? '—', hideOnMobile: true },
+    { key: 'industry', header: 'Industry', cell: (c) => c.industry ?? EMPTY, hideOnMobile: true },
     { key: 'owner', header: 'Owner', cell: (c) => c.owner.name },
     { key: 'counts', header: 'Opps / Quotes', cell: (c) => `${c._count?.opportunities ?? 0} / ${c._count?.quotations ?? 0}`, hideOnMobile: true, align: 'center' },
     { key: 'status', header: 'Status', cell: (c) => (c.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>) },

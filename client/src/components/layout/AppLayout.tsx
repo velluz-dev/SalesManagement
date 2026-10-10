@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, ChevronDown, FlaskConical, KeyRound, LogOut, Menu, X } from 'lucide-react';
-import { enumLabel } from '@crm/shared';
+import { Bell, ChevronDown, FlaskConical, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import { enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { NAVIGATION } from './navigation';
 import { cn } from '../../lib/cn';
+import { BrandMark } from '../ui/Layout';
 import { api } from '../../lib/api';
 import { relativeTime } from '../../lib/format';
 import type { Notification } from '../../lib/types';
@@ -13,30 +14,55 @@ import type { Notification } from '../../lib/types';
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5 px-2">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
-        <svg viewBox="0 0 32 32" className="size-5" aria-hidden>
-          <path d="M7 22l6-7 5 4 7-9" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
-      <span className="text-base font-semibold tracking-tight text-white">SalesHub</span>
+      <BrandMark />
+      <span className="text-[17px] font-semibold tracking-tight text-white">SalesHub</span>
     </Link>
+  );
+}
+
+const initialsOf = (name: string) => name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+
+function SidebarAccount() {
+  const { me, logout } = useAuth();
+  const navigate = useNavigate();
+  if (!me) return null;
+  return (
+    <div className="border-t border-white/10 px-3 py-3">
+      <div className="flex items-center gap-3 px-3 py-2">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-marigold-300">{initialsOf(me.user.name)}</span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-white">{me.user.name}</p>
+          <p className="truncate text-xs text-brand-200/70">{me.user.email}</p>
+        </div>
+      </div>
+      <button
+        onClick={async () => {
+          await logout();
+          navigate('/login');
+        }}
+        className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-[7px] text-sm text-brand-100/75 hover:bg-white/[0.04] hover:text-white"
+      >
+        <LogOut className="size-4 shrink-0" aria-hidden />
+        Sign out
+      </button>
+    </div>
   );
 }
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { canAny } = useAuth();
   return (
-    <nav aria-label="Main navigation" className="flex h-full flex-col bg-slate-900">
-      <div className="flex h-16 items-center border-b border-white/10 px-4">
+    <nav aria-label="Main navigation" className="flex h-full flex-col bg-brand-950">
+      <div className="flex h-14 items-center px-4">
         <Logo />
       </div>
-      <div className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+      <div className="flex-1 space-y-5 overflow-y-auto px-3 pt-3 pb-6">
         {NAVIGATION.map((section) => {
           const items = section.items.filter((i) => !i.any.length || canAny(...i.any));
           if (!items.length) return null;
           return (
             <div key={section.title}>
-              <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">{section.title}</p>
+              <p className="mb-1 px-3 text-xs text-brand-300/70">{section.title}</p>
               <ul className="space-y-0.5">
                 {items.map((item) => (
                   <li key={item.to}>
@@ -46,8 +72,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                          isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white',
+                          'flex items-center gap-3 rounded-md px-3 py-[7px] text-sm',
+                          isActive
+                            ? 'bg-white/[0.07] font-medium text-white shadow-[inset_3px_0_0_var(--color-marigold-400)]'
+                            : 'text-brand-100/75 hover:bg-white/[0.04] hover:text-white',
                         )
                       }
                     >
@@ -61,6 +89,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </div>
+      <SidebarAccount />
     </nav>
   );
 }
@@ -104,19 +133,19 @@ function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+        className="relative rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
         aria-expanded={open}
       >
         <Bell className="size-5" />
         {unread > 0 && (
-          <span className="absolute top-1 right-1 flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
+          <span className="tabular absolute top-0.5 right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] leading-4 font-semibold text-white ring-2 ring-white">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_10px_30px_-12px_rgb(24_34_30/0.3)]">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold">Notifications</p>
             {unread > 0 && (
@@ -132,7 +161,7 @@ function NotificationBell() {
             )}
           </div>
           <ul className="max-h-96 overflow-y-auto">
-            {!data?.data.length && <li className="px-4 py-8 text-center text-sm text-slate-500">You're all caught up.</li>}
+            {!data?.data.length && <li className="px-4 py-8 text-center text-sm text-slate-500">No notifications yet.</li>}
             {data?.data.map((n) => (
               <li key={n.id}>
                 <button onClick={() => openItem(n)} className="flex w-full gap-3 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50">
@@ -162,11 +191,10 @@ function UserMenu() {
   const navigate = useNavigate();
   useClickOutside(ref, () => setOpen(false), open);
   if (!me) return null;
-  const initials = me.user.name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-slate-100" aria-expanded={open} aria-haspopup="menu">
-        <span className="flex size-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">{initials}</span>
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-md p-1.5 hover:bg-slate-100" aria-expanded={open} aria-haspopup="menu">
+        <span className="flex size-8 items-center justify-center rounded-full bg-brand-900 text-xs font-semibold text-marigold-300">{initialsOf(me.user.name)}</span>
         <span className="hidden text-left sm:block">
           <span className="block text-sm leading-tight font-medium text-slate-900">{me.user.name}</span>
           <span className="block text-xs leading-tight text-slate-500">{me.roles.map(enumLabel).join(', ')}</span>
@@ -174,7 +202,7 @@ function UserMenu() {
         <ChevronDown className="hidden size-4 text-slate-400 sm:block" />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div role="menu" className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-[0_10px_30px_-12px_rgb(24_34_30/0.3)]">
           <div className="border-b border-slate-100 px-4 py-2.5">
             <p className="truncate text-sm font-medium">{me.user.name}</p>
             <p className="truncate text-xs text-slate-500">{me.user.email}</p>
@@ -199,52 +227,116 @@ function UserMenu() {
   );
 }
 
+const SIDEBAR_KEY = 'saleshub.sidebar';
+
+function readSidebarPref() {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) !== 'closed';
+  } catch {
+    return true;
+  }
+}
+
+function saveSidebarPref(open: boolean) {
+  try {
+    localStorage.setItem(SIDEBAR_KEY, open ? 'open' : 'closed');
+  } catch {
+    return;
+  }
+}
+
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(readSidebarPref);
   const { settings } = useAuth();
   const location = useLocation();
   useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const close = (e: KeyboardEvent) => e.key === 'Escape' && setMobileOpen(false);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', close);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener('keydown', close);
+    };
+  }, [mobileOpen]);
+
+  const toggleDesktop = () => {
+    const next = !desktopOpen;
+    setDesktopOpen(next);
+    saveSidebarPref(next);
+  };
 
   return (
     <div className="min-h-screen">
       <a href="#main" className="sr-only z-50 rounded bg-white px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Skip to content
       </a>
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
+      <aside
+        inert={!desktopOpen}
+        className={cn(
+          'fixed inset-y-0 left-0 z-30 hidden w-64 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:block',
+          !desktopOpen && '-translate-x-full',
+        )}
+      >
         <Sidebar />
       </aside>
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} aria-hidden />
-          <aside className="absolute inset-y-0 left-0 w-72 shadow-xl">
-            <button onClick={() => setMobileOpen(false)} className="absolute top-4 right-3 z-10 rounded-md p-1 text-slate-400 hover:text-white" aria-label="Close menu">
-              <X className="size-5" />
-            </button>
-            <Sidebar onNavigate={() => setMobileOpen(false)} />
-          </aside>
-        </div>
-      )}
 
-      <div className="lg:pl-64">
+      <div inert={!mobileOpen} className={cn('fixed inset-0 z-40 lg:hidden', !mobileOpen && 'pointer-events-none')}>
+        <div
+          className={cn('absolute inset-0 bg-slate-950/45 transition-opacity duration-300', mobileOpen ? 'opacity-100' : 'opacity-0')}
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+        />
+        <aside
+          aria-label="Menu"
+          className={cn(
+            'absolute inset-y-0 left-0 w-72 max-w-[85vw] shadow-xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
+            mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
+        >
+          <button onClick={() => setMobileOpen(false)} className="absolute top-3.5 right-3 z-10 rounded-md p-1 text-brand-200 hover:text-white" aria-label="Close menu">
+            <X className="size-5" />
+          </button>
+          <Sidebar onNavigate={() => setMobileOpen(false)} />
+        </aside>
+      </div>
+
+      <div className={cn('transition-[padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]', desktopOpen && 'lg:pl-64')}>
         {settings?.demoData && (
-          <div className="flex items-center justify-center gap-2 bg-amber-100 px-4 py-1.5 text-center text-xs font-medium text-amber-900">
-            <FlaskConical className="size-3.5" aria-hidden />
-            Demo environment — all records are fictional sample data for development and testing.
+          <div className="flex items-center justify-center gap-2 bg-marigold-300/40 px-4 py-1.5 text-center text-xs font-medium text-slate-800">
+            <FlaskConical className="size-3.5 shrink-0" aria-hidden />
+            Demo environment. Every record here is made up for development and testing.
           </div>
         )}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6">
-          <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden" aria-label="Open menu">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-4 sm:px-6">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="-ml-2 rounded-md p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+          >
             <Menu className="size-5" />
           </button>
-          <p className="hidden truncate text-sm text-slate-500 sm:block">{settings?.['company.name']}</p>
+          <button
+            onClick={toggleDesktop}
+            className="-ml-2 hidden rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:inline-flex"
+            aria-label={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
+            aria-expanded={desktopOpen}
+            title={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
+          >
+            {desktopOpen ? <PanelLeftClose className="size-5" /> : <PanelLeftOpen className="size-5" />}
+          </button>
+          <p className="hidden truncate text-sm font-medium text-slate-700 sm:block">{settings?.['company.name']}</p>
           <div className="ml-auto flex items-center gap-1">
             <NotificationBell />
             <UserMenu />
           </div>
         </header>
-        <main id="main" className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:py-8">
+        <main id="main" className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>

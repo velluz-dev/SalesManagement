@@ -24,7 +24,6 @@ const monthCount = (from: Date, to: Date) =>
 
 const monthStart = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
 
-/** Sales performance per salesperson and per month, limited to the actor's report scope. */
 reportsRouter.get('/sales', requireAnyPermission('report.sales.own', 'report.sales.team', 'report.sales.all'), async (req, res) => {
   const actor = getActor(req);
   const { from, to, toExclusive } = rangeQuery.parse(req.query);
@@ -102,7 +101,6 @@ reportsRouter.get('/sales', requireAnyPermission('report.sales.own', 'report.sal
   });
 });
 
-/** Aging buckets of open invoices by days past due. */
 export async function agingBuckets() {
   const today = startOfTodayUtc();
   const open = await prisma.invoice.findMany({
@@ -118,14 +116,13 @@ export async function agingBuckets() {
   }
   return [
     { bucket: 'Current', amount: buckets.current.toFixed(2) },
-    { bucket: '1–30 days', amount: buckets.d1_30.toFixed(2) },
-    { bucket: '31–60 days', amount: buckets.d31_60.toFixed(2) },
-    { bucket: '61–90 days', amount: buckets.d61_90.toFixed(2) },
+    { bucket: '1 to 30 days', amount: buckets.d1_30.toFixed(2) },
+    { bucket: '31 to 60 days', amount: buckets.d31_60.toFixed(2) },
+    { bucket: '61 to 90 days', amount: buckets.d61_90.toFixed(2) },
     { bucket: '90+ days', amount: buckets.d90_plus.toFixed(2) },
   ];
 }
 
-/** Financial report: invoiced vs collected by month, aging, top debtors, payment methods. */
 reportsRouter.get('/finance', requirePermission('report.finance'), async (req, res) => {
   const { from, to, toExclusive } = rangeQuery.parse(req.query);
   const mFrom = monthStart(from);

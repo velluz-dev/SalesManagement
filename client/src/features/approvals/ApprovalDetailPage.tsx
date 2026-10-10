@@ -11,7 +11,7 @@ import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
-import { date, dateTime, money } from '../../lib/format';
+import { EMPTY, date, dateTime, money } from '../../lib/format';
 import type { ApprovalRequest, Quotation } from '../../lib/types';
 import { ApprovalTimeline } from './ApprovalTimeline';
 
@@ -41,9 +41,9 @@ export default function ApprovalDetailPage() {
     <div>
       <PageHeader
         back={{ to: '/approvals', label: 'Approvals' }}
-        title={`Approval · ${r.quotation?.number} v${r.quotationVersion}`}
+        title={`Approval for ${r.quotation?.number} v${r.quotationVersion}`}
         badge={<StatusBadge status={r.status} />}
-        description={`${r.quotation?.customer.name} · requested by ${r.requestedBy.name} on ${dateTime(r.createdAt)}`}
+        description={`${r.quotation?.customer.name}, requested by ${r.requestedBy.name} on ${dateTime(r.createdAt)}`}
         actions={
           r.canDecide && (
             <>
@@ -66,11 +66,11 @@ export default function ApprovalDetailPage() {
               columns={3}
               items={[
                 { label: 'Amount (at submission)', value: <span className="tabular font-semibold">{money(r.amount, { currency })}</span> },
-                { label: 'Rule', value: r.rule?.name ?? '—' },
+                { label: 'Rule', value: r.rule?.name ?? EMPTY },
                 { label: 'Approver', value: r.assignedTo?.name ?? `Any ${r.approverRole.name}` },
                 { label: 'Quotation owner', value: r.quotation?.owner.name },
-                { label: 'Decided by', value: r.decidedBy?.name ?? '—' },
-                { label: 'Decided at', value: r.decidedAt ? dateTime(r.decidedAt) : '—' },
+                { label: 'Decided by', value: r.decidedBy?.name ?? EMPTY },
+                { label: 'Decided at', value: r.decidedAt ? dateTime(r.decidedAt) : EMPTY },
               ]}
             />
           </Card>
@@ -80,7 +80,7 @@ export default function ApprovalDetailPage() {
               actions={<Link className="text-sm font-medium text-brand-600" to={`/quotations/${q.id}`}>Open quotation</Link>}
               bodyClassName="p-0"
             >
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="table-base w-full min-w-[560px]">
                   <thead>
                     <tr><th>Description</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Disc.</th><th className="text-right">Total</th></tr>
@@ -100,7 +100,7 @@ export default function ApprovalDetailPage() {
               </div>
               <div className="flex flex-wrap justify-between gap-2 px-5 py-3 text-sm text-slate-600">
                 <span>Valid until {date(q.validUntil)}</span>
-                <span className="tabular">Discount −{money(q.discountTotal, { currency })} · Tax {money(q.taxTotal, { currency })} · <strong className="text-slate-900">Total {money(q.total, { currency })}</strong></span>
+                <span className="tabular flex flex-wrap gap-x-4"><span>Discount −{money(q.discountTotal, { currency })}</span><span>Tax {money(q.taxTotal, { currency })}</span><strong className="text-slate-900">Total {money(q.total, { currency })}</strong></span>
               </div>
             </Card>
           )}

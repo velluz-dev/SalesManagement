@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Permission } from '@crm/shared';
+import type { Permission } from '@shared';
 import { api, ApiError, setUnauthorizedHandler } from '../lib/api';
 import { setCurrency } from '../lib/format';
 
@@ -8,6 +8,7 @@ export interface Me {
   user: {
     id: string;
     email: string;
+    username: string;
     name: string;
     teamId: string | null;
     mustChangePassword: boolean;
@@ -32,7 +33,7 @@ interface AuthState {
   loading: boolean;
   can: (p: Permission) => boolean;
   canAny: (...p: Permission[]) => boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<unknown>;
 }
@@ -66,32 +67,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (settingsQuery.data) setCurrency(settingsQuery.data['company.currency']);
   }, [settingsQuery.data]);
 
-  // Any 401 from the API (expired/revoked session) resets auth state → login screen.
-  useEffect(() => {
-    setUnauthorizedHandler(() => {
-      qc.setQueryData(['me'], null);
-      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' });
-    });
-  }, [qc]);
-
   const perms = useMemo(() => new Set<string>(me?.permissions ?? []), [me]);
   const can = useCallback((p: Permission) => perms.has(p), [perms]);
   const canAny = useCallback((...p: Permission[]) => p.some((x) => perms.has(x)), [perms]);
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      await api.post('/auth/login', { email, password });
-      qc.clear();
-      await qc.fetchQuery({ queryKey: ['me'], queryFn: async () => (await api.get<{ data: Me }>('/auth/me')).data });
+  const resetSession = useCallback(
+    (next: Me | null) => {
+      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' });
+      qc.setQueryData(['me'], next);
     },
     [qc],
   );
 
+  useEffect(() => {
+    setUnauthorizedHandler(() => resetSession(null));
+  }, [resetSession]);
+
+  const login = useCallback(
+    async (identifier: string, password: string) => {
+      await api.post('/auth/login', { identifier, password });
+      const { data } = await api.get<{ data: Me }>('/auth/me');
+      resetSession(data);
+    },
+    [resetSession],
+  );
+
   const logout = useCallback(async () => {
     await api.post('/auth/logout').catch(() => undefined);
-    qc.clear();
-    qc.setQueryData(['me'], null);
-  }, [qc]);
+    resetSession(null);
+  }, [resetSession]);
 
   const value: AuthState = {
     me,
@@ -112,7 +116,6 @@ export function useAuth() {
   return ctx;
 }
 
-/** Hides children unless the user holds at least one of the permissions. UI convenience only – the API enforces. */
 export function Can({ any, children, fallback = null }: { any: Permission[]; children: ReactNode; fallback?: ReactNode }) {
   const { canAny } = useAuth();
   return <>{canAny(...any) ? children : fallback}</>;

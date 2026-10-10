@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Pencil, Plus, Trash2, Trophy } from 'lucide-react';
-import { TARGET_PERIOD_TYPES, enumLabel } from '@crm/shared';
+import { TARGET_PERIOD_TYPES, enumLabel } from '@shared';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -143,11 +143,11 @@ export default function TargetsPage() {
       cell: (t) => (
         <div className="flex items-center gap-2">
           <span className="font-medium text-slate-900">{t.user?.name ?? t.team?.name}</span>
-          {t.team && <Badge tone="purple" dot={false}>Team</Badge>}
+          {t.team && <Badge tone="purple">Team</Badge>}
         </div>
       ),
     },
-    { key: 'period', header: 'Period', cell: (t) => <span>{enumLabel(t.periodType)} · {date(t.periodStart)} – {date(t.periodEnd)}</span>, hideOnMobile: true },
+    { key: 'period', header: 'Period', cell: (t) => <span>{enumLabel(t.periodType)}, {date(t.periodStart)} to {date(t.periodEnd)}</span>, hideOnMobile: true },
     { key: 'target', header: 'Target', align: 'right', cell: (t) => <span className="tabular">{money(t.amount)}</span> },
     { key: 'achieved', header: 'Achieved', align: 'right', cell: (t) => <span className="tabular">{money(t.achieved)}</span> },
     {

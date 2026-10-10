@@ -1,5 +1,3 @@
-/** Thin fetch wrapper: same-origin cookies, JSON, and typed errors matching the server's error format. */
-
 export interface ApiErrorDetail {
   path: string;
   message: string;
@@ -14,7 +12,6 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
-  /** Field errors from validation responses, keyed by path. */
   get fieldErrors(): Record<string, string> {
     if (!Array.isArray(this.details)) return {};
     return Object.fromEntries((this.details as ApiErrorDetail[]).filter((d) => d?.path).map((d) => [d.path, d.message]));
