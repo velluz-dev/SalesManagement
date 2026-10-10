@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { money, todayIso } from '../../lib/format';
 import { cn } from '../../lib/cn';
 import type { Contract, Quotation, SalesOrder } from '../../lib/types';
+import { translate } from '../../i18n';
 
 type Mode = 'contract' | 'quotation' | 'manual';
 
@@ -104,13 +105,13 @@ export default function SalesOrderCreatePage() {
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <PageHeader
         back={{ to: '/sales-orders', label: 'Sales orders' }}
-        title="New sales order"
+        title={translate("New sales order")}
         description="Orders start as pending. Confirm them to run the credit check, then mark them delivered and invoice them."
-        actions={<Button type="submit" icon={Save} loading={formState.isSubmitting}>Create order</Button>}
+        actions={<Button type="submit" icon={Save} loading={formState.isSubmitting}>{translate("Create order")}</Button>}
       />
       <div className="space-y-6">
         <FormError message={error} />
-        <div className={cn('grid grid-cols-1 gap-3', modes.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')} role="radiogroup" aria-label="Order source">
+        <div className={cn('grid grid-cols-1 gap-3', modes.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')} role="radiogroup" aria-label={translate("Order source")}>
           {modes.map(([value, Icon, title, desc]) => (
             <button
               key={value}
@@ -130,7 +131,7 @@ export default function SalesOrderCreatePage() {
         </div>
 
         {mode === 'contract' && (
-          <Card title="Contract">
+          <Card title={translate("Contract")}>
             <Field label="Active contract" required hint={contracts.data && !contracts.data.length ? 'There are no active contracts you can order against.' : 'The order copies the contract’s quotation lines; you can adjust quantities while it is pending.'}>
               <Select {...register('contractId')} disabled={contracts.isLoading}>
                 <option value="">{contracts.isLoading ? 'Loading…' : 'Select a contract…'}</option>
@@ -139,11 +140,11 @@ export default function SalesOrderCreatePage() {
                 ))}
               </Select>
             </Field>
-            {contract && <p className="mt-3 text-sm text-slate-600">Customer <strong>{contract.customer.name}</strong>, contract value <strong>{money(contract.value, { currency: contract.currency })}</strong>.</p>}
+            {contract && <p className="mt-3 text-sm text-slate-600">{translate("Customer")} <strong>{contract.customer.name}</strong>, contract value <strong>{money(contract.value, { currency: contract.currency })}</strong>.</p>}
           </Card>
         )}
         {mode === 'quotation' && (
-          <Card title="Accepted quotation">
+          <Card title={translate("Accepted quotation")}>
             <Field label="Quotation" required hint={quotes.data && !quotes.data.length ? 'There are no accepted quotations you can order.' : undefined}>
               <Select {...register('quotationId')} disabled={quotes.isLoading}>
                 <option value="">{quotes.isLoading ? 'Loading…' : 'Select a quotation…'}</option>
@@ -152,20 +153,20 @@ export default function SalesOrderCreatePage() {
                 ))}
               </Select>
             </Field>
-            {quote && <p className="mt-3 text-sm text-slate-600">Customer <strong>{quote.customer.name}</strong>, total <strong>{money(quote.total, { currency: quote.currency })}</strong>.</p>}
+            {quote && <p className="mt-3 text-sm text-slate-600">{translate("Customer")} <strong>{quote.customer.name}</strong>, total <strong>{money(quote.total, { currency: quote.currency })}</strong>.</p>}
           </Card>
         )}
         {mode === 'manual' && (
           <>
-            <Card title="Customer">
+            <Card title={translate("Customer")}>
               <Field label="Customer" required error={formState.errors.customerId?.message} className="max-w-md"><CustomerSelect {...register('customerId')} /></Field>
             </Card>
-            <Card title="Line items">
+            <Card title={translate("Line items")}>
               <LineItemsEditor setValue={setValue as never} control={control as never} register={register as never} errors={formState.errors as never} currency={settings?.['company.currency']} defaultTaxRate={String(settings?.['quotation.defaultTaxRate'] ?? 0)} />
             </Card>
           </>
         )}
-        <Card title="Delivery">
+        <Card title={translate("Delivery")}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field label="Order date"><Input type="date" {...register('orderDate')} /></Field>
             <Field label="Requested delivery date"><Input type="date" {...register('deliveryDate')} /></Field>

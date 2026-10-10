@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Search, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { EMPTY } from '../../lib/format';
+import { tNode, translate } from '../../i18n';
 
 export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
@@ -34,16 +35,16 @@ export function PageHeader({
     <div className="mb-6">
       {back && (
         <Link to={back.to} className="mb-2 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-          <ArrowLeft className="size-4" /> {back.label}
+          <ArrowLeft className="size-4" /> {translate(back.label)}
         </Link>
       )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl leading-tight font-semibold tracking-tight text-slate-900">{title}</h1>
+            <h1 className="text-2xl leading-tight font-semibold tracking-tight text-slate-900">{tNode(title)}</h1>
             {badge}
           </div>
-          {description && <p className="mt-1.5 max-w-3xl text-sm text-slate-600">{description}</p>}
+          {description && <p className="mt-1.5 max-w-3xl text-sm text-slate-600">{tNode(description)}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -64,8 +65,8 @@ export function Card({ title, description, actions, children, className, bodyCla
       {(title || actions) && (
         <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4 pb-3">
           <div>
-            {title && <h2 className="text-[14px] font-semibold text-slate-900">{title}</h2>}
-            {description && <p className="mt-0.5 text-xs text-slate-400">{description}</p>}
+            {title && <h2 className="text-[14px] font-semibold text-slate-900">{tNode(title)}</h2>}
+            {description && <p className="mt-0.5 text-xs text-slate-400">{tNode(description)}</p>}
           </div>
           {actions}
         </div>
@@ -112,7 +113,7 @@ export function StatCard({
         </div>
       )}
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-slate-600">{label}</p>
+        <p className="truncate text-sm font-medium text-slate-600">{translate(label)}</p>
         <p className="tabular mt-1.5 truncate text-2xl leading-tight font-semibold tracking-tight text-slate-900">{value}</p>
         {change ? (
           <p className="mt-1.5 text-xs text-slate-500">
@@ -124,7 +125,7 @@ export function StatCard({
             {change.label}
           </p>
         ) : (
-          sub && <p className="mt-1.5 truncate text-xs text-slate-500">{sub}</p>
+          sub && <p className="mt-1.5 truncate text-xs text-slate-500">{tNode(sub)}</p>
         )}
       </div>
     </div>
@@ -147,7 +148,7 @@ export function DescriptionList({ items, columns = 2 }: { items: { label: string
     <dl className={cn('grid grid-cols-1 gap-x-6 gap-y-4', cols[columns])}>
       {items.map((i) => (
         <div key={i.label} className="min-w-0">
-          <dt className="text-xs text-slate-500">{i.label}</dt>
+          <dt className="text-xs text-slate-500">{translate(i.label)}</dt>
           <dd className="mt-1 text-sm break-words text-slate-900">{i.value ?? EMPTY}</dd>
         </div>
       ))}
@@ -170,8 +171,8 @@ export function SearchInput({ value, onChange, placeholder = 'Search…', classN
         type="search"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
+        placeholder={translate(placeholder)}
+        aria-label={translate(placeholder)}
         className="h-9 w-full rounded-lg border border-slate-300 bg-white pr-3 pl-9 text-sm placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 focus:outline-none"
       />
     </div>
@@ -187,14 +188,14 @@ export function FilterSelect({ label, value, onChange, options, allLabel = 'All'
 }) {
   return (
     <select
-      aria-label={label}
+      aria-label={translate(label)}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 rounded-lg border border-slate-300 bg-white px-3 pr-8 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 focus:outline-none"
     >
-      <option value="">{label}: {allLabel}</option>
+      <option value="">{translate(label)}: {translate(allLabel)}</option>
       {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
+        <option key={o.value} value={o.value}>{translate(o.label)}</option>
       ))}
     </select>
   );
@@ -214,7 +215,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { valu
             value === t.value ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800',
           )}
         >
-          {t.label}
+          {translate(t.label)}
           {t.count !== undefined && <span className="tabular ml-1.5 rounded bg-slate-100 px-1.5 text-xs text-slate-600">{t.count}</span>}
         </button>
       ))}

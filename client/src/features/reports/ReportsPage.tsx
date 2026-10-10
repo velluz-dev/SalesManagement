@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
-import { enumLabel } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
-import { EMPTY, money, monthLabel } from '../../lib/format';
+import { EMPTY, money, monthLabel, todayIso } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, StatCard, Tabs } from '../../components/ui/Layout';
 import { ErrorState } from '../../components/ui/EmptyState';
@@ -46,9 +46,10 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
 }
 
 function defaultRange() {
-  const to = new Date();
-  const from = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth() - 11, 1));
-  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+  const today = todayIso();
+  const [y, m] = today.split('-').map(Number);
+  const from = new Date(Date.UTC(y!, m! - 1 - 11, 1)).toISOString().slice(0, 10);
+  return { from, to: today };
 }
 
 function SalesTab({ range }: { range: { from: string; to: string } }) {
@@ -64,7 +65,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
   const open = data.bySalesperson.reduce((s, r) => s + Number(r.openAmount), 0);
   return (
     <div className="space-y-6">
-      <p className="text-sm text-slate-500">Scope: <strong>{data.scope === 'all' ? 'Company-wide' : data.scope === 'team' ? 'Your team' : 'Your own records'}</strong></p>
+      <p className="text-sm text-slate-500">{translate("Scope:")} <strong>{data.scope === 'all' ? 'Company-wide' : data.scope === 'team' ? 'Your team' : 'Your own records'}</strong></p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Won revenue" value={money(won, { compact: true })} sub={`${wonCount} deals`} />
         <StatCard label="Win rate" value={wonCount + lost ? `${Math.round((wonCount / (wonCount + lost)) * 100)}%` : EMPTY} sub={`${wonCount} won, ${lost} lost`} tone="green" />
@@ -72,24 +73,24 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
         <StatCard label="Quotations issued" value={data.bySalesperson.reduce((s, r) => s + r.quotations, 0)} tone="amber" />
       </div>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card title="Won revenue by month" className="xl:col-span-2">
+        <Card title={translate("Won revenue by month")} className="xl:col-span-2">
           <BarsChart rows={data.monthly} xKey="month" xLabel="Month" xFormat={monthLabel} series={[{ key: 'won', label: 'Won' }]} />
         </Card>
-        <Card title="Pipeline by stage">
+        <Card title={translate("Pipeline by stage")}>
           <HBarsChart rows={data.pipeline} yKey="stage" yLabel="Stage" yFormat={enumLabel} series={{ key: 'amount', label: 'Value' }} />
         </Card>
       </div>
       <Card
-        title="Performance by salesperson"
+        title={translate("Performance by salesperson")}
         bodyClassName="p-0"
-        actions={<Button size="sm" variant="secondary" icon={Download} onClick={() => downloadCsv(`sales-report-${range.from}-${range.to}.csv`, data.bySalesperson)}>Export CSV</Button>}
+        actions={<Button size="sm" variant="secondary" icon={Download} onClick={() => downloadCsv(`sales-report-${range.from}-${range.to}.csv`, data.bySalesperson)}>{translate("Export CSV")}</Button>}
       >
         <div className="relative overflow-x-auto">
           <table className="table-base w-full min-w-[760px]">
             <thead>
               <tr>
-                <th>Salesperson</th><th className="text-right">Won</th><th className="text-right">Deals</th><th className="text-right">Win rate</th>
-                <th className="text-right">Open pipeline</th><th className="text-right">Quotes</th><th className="text-right">Approved</th><th className="text-right">Rejected</th><th className="text-right">Accepted</th>
+                <th>{translate("Salesperson")}</th><th className="text-right">{translate("Won")}</th><th className="text-right">{translate("Deals")}</th><th className="text-right">{translate("Win rate")}</th>
+                <th className="text-right">{translate("Open pipeline")}</th><th className="text-right">{translate("Quotes")}</th><th className="text-right">{translate("Approved")}</th><th className="text-right">{translate("Rejected")}</th><th className="text-right">{translate("Accepted")}</th>
               </tr>
             </thead>
             <tbody>
@@ -106,7 +107,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
                   <td className="tabular text-right">{r.quotationsAccepted}</td>
                 </tr>
               ))}
-              {!data.bySalesperson.length && <tr><td colSpan={9} className="py-8 text-center text-slate-500">No data for this period.</td></tr>}
+              {!data.bySalesperson.length && <tr><td colSpan={9} className="py-8 text-center text-slate-500">{translate("No data for this period.")}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -131,22 +132,22 @@ function FinanceTab({ range }: { range: { from: string; to: string } }) {
         <StatCard label="Outstanding (now)" value={money(t.outstanding, { compact: true })} tone="amber" />
         <StatCard label="Overdue (now)" value={money(t.overdue, { compact: true })} tone="red" />
       </div>
-      <Card title="Invoiced vs collected by month">
+      <Card title={translate("Invoiced vs collected by month")}>
         <BarsChart rows={data.monthly} xKey="month" xLabel="Month" xFormat={monthLabel} series={[{ key: 'invoiced', label: 'Invoiced' }, { key: 'collected', label: 'Collected' }]} height={300} />
       </Card>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card title="Receivables aging"><HBarsChart rows={data.aging} yKey="bucket" yLabel="Days past due" series={{ key: 'amount', label: 'Outstanding' }} /></Card>
-        <Card title="Collections by payment method">
+        <Card title={translate("Receivables aging")}><HBarsChart rows={data.aging} yKey="bucket" yLabel="Days past due" series={{ key: 'amount', label: 'Outstanding' }} /></Card>
+        <Card title={translate("Collections by payment method")}>
           <HBarsChart rows={data.paymentMethods} yKey="method" yLabel="Method" yFormat={enumLabel} series={{ key: 'amount', label: 'Collected' }} />
         </Card>
       </div>
       <Card
-        title="Top outstanding customers"
+        title={translate("Top outstanding customers")}
         bodyClassName="p-0"
-        actions={<Button size="sm" variant="secondary" icon={Download} onClick={() => downloadCsv(`receivables-${range.to}.csv`, data.topDebtors)}>Export CSV</Button>}
+        actions={<Button size="sm" variant="secondary" icon={Download} onClick={() => downloadCsv(`receivables-${range.to}.csv`, data.topDebtors)}>{translate("Export CSV")}</Button>}
       >
         <table className="table-base w-full">
-          <thead><tr><th>Customer</th><th className="text-right">Outstanding</th><th className="text-right">Overdue</th></tr></thead>
+          <thead><tr><th>{translate("Customer")}</th><th className="text-right">{translate("Outstanding")}</th><th className="text-right">{translate("Overdue")}</th></tr></thead>
           <tbody>
             {data.topDebtors.map((d) => (
               <tr key={d.customerId}>
@@ -155,7 +156,7 @@ function FinanceTab({ range }: { range: { from: string; to: string } }) {
                 <td className={`tabular text-right ${Number(d.overdue) > 0 ? 'font-medium text-rose-600' : ''}`}>{money(d.overdue)}</td>
               </tr>
             ))}
-            {!data.topDebtors.length && <tr><td colSpan={3} className="py-8 text-center text-slate-500">No outstanding receivables.</td></tr>}
+            {!data.topDebtors.length && <tr><td colSpan={3} className="py-8 text-center text-slate-500">{translate("No outstanding receivables.")}</td></tr>}
           </tbody>
         </table>
       </Card>
@@ -177,12 +178,12 @@ export default function ReportsPage() {
   return (
     <div>
       <PageHeader
-        title="Reports"
+        title={translate("Reports")}
         description="Performance and financial reporting for your authorized scope."
         actions={
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <label className="flex items-center gap-1.5 text-slate-600">From <input type="date" className="h-10 rounded-lg border border-slate-300 bg-white px-2" value={range.from} max={range.to} onChange={(e) => e.target.value && setRange((r) => ({ ...r, from: e.target.value }))} /></label>
-            <label className="flex items-center gap-1.5 text-slate-600">To <input type="date" className="h-10 rounded-lg border border-slate-300 bg-white px-2" value={range.to} min={range.from} onChange={(e) => e.target.value && setRange((r) => ({ ...r, to: e.target.value }))} /></label>
+            <label className="flex items-center gap-1.5 text-slate-600">{translate("From")} <input type="date" className="h-10 rounded-lg border border-slate-300 bg-white px-2" value={range.from} max={range.to} onChange={(e) => e.target.value && setRange((r) => ({ ...r, from: e.target.value }))} /></label>
+            <label className="flex items-center gap-1.5 text-slate-600">{translate("To")} <input type="date" className="h-10 rounded-lg border border-slate-300 bg-white px-2" value={range.to} min={range.from} onChange={(e) => e.target.value && setRange((r) => ({ ...r, to: e.target.value }))} /></label>
           </div>
         }
       />

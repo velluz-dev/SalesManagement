@@ -16,6 +16,7 @@ import { api, errorMessage } from '../../lib/api';
 import { applyServerErrors } from '../../lib/forms';
 import { EMPTY, relativeTime } from '../../lib/format';
 import type { AdminUser, Role, Team } from '../../lib/types';
+import { translate } from '../../i18n';
 
 const PASSWORD_RULE = (p: string) => p.length >= 10 && /[A-Za-z]/.test(p) && /\d/.test(p);
 const USERNAME_RULE = /^[a-z0-9]+(?:[._][a-z0-9]+)*$/;
@@ -77,7 +78,7 @@ function UserForm({ user, onClose }: { user?: AdminUser; onClose: () => void }) 
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{user ? 'Save' : 'Create user'}</Button>
         </>
       }
@@ -98,7 +99,7 @@ function UserForm({ user, onClose }: { user?: AdminUser; onClose: () => void }) 
         )}
         <Field label="Team">
           <Select {...register('teamId')}>
-            <option value="">No team</option>
+            <option value="">{translate("No team")}</option>
             {teams.data?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </Select>
         </Field>
@@ -107,7 +108,7 @@ function UserForm({ user, onClose }: { user?: AdminUser; onClose: () => void }) 
             <Checkbox className="sm:col-span-2" label="Require password change at first sign-in" {...register('mustChangePassword')} />
             {can('role.assign') && (
               <fieldset className="sm:col-span-2">
-                <legend className="mb-2 text-sm font-medium text-slate-700">Roles</legend>
+                <legend className="mb-2 text-sm font-medium text-slate-700">{translate("Roles")}</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {roles.data?.map((r) => (
                     <Checkbox
@@ -140,7 +141,7 @@ function RolesForm({ user, onClose }: { user: AdminUser; onClose: () => void }) 
       description="Changes take effect on the user's next request. Administrators do not gain business approval authority from the admin role."
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button
             loading={save.isPending}
             onClick={async () => {
@@ -153,7 +154,7 @@ function RolesForm({ user, onClose }: { user: AdminUser; onClose: () => void }) 
               }
             }}
           >
-            Save roles
+            {translate("Save roles")}
           </Button>
         </>
       }
@@ -187,7 +188,7 @@ function ResetPasswordForm({ user, onClose }: { user: AdminUser; onClose: () => 
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button
             loading={reset.isPending}
             onClick={async () => {
@@ -200,7 +201,7 @@ function ResetPasswordForm({ user, onClose }: { user: AdminUser; onClose: () => 
               }
             }}
           >
-            Reset password
+            {translate("Reset password")}
           </Button>
         </>
       }
@@ -262,27 +263,27 @@ export default function UsersPage() {
         </div>
       ),
     },
-    { key: 'roles', header: 'Roles', cell: (u) => <div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <Badge key={r.id} tone="indigo">{r.name}</Badge>) : <span className="text-xs text-slate-400">No roles</span>}</div> },
+    { key: 'roles', header: 'Roles', cell: (u) => <div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <Badge key={r.id} tone="indigo">{r.name}</Badge>) : <span className="text-xs text-slate-400">{translate("No roles")}</span>}</div> },
     { key: 'team', header: 'Team', cell: (u) => u.team?.name ?? EMPTY, hideOnMobile: true },
-    { key: 'status', header: 'Status', cell: (u) => (u.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>) },
+    { key: 'status', header: 'Status', cell: (u) => (u.isActive ? <Badge tone="green">{translate("Active")}</Badge> : <Badge>{translate("Inactive")}</Badge>) },
     { key: 'lastLoginAt', header: 'Last sign-in', sortKey: 'lastLoginAt', cell: (u) => (u.lastLoginAt ? relativeTime(u.lastLoginAt) : 'Never'), hideOnMobile: true },
-    { key: 'actions', header: <span className="sr-only">Actions</span>, align: 'right', cell: (u) => <RowMenu user={u} onAction={(kind) => setModal({ kind, user: u })} /> },
+    { key: 'actions', header: <span className="sr-only">{translate("Actions")}</span>, align: 'right', cell: (u) => <RowMenu user={u} onAction={(kind) => setModal({ kind, user: u })} /> },
   ];
 
   return (
     <div>
       <PageHeader
-        title="Users"
+        title={translate("Users")}
         description="Manage accounts, team membership and role assignments."
-        actions={can('user.create') && <Button icon={Plus} onClick={() => setModal({ kind: 'new' })}>New user</Button>}
+        actions={can('user.create') && <Button icon={Plus} onClick={() => setModal({ kind: 'new' })}>{translate("New user")}</Button>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search name, username or email…" className="sm:w-72" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search name, username or email…")} className="sm:w-72" />
           <FilterSelect label="Status" value={lp.filters.isActive ?? ''} onChange={(v) => lp.setFilter('isActive', v)} options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]} />
           <FilterSelect label="Role" value={lp.filters.roleId ?? ''} onChange={(v) => lp.setFilter('roleId', v)} options={(roles.data ?? []).map((r) => ({ value: r.id, label: r.name }))} />
         </Toolbar>
-        <DataTable caption="Users" columns={columns} rows={data?.data} loading={isLoading || isFetching} error={error} onRetry={refetch} sort={lp} onSort={lp.setSort} empty={<EmptyState icon={UserCog} title="No users found" />} />
+        <DataTable caption="Users" columns={columns} rows={data?.data} loading={isLoading || isFetching} error={error} onRetry={refetch} sort={lp} onSort={lp.setSort} empty={<EmptyState icon={UserCog} title={translate("No users found")} />} />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>
       {(modal?.kind === 'new' || modal?.kind === 'edit') && <UserForm user={modal.user} onClose={() => setModal(null)} />}

@@ -3,10 +3,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { LEAD_SOURCES, LEAD_STATUSES, enumLabel } from '@shared';
+import { LEAD_SOURCES, LEAD_STATUSES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
+import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
 import { UserSelect } from '../../components/ui/Pickers';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../auth/AuthProvider';
@@ -81,14 +82,14 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: { open: boolean;
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{lead ? 'Save changes' : 'Create lead'}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <div className="sm:col-span-2"><FormError message={error} /></div>
-        <Field label="Title" error={formState.errors.title?.message} required className="sm:col-span-2"><Input {...register('title')} placeholder="e.g. Warehouse automation project" /></Field>
+        <Field label="Title" error={formState.errors.title?.message} required className="sm:col-span-2"><Input {...register('title')} placeholder={translate("e.g. Warehouse automation project")} /></Field>
         <Field label="Contact name" error={formState.errors.contactName?.message} required><Input {...register('contactName')} /></Field>
         <Field label="Company" error={formState.errors.company?.message}><Input {...register('company')} /></Field>
         <Field label="Email" error={formState.errors.email?.message}><Input type="email" {...register('email')} /></Field>
@@ -101,7 +102,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: { open: boolean;
             {LEAD_STATUSES.filter((s) => s !== 'CONVERTED').map((s) => <option key={s} value={s}>{enumLabel(s)}</option>)}
           </Select>
         </Field>
-        <Field label="Estimated value" error={formState.errors.estimatedValue?.message}><Input inputMode="decimal" {...register('estimatedValue')} /></Field>
+        <Field label="Estimated value" error={formState.errors.estimatedValue?.message}><NumberInput decimals={2} {...register('estimatedValue')} /></Field>
         {can('lead.assign') && (
           <Field label="Owner" error={formState.errors.ownerId?.message}><UserSelect {...register('ownerId')} /></Field>
         )}

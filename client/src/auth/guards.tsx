@@ -5,6 +5,7 @@ import { useAuth } from './AuthProvider';
 import { FullPageSpinner } from '../components/ui/Spinner';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ShieldAlert } from 'lucide-react';
+import { translate } from '../i18n';
 
 export function RequireAuth() {
   const { me, loading } = useAuth();
@@ -23,7 +24,7 @@ export function RequirePermission({ any, children }: { any: Permission[]; childr
     return (
       <EmptyState
         icon={ShieldAlert}
-        title="Access restricted"
+        title={translate("Access restricted")}
         description="Your role does not include access to this page. Contact your administrator if you believe this is a mistake."
       />
     );

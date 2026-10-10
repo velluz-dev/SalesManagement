@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { FileText, Plus } from 'lucide-react';
-import { QUOTATION_STATUSES, enumLabel } from '@shared';
+import { QUOTATION_STATUSES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -41,13 +42,13 @@ export default function QuotationsPage() {
   return (
     <div>
       <PageHeader
-        title="Quotations"
+        title={translate("Quotations")}
         description="Create, submit for approval and track quotations."
-        actions={can('quotation.create') && <ButtonLink to="/quotations/new" icon={Plus}>New quotation</ButtonLink>}
+        actions={can('quotation.create') && <ButtonLink to="/quotations/new" icon={Plus}>{translate("New quotation")}</ButtonLink>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search number or customer…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search number or customer…")} className="sm:w-80" />
           <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={enumOptions(QUOTATION_STATUSES, enumLabel)} />
         </Toolbar>
         <DataTable
@@ -60,7 +61,7 @@ export default function QuotationsPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={(q) => navigate(`/quotations/${q.id}`)}
-          empty={<EmptyState icon={FileText} title="No quotations found" />}
+          empty={<EmptyState icon={FileText} title={translate("No quotations found")} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

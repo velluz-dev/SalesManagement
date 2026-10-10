@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { enumLabel } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { Link, useParams } from 'react-router-dom';
 import { Pencil, Plus } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
@@ -14,7 +14,7 @@ import type { Customer, Invoice, Opportunity, Quotation } from '../../lib/types'
 import { CustomerFormModal } from './CustomerForm';
 
 function MiniList<T extends { id: string }>({ rows, empty, render }: { rows?: T[]; empty: string; render: (r: T) => React.ReactNode }) {
-  if (!rows) return <p className="text-sm text-slate-400">Loading…</p>;
+  if (!rows) return <p className="text-sm text-slate-400">{translate("Loading…")}</p>;
   if (!rows.length) return <p className="text-sm text-slate-500">{empty}</p>;
   return <ul className="-my-2 divide-y divide-slate-100">{rows.map((r) => <li key={r.id} className="py-2">{render(r)}</li>)}</ul>;
 }
@@ -38,18 +38,18 @@ export default function CustomerDetailPage() {
       <PageHeader
         back={{ to: '/customers', label: 'Customers' }}
         title={c.name}
-        badge={c.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}
+        badge={c.isActive ? <Badge tone="green">{translate("Active")}</Badge> : <Badge>{translate("Inactive")}</Badge>}
         description={[c.industry, `Owner: ${c.owner.name}`].filter(Boolean).join('. ')}
         actions={
           <>
-            {can('customer.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>Edit</Button>}
-            {can('quotation.create') && <ButtonLink to={`/quotations/new?customerId=${c.id}`} icon={Plus}>New quotation</ButtonLink>}
+            {can('customer.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>{translate("Edit")}</Button>}
+            {can('quotation.create') && <ButtonLink to={`/quotations/new?customerId=${c.id}`} icon={Plus}>{translate("New quotation")}</ButtonLink>}
           </>
         }
       />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Details">
+          <Card title={translate("Details")}>
             <DescriptionList
               items={[
                 { label: 'Email', value: c.email },
@@ -63,7 +63,7 @@ export default function CustomerDetailPage() {
             />
           </Card>
           {canOpps && (
-            <Card title="Opportunities">
+            <Card title={translate("Opportunities")}>
               <MiniList
                 rows={opps.data?.data}
                 empty="No opportunities yet."
@@ -77,7 +77,7 @@ export default function CustomerDetailPage() {
             </Card>
           )}
           {canQuotes && (
-            <Card title="Quotations">
+            <Card title={translate("Quotations")}>
               <MiniList
                 rows={quotes.data?.data}
                 empty="No quotations yet."
@@ -93,23 +93,23 @@ export default function CustomerDetailPage() {
         </div>
         <div className="space-y-6">
           {can('credit.read') && (
-            <Card title="Credit" actions={<Link to={`/credit?q=${encodeURIComponent(c.name)}`} className="text-sm font-medium text-brand-600">Manage</Link>}>
+            <Card title={translate("Credit")} actions={<Link to={`/credit?q=${encodeURIComponent(c.name)}`} className="text-sm font-medium text-brand-600">{translate("Manage")}</Link>}>
               {c.credit ? (
                 <DescriptionList
                   columns={1}
                   items={[
                     { label: 'Credit limit', value: money(c.credit.creditLimit) },
                     { label: 'Payment terms', value: c.paymentTerm ? `${c.paymentTerm.name} (${c.paymentTerm.days} days)` : 'System default' },
-                    { label: 'Status', value: c.credit.onHold ? <Badge tone="red">On hold</Badge> : <Badge tone="green">Good standing</Badge> },
+                    { label: 'Status', value: c.credit.onHold ? <Badge tone="red">{translate("On hold")}</Badge> : <Badge tone="green">{translate("Good standing")}</Badge> },
                   ]}
                 />
               ) : (
-                <p className="text-sm text-slate-500">No credit terms configured. Default payment terms apply.</p>
+                <p className="text-sm text-slate-500">{translate("No credit terms configured. Default payment terms apply.")}</p>
               )}
             </Card>
           )}
           {can('invoice.read') && (
-            <Card title="Invoices">
+            <Card title={translate("Invoices")}>
               <MiniList
                 rows={invoices.data?.data}
                 empty="No invoices yet."

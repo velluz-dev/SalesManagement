@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { BarChart3, Table2 } from 'lucide-react';
 import { money } from '../../lib/format';
+import { translate } from '../../i18n';
 
 export const SERIES = ['#5b4fe3', '#eb6834', '#1baf7a'] as const;
 const AXIS = { fontSize: 12, fill: '#64748b' };
@@ -68,7 +69,7 @@ export function ChartFrame<T extends Record<string, unknown>>({
           aria-pressed={table}
         >
           {table ? <BarChart3 className="size-3.5" /> : <Table2 className="size-3.5" />}
-          {table ? 'View chart' : 'View as table'}
+          {translate(table ? 'View chart' : 'View as table')}
         </button>
       </div>
       {table ? (

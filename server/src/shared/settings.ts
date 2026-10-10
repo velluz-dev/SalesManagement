@@ -6,7 +6,7 @@ export type SettingDefinition =
 
 export const SETTING_DEFINITIONS = [
   { key: 'company.name', label: 'Company name', description: 'Shown on quotations and invoices', type: 'string', default: 'Acme Trading Co.' },
-  { key: 'company.currency', label: 'Currency', description: 'ISO 4217 currency code used for display', type: 'enum', default: 'USD', options: ['USD', 'EUR', 'GBP', 'SGD', 'THB', 'MMK', 'JPY', 'AUD'] },
+  { key: 'company.currency', label: 'Currency', description: 'ISO 4217 currency code used for display', type: 'enum', default: 'MMK', options: ['MMK', 'USD', 'THB', 'SGD', 'CNY', 'EUR', 'GBP', 'JPY'] },
   { key: 'approval.allowSelfApproval', label: 'Allow self-approval', description: 'If enabled, an approver may approve a quotation they requested or own', type: 'boolean', default: false },
   { key: 'approval.fallbackRoleCode', label: 'Approval fallback role', description: 'Role that receives team-manager approvals when no eligible manager exists', type: 'enum', default: 'DIRECTOR', options: ['DIRECTOR', 'SALES_MANAGER'], optionLabels: { DIRECTOR: 'Director', SALES_MANAGER: 'Sales manager' } },
   { key: 'quotation.defaultValidityDays', label: 'Quotation validity (days)', description: 'Default validity period of new quotations', type: 'number', default: 30, min: 1, max: 365 },

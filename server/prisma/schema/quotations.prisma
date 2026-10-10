@@ -21,7 +21,7 @@ model Quotation {
   status        QuotationStatus @default(DRAFT)
   issueDate     DateTime        @default(now()) @db.Date
   validUntil    DateTime        @db.Date
-  currency      String          @default("USD") @db.VarChar(3)
+  currency      String          @default("MMK") @db.VarChar(3)
   notes         String?
   terms         String?
   subtotal      Decimal         @default(0) @db.Decimal(14, 2)

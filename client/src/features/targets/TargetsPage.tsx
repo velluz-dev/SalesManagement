@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Pencil, Plus, Trash2, Trophy } from 'lucide-react';
-import { TARGET_PERIOD_TYPES, enumLabel } from '@shared';
+import { TARGET_PERIOD_TYPES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -10,7 +11,7 @@ import { DataTable, Pagination, type Column } from '../../components/ui/DataTabl
 import { FilterSelect, PageHeader, ProgressBar, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
-import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
+import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
 import { TeamSelect, UserSelect } from '../../components/ui/Pickers';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
@@ -87,17 +88,17 @@ function TargetForm({ target, onClose }: { target?: SalesTarget; onClose: () => 
       title={target ? 'Edit target' : 'Set sales target'}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Save target</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Save target")}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <div className="sm:col-span-2"><FormError message={error} /></div>
         <fieldset className="flex gap-4 text-sm sm:col-span-2">
-          <legend className="sr-only">Assign to</legend>
-          <label className="flex items-center gap-2"><input type="radio" value="user" {...register('assignee')} /> Salesperson</label>
-          <label className="flex items-center gap-2"><input type="radio" value="team" {...register('assignee')} /> Team</label>
+          <legend className="sr-only">{translate("Assign to")}</legend>
+          <label className="flex items-center gap-2"><input type="radio" value="user" {...register('assignee')} /> {translate("Salesperson")}</label>
+          <label className="flex items-center gap-2"><input type="radio" value="team" {...register('assignee')} /> {translate("Team")}</label>
         </fieldset>
         {assignee === 'user' ? (
           <Field label="Salesperson" required className="sm:col-span-2" hint="You cannot set your own target.">
@@ -109,7 +110,7 @@ function TargetForm({ target, onClose }: { target?: SalesTarget; onClose: () => 
         <Field label="Period type">
           <Select {...register('periodType')}>{TARGET_PERIOD_TYPES.map((p) => <option key={p} value={p}>{enumLabel(p)}</option>)}</Select>
         </Field>
-        <Field label="Year"><Input type="number" min={2000} max={2100} {...register('year')} /></Field>
+        <Field label="Year"><NumberInput decimals={0} maxValue={2100} maxIntegerDigits={4} {...register('year')} /></Field>
         {periodType !== 'YEAR' && (
           <Field label={periodType === 'QUARTER' ? 'Quarter' : 'Month'}>
             <Select {...register('period')}>
@@ -119,7 +120,7 @@ function TargetForm({ target, onClose }: { target?: SalesTarget; onClose: () => 
             </Select>
           </Field>
         )}
-        <Field label="Target amount" required><Input inputMode="decimal" {...register('amount')} /></Field>
+        <Field label="Target amount" required><NumberInput decimals={2} {...register('amount')} /></Field>
         <Field label="Notes" className="sm:col-span-2"><Textarea {...register('notes')} /></Field>
       </form>
       <p className="mt-3 text-xs text-slate-400">Set by {me?.user.name}. The assignee is notified.</p>
@@ -143,7 +144,7 @@ export default function TargetsPage() {
       cell: (t) => (
         <div className="flex items-center gap-2">
           <span className="font-medium text-slate-900">{t.user?.name ?? t.team?.name}</span>
-          {t.team && <Badge tone="purple">Team</Badge>}
+          {t.team && <Badge tone="purple">{translate("Team")}</Badge>}
         </div>
       ),
     },
@@ -164,12 +165,12 @@ export default function TargetsPage() {
     ...(can('target.manage')
       ? [{
           key: 'actions',
-          header: <span className="sr-only">Actions</span>,
+          header: <span className="sr-only">{translate("Actions")}</span>,
           align: 'right' as const,
           cell: (t: SalesTarget) => (
             <div className="flex justify-end gap-1">
-              <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={() => setEditing(t)} aria-label="Edit target"><Pencil className="size-4" /></button>
-              <button className="rounded p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleting(t)} aria-label="Delete target"><Trash2 className="size-4" /></button>
+              <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={() => setEditing(t)} aria-label={translate("Edit target")}><Pencil className="size-4" /></button>
+              <button className="rounded p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => setDeleting(t)} aria-label={translate("Delete target")}><Trash2 className="size-4" /></button>
             </div>
           ),
         }]
@@ -179,9 +180,9 @@ export default function TargetsPage() {
   return (
     <div>
       <PageHeader
-        title="Sales targets"
+        title={translate("Sales targets")}
         description="Targets and achievement by salesperson and team."
-        actions={can('target.manage') && <Button icon={Plus} onClick={() => setEditing('new')}>Set target</Button>}
+        actions={can('target.manage') && <Button icon={Plus} onClick={() => setEditing('new')}>{translate("Set target")}</Button>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
@@ -196,7 +197,7 @@ export default function TargetsPage() {
           loading={isLoading || isFetching}
           error={error}
           onRetry={refetch}
-          empty={<EmptyState icon={Trophy} title="No targets" description="No targets match these filters." />}
+          empty={<EmptyState icon={Trophy} title={translate("No targets")} description="No targets match these filters." />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>
@@ -204,7 +205,7 @@ export default function TargetsPage() {
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}
-        title="Delete target?"
+        title={translate("Delete target?")}
         message="This target and its progress tracking will be removed."
         tone="danger"
         confirmLabel="Delete"

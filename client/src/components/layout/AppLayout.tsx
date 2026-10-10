@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Bell, ChevronRight, CornerDownLeft, FlaskConical, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, UserRound, X } from 'lucide-react';
-import { enumLabel } from '@shared';
+import { enumLabel } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { NAVIGATION, SEARCH_TARGETS, isNavActive } from './navigation';
 import { cn } from '../../lib/cn';
@@ -10,6 +10,8 @@ import { BrandMark } from '../ui/Layout';
 import { api } from '../../lib/api';
 import { relativeTime } from '../../lib/format';
 import type { Notification } from '../../lib/types';
+import { translate } from '../../i18n';
+import { LanguageSwitch } from './LanguageSwitch';
 
 function Logo() {
   return (
@@ -38,13 +40,13 @@ function SidebarAccount() {
         <div role="menu" className="absolute right-3 bottom-full left-3 mb-2 overflow-hidden rounded-xl border border-white/10 bg-navy-800 py-1 shadow-xl">
           <div className="border-b border-white/10 px-4 py-2.5">
             <p className="truncate text-xs text-slate-400">{me.user.email}</p>
-            {me.user.team && <p className="mt-0.5 truncate text-xs text-slate-400">Team: {me.user.team.name}</p>}
+            {me.user.team && <p className="mt-0.5 truncate text-xs text-slate-400">{translate('Team: {name}', { name: me.user.team.name })}</p>}
           </div>
           <Link role="menuitem" to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-white/5">
-            <UserRound className="size-4" /> My profile
+            <UserRound className="size-4" /> {translate('My profile')}
           </Link>
           <Link role="menuitem" to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-white/5">
-            <KeyRound className="size-4" /> Change password
+            <KeyRound className="size-4" /> {translate('Change password')}
           </Link>
           <button
             role="menuitem"
@@ -54,7 +56,7 @@ function SidebarAccount() {
             }}
             className="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-300 hover:bg-white/5"
           >
-            <LogOut className="size-4" /> Sign out
+            <LogOut className="size-4" /> {translate('Sign out')}
           </button>
         </div>
       )}
@@ -82,7 +84,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { canAny } = useAuth();
   const location = useLocation();
   return (
-    <nav aria-label="Main navigation" className="flex h-full flex-col bg-navy-950">
+    <nav aria-label={translate('Main navigation')} className="flex h-full flex-col bg-navy-950">
       <div className="flex h-16 items-center px-5">
         <Logo />
       </div>
@@ -93,7 +95,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           return (
             <div key={section.title || 'main'}>
               {section.title && (
-                <p className="mb-1.5 px-3 text-[10px] font-semibold tracking-[0.12em] text-slate-500">{section.title}</p>
+                <p className="mb-1.5 px-3 text-[10px] font-semibold tracking-[0.12em] text-slate-500">{translate(section.title)}</p>
               )}
               <ul className="space-y-1">
                 {items.map((item) => (
@@ -106,13 +108,13 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                         cn(
                           'flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
                           isNavActive(item.to, location.pathname, location.search)
-                            ? 'bg-brand-500 text-white shadow-[0_4px_12px_rgb(106_98_239/0.45)]'
+                            ? 'bg-brand-500 text-white'
                             : 'text-slate-300/85 hover:bg-white/[0.06] hover:text-white',
                         )
                       }
                     >
                       <item.icon className="size-[18px] shrink-0" aria-hidden />
-                      {item.label}
+                      {translate(item.label)}
                     </NavLink>
                   </li>
                 ))}
@@ -167,13 +169,13 @@ function GlobalSearch() {
         ...SEARCH_TARGETS.filter((t) => allowed(t.any)).map((t) => ({
           key: `search-${t.to}`,
           to: `${t.to}?q=${encodeURIComponent(text)}`,
-          label: `Search ${t.label.toLowerCase()} for “${text}”`,
-          hint: t.label,
+          label: translate('Search {target} for “{q}”', { target: translate(t.label), q: text }),
+          hint: translate(t.label),
           icon: t.icon,
         })),
         ...NAVIGATION.flatMap((sec) => sec.items)
-          .filter((i) => allowed(i.any) && i.label.toLowerCase().includes(text.toLowerCase()))
-          .map((i) => ({ key: `page-${i.to}`, to: i.to, label: i.label, hint: 'Go to page', icon: i.icon })),
+          .filter((i) => allowed(i.any) && (i.label.toLowerCase().includes(text.toLowerCase()) || translate(i.label).includes(text)))
+          .map((i) => ({ key: `page-${i.to}`, to: i.to, label: translate(i.label), hint: translate('Go to page'), icon: i.icon })),
       ]
     : [];
 
@@ -214,8 +216,8 @@ function GlobalSearch() {
               (e.target as HTMLInputElement).blur();
             }
           }}
-          placeholder="Search anything..."
-          aria-label="Search anything"
+          placeholder={translate('Search anything...')}
+          aria-label={translate('Search anything')}
           role="combobox"
           aria-expanded={open && options.length > 0}
           aria-controls="global-search-results"
@@ -273,7 +275,7 @@ function NotificationBell() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="relative rounded-xl p-2 text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm"
-        aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
+        aria-label={`${translate('Notifications')}${unread ? ` (${unread})` : ''}`}
         aria-expanded={open}
       >
         <Bell className="size-5" />
@@ -286,7 +288,7 @@ function NotificationBell() {
       {open && (
         <div className="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_16px_40px_-12px_rgb(16_24_64/0.25)]">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-            <p className="text-sm font-semibold">Notifications</p>
+            <p className="text-sm font-semibold">{translate('Notifications')}</p>
             {unread > 0 && (
               <button
                 className="text-xs font-medium text-brand-600 hover:text-brand-700"
@@ -295,12 +297,12 @@ function NotificationBell() {
                   void refetch();
                 }}
               >
-                Mark all as read
+                {translate('Mark all as read')}
               </button>
             )}
           </div>
           <ul className="max-h-96 overflow-y-auto">
-            {!data?.data.length && <li className="px-4 py-8 text-center text-sm text-slate-500">No notifications yet.</li>}
+            {!data?.data.length && <li className="px-4 py-8 text-center text-sm text-slate-500">{translate('No notifications yet.')}</li>}
             {data?.data.map((n) => (
               <li key={n.id}>
                 <button onClick={() => openItem(n)} className="flex w-full gap-3 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50">
@@ -315,7 +317,7 @@ function NotificationBell() {
             ))}
           </ul>
           <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-slate-100 px-4 py-2.5 text-center text-sm font-medium text-brand-600 hover:bg-slate-50">
-            View all notifications
+            {translate('View all notifications')}
           </Link>
         </div>
       )}
@@ -380,7 +382,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
       <a href="#main" className="sr-only z-50 rounded bg-white px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
-        Skip to content
+        {translate('Skip to content')}
       </a>
       <aside
         inert={!desktopOpen}
@@ -399,13 +401,13 @@ export function AppLayout() {
           aria-hidden
         />
         <aside
-          aria-label="Menu"
+          aria-label={translate("Menu")}
           className={cn(
             'absolute inset-y-0 left-0 w-72 max-w-[85vw] shadow-xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
             mobileOpen ? 'translate-x-0' : '-translate-x-full',
           )}
         >
-          <button onClick={() => setMobileOpen(false)} className="absolute top-4 right-3 z-10 rounded-md p-1 text-slate-400 hover:text-white" aria-label="Close menu">
+          <button onClick={() => setMobileOpen(false)} className="absolute top-4 right-3 z-10 rounded-md p-1 text-slate-400 hover:text-white" aria-label={translate('Close menu')}>
             <X className="size-5" />
           </button>
           <Sidebar onNavigate={() => setMobileOpen(false)} />
@@ -416,7 +418,7 @@ export function AppLayout() {
         {settings?.demoData && (
           <div className="flex items-center justify-center gap-2 bg-amber-100/70 px-4 py-1.5 text-center text-xs font-medium text-slate-800">
             <FlaskConical className="size-3.5 shrink-0" aria-hidden />
-            Demo environment. Every record here is made up for development and testing.
+            {translate('Demo environment. Every record here is made up for development and testing.')}
           </div>
         )}
         <header className="sticky top-0 z-20 bg-[#f5f6fa]/85 backdrop-blur">
@@ -424,7 +426,7 @@ export function AppLayout() {
             <button
               onClick={() => setMobileOpen(true)}
               className="-ml-2 rounded-lg p-2 text-slate-500 hover:bg-white lg:hidden"
-              aria-label="Open menu"
+              aria-label={translate('Open menu')}
               aria-expanded={mobileOpen}
             >
               <Menu className="size-5" />
@@ -432,9 +434,9 @@ export function AppLayout() {
             <button
               onClick={toggleDesktop}
               className="-ml-2 hidden rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-800 lg:inline-flex"
-              aria-label={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
+              aria-label={translate(desktopOpen ? 'Hide sidebar' : 'Show sidebar')}
               aria-expanded={desktopOpen}
-              title={desktopOpen ? 'Hide sidebar' : 'Show sidebar'}
+              title={translate(desktopOpen ? 'Hide sidebar' : 'Show sidebar')}
             >
               {desktopOpen ? <PanelLeftClose className="size-5" /> : <PanelLeftOpen className="size-5" />}
             </button>
@@ -442,6 +444,7 @@ export function AppLayout() {
               <GlobalSearch />
             </div>
             <div className="ml-auto flex items-center gap-1 md:ml-0">
+              <LanguageSwitch />
               <NotificationBell />
             </div>
           </div>

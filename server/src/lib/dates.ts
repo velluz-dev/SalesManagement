@@ -1,6 +1,14 @@
-export function startOfTodayUtc(): Date {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+/** Business time zone for calendar dates (due dates, overdue checks, defaults). Override with BUSINESS_TIMEZONE. */
+export const BUSINESS_TIMEZONE = process.env.BUSINESS_TIMEZONE || 'Asia/Yangon';
+
+const dayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+
+/**
+ * Today's calendar date in the business time zone, as UTC midnight (the representation used for DATE columns).
+ * Using the UTC date instead would still be "yesterday" in Myanmar between 00:00 and 06:30.
+ */
+export function startOfTodayUtc(now: Date = new Date()): Date {
+  return new Date(`${dayFormatter.format(now)}T00:00:00.000Z`);
 }
 
 export function addDays(date: Date, days: number): Date {

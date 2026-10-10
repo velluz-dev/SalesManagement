@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { translate } from '../../i18n';
 
 interface ToastItem {
   id: number;
@@ -42,8 +43,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             )}
           >
             {t.tone === 'success' ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" /> : <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />}
-            <p className="flex-1 text-slate-700">{t.message}</p>
-            <button onClick={() => dismiss(t.id)} className="text-slate-400 hover:text-slate-600" aria-label="Dismiss notification">
+            <p className="flex-1 text-slate-700">{translate(t.message)}</p>
+            <button onClick={() => dismiss(t.id)} className="text-slate-400 hover:text-slate-600" aria-label={translate('Dismiss notification')}>
               <X className="size-4" />
             </button>
           </div>

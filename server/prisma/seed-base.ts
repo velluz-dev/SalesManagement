@@ -59,8 +59,8 @@ export async function seedBase(prisma: PrismaClient, opts: { resetRolePermission
   if ((await prisma.approvalRule.count()) === 0) {
     await prisma.approvalRule.createMany({
       data: [
-        { name: 'Standard (team manager)', minAmount: 0, maxAmount: 50_000, approverType: 'TEAM_MANAGER', approverRoleId: roles.SALES_MANAGER, priority: 0 },
-        { name: 'High value (director)', minAmount: 50_000, maxAmount: null, approverType: 'ROLE', approverRoleId: roles.DIRECTOR, priority: 0 },
+        { name: 'Standard (team manager)', minAmount: 0, maxAmount: 100_000_000, approverType: 'TEAM_MANAGER', approverRoleId: roles.SALES_MANAGER, priority: 0 },
+        { name: 'High value (director)', minAmount: 100_000_000, maxAmount: null, approverType: 'ROLE', approverRoleId: roles.DIRECTOR, priority: 0 },
       ],
     });
   }

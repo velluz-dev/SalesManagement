@@ -9,6 +9,7 @@ import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { date, money, relativeTime } from '../../lib/format';
 import type { ApprovalRequest } from '../../lib/types';
+import { translate } from '../../i18n';
 
 export default function ApprovalsPage() {
   const { can } = useAuth();
@@ -48,7 +49,7 @@ export default function ApprovalsPage() {
       cell: (r) => (
         <span className="flex flex-wrap items-center gap-1.5">
           <StatusBadge status={r.status} />
-          {r.status === 'PENDING' && r.canDecide && <Badge tone="indigo">Action needed</Badge>}
+          {r.status === 'PENDING' && r.canDecide && <Badge tone="indigo">{translate("Action needed")}</Badge>}
         </span>
       ),
     },
@@ -57,7 +58,7 @@ export default function ApprovalsPage() {
 
   return (
     <div>
-      <PageHeader title="Approvals" description="Quotation approval requests routed by the configured approval rules." />
+      <PageHeader title={translate("Approvals")} description="Quotation approval requests routed by the configured approval rules." />
       <div className="card overflow-hidden">
         <div className="px-4 pt-2">
           <Tabs
@@ -71,7 +72,7 @@ export default function ApprovalsPage() {
           />
         </div>
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search quotation or customer…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search quotation or customer…")} className="sm:w-80" />
         </Toolbar>
         <DataTable
           caption="Approval requests"
@@ -83,7 +84,7 @@ export default function ApprovalsPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={(r) => navigate(`/approvals/${r.id}`)}
-          empty={<EmptyState icon={CheckSquare} title="No approval requests" description="Nothing matches this view right now." />}
+          empty={<EmptyState icon={CheckSquare} title={translate("No approval requests")} description="Nothing matches this view right now." />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

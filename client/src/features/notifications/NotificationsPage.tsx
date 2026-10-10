@@ -13,6 +13,7 @@ import { Skeleton } from '../../components/ui/Spinner';
 import { dateTime, label } from '../../lib/format';
 import { cn } from '../../lib/cn';
 import type { Notification } from '../../lib/types';
+import { translate } from '../../i18n';
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -32,9 +33,9 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Notifications"
+        title={translate("Notifications")}
         description="Approval requests, decisions, overdue invoices and assignments."
-        actions={!!data?.unread && <Button variant="secondary" icon={CheckCheck} onClick={() => readAll.mutate(undefined)}>Mark all as read</Button>}
+        actions={!!data?.unread && <Button variant="secondary" icon={CheckCheck} onClick={() => readAll.mutate(undefined)}>{translate("Mark all as read")}</Button>}
       />
       <div className="card overflow-hidden">
         <div className="px-4 pt-2">
@@ -45,7 +46,7 @@ export default function NotificationsPage() {
         ) : isLoading ? (
           <div className="space-y-3 p-4">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-14" />)}</div>
         ) : !data?.data.length ? (
-          <EmptyState icon={Bell} title="No notifications" description="You're all caught up." />
+          <EmptyState icon={Bell} title={translate("No notifications")} description="You're all caught up." />
         ) : (
           <ul className="divide-y divide-slate-100">
             {data.data.map((n) => (

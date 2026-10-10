@@ -13,6 +13,7 @@ import { FullPageSpinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
 import { useLookup } from '../../hooks/useApi';
 import type { Team } from '../../lib/types';
+import { translate } from '../../i18n';
 
 function TeamForm({ team, onClose }: { team?: Team; onClose: () => void }) {
   const users = useLookup<{ id: string; name: string; email: string; teamId: string | null }>('users');
@@ -43,8 +44,8 @@ function TeamForm({ team, onClose }: { team?: Team; onClose: () => void }) {
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={save.isPending}>Save team</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={submit} loading={save.isPending}>{translate("Save team")}</Button>
         </>
       }
     >
@@ -54,13 +55,13 @@ function TeamForm({ team, onClose }: { team?: Team; onClose: () => void }) {
           <Field label="Team name" required><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
           <Field label="Manager" hint="Team quotations under the manager threshold route to this person.">
             <Select value={managerId} onChange={(e) => setManagerId(e.target.value)}>
-              <option value="">No manager</option>
+              <option value="">{translate("No manager")}</option>
               {users.data?.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
             </Select>
           </Field>
         </div>
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-slate-700">Members <span className="font-normal text-slate-500">(a user belongs to at most one team)</span></legend>
+          <legend className="mb-2 text-sm font-medium text-slate-700">{translate("Members")} <span className="font-normal text-slate-500">(a user belongs to at most one team)</span></legend>
           <div className="grid max-h-72 grid-cols-1 gap-2 overflow-y-auto rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
             {users.data?.map((u) => (
               <Checkbox
@@ -89,12 +90,12 @@ export default function TeamsPage() {
   return (
     <div>
       <PageHeader
-        title="Teams"
+        title={translate("Teams")}
         description="Teams define a manager's data scope and approval routing."
-        actions={can('team.manage') && <Button icon={Plus} onClick={() => setEditing('new')}>New team</Button>}
+        actions={can('team.manage') && <Button icon={Plus} onClick={() => setEditing('new')}>{translate("New team")}</Button>}
       />
       {!data?.length ? (
-        <div className="card"><EmptyState icon={Network} title="No teams yet" /></div>
+        <div className="card"><EmptyState icon={Network} title={translate("No teams yet")} /></div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {data.map((t) => (
@@ -112,13 +113,13 @@ export default function TeamsPage() {
               }
             >
               {!t.members.length ? (
-                <p className="text-sm text-slate-500">No members.</p>
+                <p className="text-sm text-slate-500">{translate("No members.")}</p>
               ) : (
                 <ul className="space-y-2">
                   {t.members.map((m) => (
                     <li key={m.id} className="flex items-center justify-between text-sm">
-                      <span>{m.name}{m.id === t.managerId && <Badge tone="indigo" className="ml-2">Manager</Badge>}</span>
-                      {!m.isActive && <Badge>Inactive</Badge>}
+                      <span>{m.name}{m.id === t.managerId && <Badge tone="indigo" className="ml-2">{translate("Manager")}</Badge>}</span>
+                      {!m.isActive && <Badge>{translate("Inactive")}</Badge>}
                     </li>
                   ))}
                 </ul>

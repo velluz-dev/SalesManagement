@@ -1,6 +1,7 @@
-import { cloneElement, isValidElement, useId, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, useState, type ChangeEvent, type ComponentProps, type ReactElement, type ReactNode, type SyntheticEvent } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { tNode, translate } from '../../i18n';
 
 const control =
   'block w-full rounded-md border bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/25 disabled:bg-slate-50 disabled:text-slate-500';
@@ -8,6 +9,69 @@ const controlState = (invalid?: boolean) => (invalid ? 'border-rose-400 focus:bo
 
 export function Input({ className, invalid, ...rest }: ComponentProps<'input'> & { invalid?: boolean }) {
   return <input className={cn(control, controlState(invalid), 'h-9', className)} aria-invalid={invalid || undefined} {...rest} />;
+}
+
+export interface NumberRules {
+  /** Allowed digits after the decimal point; 0 = whole numbers only. Default 2. */
+  decimals?: number;
+  /** Values above this are capped (e.g. 100 for percentages). */
+  maxValue?: number;
+  /** Longest whole-number part, to match server limits. Default 12. */
+  maxIntegerDigits?: number;
+}
+
+/**
+ * Reduces text to a valid non-negative number string: digits and at most one decimal point,
+ * limited decimals and length, capped at `max`. Commas and spaces from pasted amounts are dropped.
+ */
+export function sanitizeNumber(raw: string, { decimals = 2, maxValue, maxIntegerDigits = 12 }: NumberRules = {}): string {
+  let v = raw.replace(/[^\d.]/g, '');
+  if (decimals === 0) {
+    v = v.replace(/\./g, '');
+  } else {
+    const dot = v.indexOf('.');
+    if (dot !== -1) v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, '').slice(0, decimals);
+  }
+  const [intRaw = '', frac] = v.split('.');
+  const int = intRaw.slice(0, maxIntegerDigits).replace(/^0+(?=\d)/, '');
+  v = frac !== undefined ? `${int || '0'}.${frac}` : int;
+  if (maxValue !== undefined && v !== '' && Number(v) > maxValue) v = String(maxValue);
+  return v;
+}
+
+/**
+ * Text box that only ever holds a valid number. Letters and symbols are blocked as you type, pasted
+ * text is cleaned, and a trailing "." is removed on blur. Works with react-hook-form `register` and
+ * with controlled `value`/`onChange`. The server still validates every value.
+ */
+export function NumberInput({ decimals = 2, maxValue, maxIntegerDigits, onChange, onBlur, invalid, ...rest }: Omit<ComponentProps<'input'>, 'type'> & NumberRules & { invalid?: boolean }) {
+  const rules = { decimals, maxValue, maxIntegerDigits };
+  const emit = (target: HTMLInputElement, e: SyntheticEvent<HTMLInputElement>) => onChange?.({ ...e, target, currentTarget: target } as ChangeEvent<HTMLInputElement>);
+  return (
+    <Input
+      {...rest}
+      type="text"
+      inputMode={decimals ? 'decimal' : 'numeric'}
+      autoComplete="off"
+      invalid={invalid}
+      onBeforeInput={(e) => {
+        const data = (e as unknown as { data?: string | null }).data;
+        if (data && (/[^\d.]/.test(data) || (decimals === 0 && data.includes('.')))) e.preventDefault();
+      }}
+      onChange={(e) => {
+        const clean = sanitizeNumber(e.target.value, rules);
+        if (clean !== e.target.value) e.target.value = clean;
+        onChange?.(e);
+      }}
+      onBlur={(e) => {
+        if (e.target.value.endsWith('.')) {
+          e.target.value = e.target.value.slice(0, -1);
+          emit(e.target, e);
+        }
+        onBlur?.(e);
+      }}
+    />
+  );
 }
 
 export function PasswordInput({ className, invalid, ...rest }: Omit<ComponentProps<'input'>, 'type'> & { invalid?: boolean }) {
@@ -36,7 +100,7 @@ export function PasswordInput({ className, invalid, ...rest }: Omit<ComponentPro
 export function Select({ className, invalid, children, ...rest }: ComponentProps<'select'> & { invalid?: boolean }) {
   return (
     <select className={cn(control, controlState(invalid), 'h-9 pr-8', className)} aria-invalid={invalid || undefined} {...rest}>
-      {children}
+      {tNode(children)}
     </select>
   );
 }
@@ -49,7 +113,7 @@ export function Checkbox({ label, className, ...rest }: ComponentProps<'input'> 
   return (
     <label className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-slate-700', className)}>
       <input type="checkbox" className="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" {...rest} />
-      {label}
+      {tNode(label)}
     </label>
   );
 }
@@ -77,17 +141,17 @@ export function Field({
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-800">
-        {label}
+        {tNode(label)}
         {required && <span className="ml-0.5 text-rose-500" aria-hidden>*</span>}
       </label>
       {child}
       {error ? (
         <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-rose-600">
-          {error}
+          {tNode(error)}
         </p>
       ) : hint ? (
         <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
-          {hint}
+          {tNode(hint)}
         </p>
       ) : null}
     </div>
@@ -98,7 +162,7 @@ export function FormError({ message }: { message?: string | null }) {
   if (!message) return null;
   return (
     <div role="alert" className="rounded-md border-l-[3px] border-rose-600 bg-rose-50 px-3 py-2 text-sm text-rose-800">
-      {message}
+      {translate(message)}
     </div>
   );
 }

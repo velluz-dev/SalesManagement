@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { AlertTriangle, Ban, Send, Wallet } from 'lucide-react';
-import { PAYMENT_METHODS, enumLabel } from '@shared';
+import { PAYMENT_METHODS } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader, ProgressBar } from '../../components/ui/Layout';
 import { Badge, InvoiceStatusBadge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
-import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
+import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
 import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
@@ -42,17 +43,17 @@ function PaymentModal({ invoice, onClose }: { invoice: Invoice; onClose: () => v
       description={`Outstanding balance ${money(invoice.balance, { currency: invoice.currency })}`}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Record payment</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Record payment")}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <div className="sm:col-span-2"><FormError message={error} /></div>
-        <Field label="Amount" required><Input inputMode="decimal" {...register('amount')} /></Field>
+        <Field label="Amount" required><NumberInput decimals={2} {...register('amount')} /></Field>
         <Field label="Payment date" required><Input type="date" max={todayIso()} {...register('paidAt')} /></Field>
         <Field label="Method"><Select {...register('method')}>{PAYMENT_METHODS.map((m) => <option key={m} value={m}>{enumLabel(m)}</option>)}</Select></Field>
-        <Field label="Reference"><Input placeholder="Transaction / cheque no." {...register('reference')} /></Field>
+        <Field label="Reference"><Input placeholder={translate("Transaction / cheque no.")} {...register('reference')} /></Field>
         <Field label="Notes" className="sm:col-span-2"><Textarea {...register('notes')} /></Field>
       </form>
     </Modal>
@@ -97,10 +98,10 @@ export default function InvoiceDetailPage() {
         actions={
           <>
             {can('invoice.cancel') && (inv.status === 'DRAFT' || (inv.status === 'ISSUED' && Number(inv.amountPaid) === 0)) && (
-              <Button variant="ghost" icon={Ban} onClick={() => setDialog('cancel')}>Cancel invoice</Button>
+              <Button variant="ghost" icon={Ban} onClick={() => setDialog('cancel')}>{translate("Cancel invoice")}</Button>
             )}
-            {can('invoice.update') && inv.status === 'DRAFT' && <Button icon={Send} onClick={() => setDialog('issue')}>Issue invoice</Button>}
-            {can('payment.create') && open && <Button icon={Wallet} onClick={() => setDialog('pay')}>Record payment</Button>}
+            {can('invoice.update') && inv.status === 'DRAFT' && <Button icon={Send} onClick={() => setDialog('issue')}>{translate("Issue invoice")}</Button>}
+            {can('payment.create') && open && <Button icon={Wallet} onClick={() => setDialog('pay')}>{translate("Record payment")}</Button>}
           </>
         }
       />
@@ -117,7 +118,7 @@ export default function InvoiceDetailPage() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Invoice details">
+          <Card title={translate("Invoice details")}>
             <DescriptionList
               columns={3}
               items={[
@@ -141,10 +142,10 @@ export default function InvoiceDetailPage() {
             />
             {inv.notes && <p className="mt-5 border-t border-slate-100 pt-4 text-sm whitespace-pre-wrap text-slate-700">{inv.notes}</p>}
           </Card>
-          <Card title="Line items" bodyClassName="p-0">
+          <Card title={translate("Line items")} bodyClassName="p-0">
             <div className="relative overflow-x-auto">
               <table className="table-base w-full min-w-[600px]">
-                <thead><tr><th>Description</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Disc.</th><th className="text-right">Tax</th><th className="text-right">Total</th></tr></thead>
+                <thead><tr><th>{translate("Description")}</th><th className="text-right">{translate("Qty")}</th><th className="text-right">{translate("Unit price")}</th><th className="text-right">{translate("Disc.")}</th><th className="text-right">{translate("Tax")}</th><th className="text-right">{translate("Total")}</th></tr></thead>
                 <tbody>
                   {inv.items?.map((i) => (
                     <tr key={i.id}>
@@ -160,19 +161,19 @@ export default function InvoiceDetailPage() {
               </table>
             </div>
             <dl className="tabular ml-auto max-w-xs space-y-1.5 px-5 py-4 text-sm">
-              <div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd>{money(inv.subtotal, { currency: inv.currency })}</dd></div>
-              <div className="flex justify-between text-slate-600"><dt>Discount</dt><dd>−{money(inv.discountTotal, { currency: inv.currency })}</dd></div>
-              <div className="flex justify-between text-slate-600"><dt>Tax</dt><dd>{money(inv.taxTotal, { currency: inv.currency })}</dd></div>
-              <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold"><dt>Total</dt><dd>{money(inv.total, { currency: inv.currency })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Subtotal")}</dt><dd>{money(inv.subtotal, { currency: inv.currency })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Discount")}</dt><dd>−{money(inv.discountTotal, { currency: inv.currency })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Tax")}</dt><dd>{money(inv.taxTotal, { currency: inv.currency })}</dd></div>
+              <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold"><dt>{translate("Total")}</dt><dd>{money(inv.total, { currency: inv.currency })}</dd></div>
             </dl>
           </Card>
-          <Card title="Payments" bodyClassName="p-0">
+          <Card title={translate("Payments")} bodyClassName="p-0">
             {!inv.payments?.length ? (
-              <p className="px-5 py-4 text-sm text-slate-500">No payments recorded.</p>
+              <p className="px-5 py-4 text-sm text-slate-500">{translate("No payments recorded.")}</p>
             ) : (
               <div className="relative overflow-x-auto">
                 <table className="table-base w-full min-w-[600px]">
-                  <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Recorded by</th><th className="text-right">Amount</th><th /></tr></thead>
+                  <thead><tr><th>{translate("Date")}</th><th>{translate("Method")}</th><th>{translate("Reference")}</th><th>{translate("Recorded by")}</th><th className="text-right">{translate("Amount")}</th><th /></tr></thead>
                   <tbody>
                     {inv.payments.map((p) => (
                       <tr key={p.id} className={p.voidedAt ? 'text-slate-400' : ''}>
@@ -183,9 +184,9 @@ export default function InvoiceDetailPage() {
                         <td className={`tabular text-right ${p.voidedAt ? 'line-through' : 'font-medium'}`}>{money(p.amount, { currency: inv.currency })}</td>
                         <td className="text-right">
                           {p.voidedAt ? (
-                            <span title={`Voided by ${p.voidedBy?.name ?? 'unknown'} on ${dateTime(p.voidedAt)}${p.voidReason ? `: ${p.voidReason}` : ''}`}><Badge>Void</Badge></span>
+                            <span title={`Voided by ${p.voidedBy?.name ?? 'unknown'} on ${dateTime(p.voidedAt)}${p.voidReason ? `: ${p.voidReason}` : ''}`}><Badge>{translate("Void")}</Badge></span>
                           ) : (
-                            can('payment.void') && <button className="text-xs font-medium text-rose-600 hover:underline" onClick={() => setVoiding(p)}>Void</button>
+                            can('payment.void') && <button className="text-xs font-medium text-rose-600 hover:underline" onClick={() => setVoiding(p)}>{translate("Void")}</button>
                           )}
                         </td>
                       </tr>
@@ -197,25 +198,25 @@ export default function InvoiceDetailPage() {
           </Card>
         </div>
         <div className="space-y-6">
-          <Card title="Balance">
+          <Card title={translate("Balance")}>
             <p className="tabular text-3xl font-semibold">{money(inv.balance, { currency: inv.currency })}</p>
             <p className="mt-1 text-sm text-slate-500">outstanding of {money(inv.total, { currency: inv.currency })}</p>
             <ProgressBar value={paidPct} className="mt-4" label="Paid" />
             <p className="mt-1.5 text-xs text-slate-500">{money(inv.amountPaid, { currency: inv.currency })} paid ({Math.round(paidPct)}%)</p>
           </Card>
           {can('credit.read') && (
-            <Card title="Customer credit">
+            <Card title={translate("Customer credit")}>
               {credit ? (
                 <DescriptionList
                   columns={1}
                   items={[
                     { label: 'Credit limit', value: money(credit.creditLimit) },
                     { label: 'Terms', value: inv.customer.paymentTerm ? `${inv.customer.paymentTerm.name} (${inv.customer.paymentTerm.days} days)` : 'System default' },
-                    { label: 'Status', value: credit.onHold ? <Badge tone="red">On hold</Badge> : <Badge tone="green">Good standing</Badge> },
+                    { label: 'Status', value: credit.onHold ? <Badge tone="red">{translate("On hold")}</Badge> : <Badge tone="green">{translate("Good standing")}</Badge> },
                   ]}
                 />
               ) : (
-                <p className="text-sm text-slate-500">No credit terms set; default payment terms apply.</p>
+                <p className="text-sm text-slate-500">{translate("No credit terms set; default payment terms apply.")}</p>
               )}
             </Card>
           )}
@@ -225,7 +226,7 @@ export default function InvoiceDetailPage() {
       <ConfirmDialog
         open={dialog === 'issue'}
         onClose={() => setDialog(null)}
-        title="Issue invoice?"
+        title={translate("Issue invoice?")}
         message="The issue date is set to today and the due date is calculated from the customer's payment terms. Issued invoices can no longer be edited. A credit check is performed."
         confirmLabel="Issue invoice"
         onConfirm={() => issue.mutateAsync(undefined)}
@@ -233,7 +234,7 @@ export default function InvoiceDetailPage() {
       <ConfirmDialog
         open={dialog === 'cancel'}
         onClose={() => setDialog(null)}
-        title="Cancel invoice?"
+        title={translate("Cancel invoice?")}
         message="Cancelled invoices remain on record but no longer count toward receivables."
         confirmLabel="Cancel invoice"
         tone="danger"
@@ -244,7 +245,7 @@ export default function InvoiceDetailPage() {
       <ConfirmDialog
         open={!!voiding}
         onClose={() => setVoiding(null)}
-        title="Void payment?"
+        title={translate("Void payment?")}
         message={voiding ? `Voiding ${money(voiding.amount, { currency: inv.currency })} re-opens that amount on the invoice. This is recorded in the audit log.` : ''}
         confirmLabel="Void payment"
         tone="danger"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CUSTOMER_TYPES, enumLabel } from '@shared';
+import { CUSTOMER_TYPES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
@@ -37,20 +38,20 @@ export default function CustomersPage() {
     { key: 'industry', header: 'Industry', cell: (c) => c.industry ?? EMPTY, hideOnMobile: true },
     { key: 'owner', header: 'Owner', cell: (c) => c.owner.name },
     { key: 'counts', header: 'Opps / Quotes', cell: (c) => `${c._count?.opportunities ?? 0} / ${c._count?.quotations ?? 0}`, hideOnMobile: true, align: 'center' },
-    { key: 'status', header: 'Status', cell: (c) => (c.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>) },
+    { key: 'status', header: 'Status', cell: (c) => (c.isActive ? <Badge tone="green">{translate("Active")}</Badge> : <Badge>{translate("Inactive")}</Badge>) },
     { key: 'createdAt', header: 'Created', sortKey: 'createdAt', cell: (c) => date(c.createdAt), hideOnMobile: true },
   ];
 
   return (
     <div>
       <PageHeader
-        title="Customers"
+        title={translate("Customers")}
         description="Accounts you are responsible for."
-        actions={can('customer.create') && <Button icon={Plus} onClick={() => setCreating(true)}>New customer</Button>}
+        actions={can('customer.create') && <Button icon={Plus} onClick={() => setCreating(true)}>{translate("New customer")}</Button>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search name, email, industry…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search name, email, industry…")} className="sm:w-80" />
           <FilterSelect
             label="Type"
             value={lp.filters.type ?? ''}
@@ -74,7 +75,7 @@ export default function CustomersPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={(c) => navigate(`/customers/${c.id}`)}
-          empty={<EmptyState icon={Users} title="No customers found" description={lp.q ? 'Try a different search.' : 'Create your first customer to get started.'} />}
+          empty={<EmptyState icon={Users} title={translate("No customers found")} description={lp.q ? 'Try a different search.' : 'Create your first customer to get started.'} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

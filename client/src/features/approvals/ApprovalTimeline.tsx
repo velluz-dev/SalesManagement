@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleSlash, GitBranch, Send, XCircle } from 'lucide-react';
-import { enumLabel } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { StatusBadge } from '../../components/ui/Badge';
 import { dateTime, money } from '../../lib/format';
 import { cn } from '../../lib/cn';
@@ -14,7 +14,7 @@ const ICONS = {
 } as const;
 
 export function ApprovalTimeline({ requests, currency }: { requests: ApprovalRequest[]; currency?: string }) {
-  if (!requests.length) return <p className="text-sm text-slate-500">This quotation has not been submitted for approval yet.</p>;
+  if (!requests.length) return <p className="text-sm text-slate-500">{translate("This quotation has not been submitted for approval yet.")}</p>;
   return (
     <div className="space-y-6">
       {requests.map((r) => (
@@ -26,7 +26,7 @@ export function ApprovalTimeline({ requests, currency }: { requests: ApprovalReq
             <StatusBadge status={r.status} />
           </div>
           <div className="px-4 py-2 text-xs text-slate-500">
-            Routed to <span className="font-medium text-slate-700">{r.assignedTo ? r.assignedTo.name : `any ${r.approverRole.name}`}</span>
+            {translate("Routed to")} <span className="font-medium text-slate-700">{r.assignedTo ? r.assignedTo.name : `any ${r.approverRole.name}`}</span>
             {r.rule && <> by rule “{r.rule.name}”</>}
           </div>
           <ol className="relative space-y-4 px-4 pt-2 pb-4">

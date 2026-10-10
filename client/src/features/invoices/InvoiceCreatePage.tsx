@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { money } from '../../lib/format';
 import { cn } from '../../lib/cn';
 import type { Invoice, Quotation, SalesOrder } from '../../lib/types';
+import { translate } from '../../i18n';
 
 interface Values extends WithItems {
   quotationId: string;
@@ -101,13 +102,13 @@ export default function InvoiceCreatePage() {
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <PageHeader
         back={{ to: '/invoices', label: 'Invoices' }}
-        title="New invoice"
+        title={translate("New invoice")}
         description="Invoices are created as drafts. Review, then issue them to start the payment terms."
-        actions={<Button type="submit" icon={Save} loading={formState.isSubmitting}>Create draft</Button>}
+        actions={<Button type="submit" icon={Save} loading={formState.isSubmitting}>{translate("Create draft")}</Button>}
       />
       <div className="space-y-6">
         <FormError message={error} />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Invoice source">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" role="radiogroup" aria-label={translate("Invoice source")}>
           {([
             ...(canSeeOrders ? [['order', ClipboardList, 'From a sales order', 'Bill a confirmed or delivered order.'] as const] : []),
             ['quotation', FileText, 'From a quotation', 'Copy line items from an approved or accepted quotation.'] as const,
@@ -131,7 +132,7 @@ export default function InvoiceCreatePage() {
         </div>
 
         {mode === 'order' ? (
-          <Card title="Sales order">
+          <Card title={translate("Sales order")}>
             <Field label="Sales order" required hint={orders.data && !orders.data.length ? 'There are no confirmed or delivered orders to invoice.' : undefined}>
               <Select {...register('salesOrderId')} disabled={orders.isLoading}>
                 <option value="">{orders.isLoading ? 'Loading…' : 'Select a sales order…'}</option>
@@ -144,13 +145,13 @@ export default function InvoiceCreatePage() {
             </Field>
             {selectedOrder && (
               <p className="mt-3 text-sm text-slate-600">
-                Invoice for <strong>{selectedOrder.customer.name}</strong>, total <strong>{money(selectedOrder.total, { currency: selectedOrder.currency })}</strong>
+                {translate("Invoice for")} <strong>{selectedOrder.customer.name}</strong>, total <strong>{money(selectedOrder.total, { currency: selectedOrder.currency })}</strong>
                 {selectedOrder.contract && <> under contract {selectedOrder.contract.number}</>}. The due date comes from the customer's payment terms when you issue it.
               </p>
             )}
           </Card>
         ) : mode === 'quotation' ? (
-          <Card title="Quotation">
+          <Card title={translate("Quotation")}>
             <Field label="Quotation" required hint={quotes.data && !quotes.data.length ? 'There are no approved or accepted quotations to invoice.' : undefined}>
               <Select {...register('quotationId')} disabled={quotes.isLoading}>
                 <option value="">{quotes.isLoading ? 'Loading…' : 'Select a quotation…'}</option>
@@ -163,21 +164,21 @@ export default function InvoiceCreatePage() {
             </Field>
             {selectedQuote && (
               <p className="mt-3 text-sm text-slate-600">
-                Invoice for <strong>{selectedQuote.customer.name}</strong>, total <strong>{money(selectedQuote.total, { currency: selectedQuote.currency })}</strong>, salesperson {selectedQuote.owner.name}.
+                {translate("Invoice for")} <strong>{selectedQuote.customer.name}</strong>, total <strong>{money(selectedQuote.total, { currency: selectedQuote.currency })}</strong>, salesperson {selectedQuote.owner.name}.
               </p>
             )}
           </Card>
         ) : (
           <>
-            <Card title="Customer">
+            <Card title={translate("Customer")}>
               <Field label="Customer" required error={formState.errors.customerId?.message} className="max-w-md"><CustomerSelect {...register('customerId')} /></Field>
             </Card>
-            <Card title="Line items">
+            <Card title={translate("Line items")}>
               <LineItemsEditor setValue={setValue as never} control={control as never} register={register as never} errors={formState.errors as never} currency={settings?.['company.currency']} defaultTaxRate={String(settings?.['quotation.defaultTaxRate'] ?? 0)} />
             </Card>
           </>
         )}
-        <Card title="Notes">
+        <Card title={translate("Notes")}>
           <Field label="Notes on invoice"><Textarea rows={3} {...register('notes')} /></Field>
         </Card>
       </div>

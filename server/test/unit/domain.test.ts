@@ -4,7 +4,7 @@ import { resolveScope, DEFAULT_ROLE_PERMISSIONS } from '../../src/shared';
 import { calculateLine, calculateTotals } from '../../src/lib/money';
 import { isSelfApproval, selectRule } from '../../src/modules/approvals/approval-engine';
 import { deriveInvoiceState } from '../../src/modules/invoices/invoices.service';
-import { periodBounds } from '../../src/lib/dates';
+import { periodBounds, startOfTodayUtc } from '../../src/lib/dates';
 
 const D = (v: number | string) => new Prisma.Decimal(v);
 
@@ -102,5 +102,14 @@ describe('periodBounds', () => {
     expect(periodBounds('MONTH', 2026, 2).end.toISOString().slice(0, 10)).toBe('2026-02-28');
     expect(periodBounds('QUARTER', 2026, 4).start.toISOString().slice(0, 10)).toBe('2026-10-01');
     expect(periodBounds('YEAR', 2026, 1).end.toISOString().slice(0, 10)).toBe('2026-12-31');
+  });
+});
+
+describe('business dates (Asia/Yangon, UTC+06:30)', () => {
+  it('uses the Myanmar calendar date, not the UTC date', () => {
+    // 01:00 in Yangon on 11 Oct = 18:30 UTC on 10 Oct.
+    expect(startOfTodayUtc(new Date('2026-10-10T18:30:00Z')).toISOString().slice(0, 10)).toBe('2026-10-11');
+    // 23:00 in Yangon on 10 Oct = 16:30 UTC on 10 Oct.
+    expect(startOfTodayUtc(new Date('2026-10-10T16:30:00Z')).toISOString().slice(0, 10)).toBe('2026-10-10');
   });
 });

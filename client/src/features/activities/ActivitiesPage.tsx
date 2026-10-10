@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CalendarCheck, Plus } from 'lucide-react';
-import { ACTIVITY_TYPES, enumLabel } from '@shared';
+import { ACTIVITY_TYPES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -22,9 +23,9 @@ export default function ActivitiesPage() {
   return (
     <div>
       <PageHeader
-        title="Activities"
+        title={translate("Activities")}
         description="Calls, meetings, emails and tasks."
-        actions={can('activity.manage') && <Button icon={Plus} onClick={() => setAdding(true)}>New activity</Button>}
+        actions={can('activity.manage') && <Button icon={Plus} onClick={() => setAdding(true)}>{translate("New activity")}</Button>}
       />
       <div className="card overflow-hidden">
         <div className="px-4 pt-2">
@@ -40,7 +41,7 @@ export default function ActivitiesPage() {
           />
         </div>
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search activities…" className="sm:w-72" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search activities…")} className="sm:w-72" />
           <FilterSelect label="Type" value={lp.filters.type ?? ''} onChange={(v) => lp.setFilter('type', v)} options={enumOptions(ACTIVITY_TYPES, enumLabel)} />
         </Toolbar>
         <div className="px-5">
@@ -49,7 +50,7 @@ export default function ActivitiesPage() {
           ) : isLoading ? (
             <div className="space-y-3 py-4">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-10" />)}</div>
           ) : !data?.data.length ? (
-            <EmptyState icon={CalendarCheck} title="No activities" description="Nothing matches the current filter." />
+            <EmptyState icon={CalendarCheck} title={translate("No activities")} description="Nothing matches the current filter." />
           ) : (
             <ul className="divide-y divide-slate-100">{data.data.map((a) => <ActivityRow key={a.id} a={a} canManage={can('activity.manage')} />)}</ul>
           )}

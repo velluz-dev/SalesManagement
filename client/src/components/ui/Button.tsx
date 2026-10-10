@@ -2,6 +2,7 @@ import type { ComponentProps, ComponentType } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { tNode } from '../../i18n';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'success';
 type Size = 'sm' | 'md';
@@ -37,7 +38,7 @@ export function Button({ variant, size, icon: Icon, loading, className, children
   return (
     <button type={type} className={buttonClass(variant, size, className)} disabled={disabled || loading} aria-busy={loading || undefined} {...rest}>
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : Icon ? <Icon className="size-4" aria-hidden /> : null}
-      {children}
+      {tNode(children)}
     </button>
   );
 }
@@ -46,7 +47,7 @@ export function ButtonLink({ variant, size, icon: Icon, className, children, ...
   return (
     <Link className={buttonClass(variant, size, className)} {...rest}>
       {Icon ? <Icon className="size-4" aria-hidden /> : null}
-      {children}
+      {tNode(children)}
     </Link>
   );
 }

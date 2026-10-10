@@ -3,10 +3,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { OPPORTUNITY_STAGES, enumLabel } from '@shared';
+import { OPPORTUNITY_STAGES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
+import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
 import { CustomerSelect, UserSelect } from '../../components/ui/Pickers';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../auth/AuthProvider';
@@ -85,7 +86,7 @@ export function OpportunityFormModal({ open, onClose, opportunity, defaultCustom
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{opportunity ? 'Save changes' : 'Create opportunity'}</Button>
         </>
       }
@@ -99,8 +100,8 @@ export function OpportunityFormModal({ open, onClose, opportunity, defaultCustom
             {OPPORTUNITY_STAGES.map((s) => <option key={s} value={s}>{enumLabel(s)}</option>)}
           </Select>
         </Field>
-        <Field label="Amount" error={formState.errors.amount?.message} required><Input inputMode="decimal" {...register('amount')} /></Field>
-        <Field label="Probability (%)" error={formState.errors.probability?.message}><Input type="number" min={0} max={100} {...register('probability')} /></Field>
+        <Field label="Amount" error={formState.errors.amount?.message} required><NumberInput decimals={2} {...register('amount')} /></Field>
+        <Field label="Probability (%)" error={formState.errors.probability?.message}><NumberInput decimals={0} maxValue={100} {...register('probability')} /></Field>
         <Field label="Expected close date" error={formState.errors.expectedCloseDate?.message}><Input type="date" {...register('expectedCloseDate')} /></Field>
         {can('lead.assign') && <Field label="Owner"><UserSelect {...register('ownerId')} /></Field>}
         <Field label="Notes" className="sm:col-span-2"><Textarea {...register('notes')} /></Field>

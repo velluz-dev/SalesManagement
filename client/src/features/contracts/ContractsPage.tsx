@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { FileSignature } from 'lucide-react';
-import { CONTRACT_STATUSES, enumLabel } from '@shared';
+import { CONTRACT_STATUSES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
 import { DataTable, Pagination, type Column } from '../../components/ui/DataTable';
@@ -36,10 +37,10 @@ export default function ContractsPage() {
 
   return (
     <div>
-      <PageHeader title="Contracts" description="Agreements created from accepted quotations. Create one from an accepted quotation's page." />
+      <PageHeader title={translate("Contracts")} description="Agreements created from accepted quotations. Create one from an accepted quotation's page." />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search number, title, customer…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search number, title, customer…")} className="sm:w-80" />
           <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={CONTRACT_STATUSES.map((s) => ({ value: s, label: enumLabel(s) }))} />
         </Toolbar>
         <DataTable
@@ -52,7 +53,7 @@ export default function ContractsPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={(c) => navigate(`/contracts/${c.id}`)}
-          empty={<EmptyState icon={FileSignature} title="No contracts yet" description="When a customer accepts a quotation, open it and choose Create contract." />}
+          empty={<EmptyState icon={FileSignature} title={translate("No contracts yet")} description="When a customer accepts a quotation, open it and choose Create contract." />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

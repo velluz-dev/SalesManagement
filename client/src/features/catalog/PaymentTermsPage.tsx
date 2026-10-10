@@ -6,11 +6,12 @@ import { Button } from '../../components/ui/Button';
 import { Card, PageHeader } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
-import { Checkbox, Field, FormError, Input } from '../../components/ui/Form';
+import { Checkbox, Field, FormError, Input, NumberInput } from '../../components/ui/Form';
 import { EmptyState, ErrorState } from '../../components/ui/EmptyState';
 import { FullPageSpinner } from '../../components/ui/Spinner';
 import { api, errorMessage } from '../../lib/api';
 import type { PaymentTerm } from '../../lib/types';
+import { translate } from '../../i18n';
 
 function TermForm({ term, onClose }: { term?: PaymentTerm; onClose: () => void }) {
   const [name, setName] = useState(term?.name ?? '');
@@ -43,15 +44,15 @@ function TermForm({ term, onClose }: { term?: PaymentTerm; onClose: () => void }
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={save.isPending}>Save</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={submit} loading={save.isPending}>{translate("Save")}</Button>
         </>
       }
     >
       <div className="space-y-4">
         <FormError message={error} />
         <Field label="Name" required hint="e.g. Net 30, COD"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
-        <Field label="Days until due" required hint="0 means payment on delivery (COD)."><Input type="number" min={0} max={365} value={days} onChange={(e) => setDays(e.target.value)} /></Field>
+        <Field label="Days until due" required hint="0 means payment on delivery (COD)."><NumberInput decimals={0} maxValue={365} value={days} onChange={(e) => setDays(e.target.value)} /></Field>
         <Checkbox label="Available for new customers" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
       </div>
     </Modal>
@@ -72,17 +73,17 @@ export default function PaymentTermsPage() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Payment terms"
+        title={translate("Payment terms")}
         description="Terms you offer customers. A customer's term sets the due date of their invoices; customers without one use the system default."
-        actions={<Button icon={Plus} onClick={() => setEditing('new')}>New term</Button>}
+        actions={<Button icon={Plus} onClick={() => setEditing('new')}>{translate("New term")}</Button>}
       />
       <Card bodyClassName="p-0">
         {!data?.length ? (
-          <EmptyState icon={CalendarDays} title="No payment terms" />
+          <EmptyState icon={CalendarDays} title={translate("No payment terms")} />
         ) : (
           <table className="table-base w-full">
             <thead>
-              <tr><th>Term</th><th className="text-right">Days</th><th className="text-right">Customers</th><th>Status</th><th /></tr>
+              <tr><th>{translate("Term")}</th><th className="text-right">{translate("Days")}</th><th className="text-right">{translate("Customers")}</th><th>{translate("Status")}</th><th /></tr>
             </thead>
             <tbody>
               {data.map((t) => (
@@ -90,7 +91,7 @@ export default function PaymentTermsPage() {
                   <td className="font-medium">{t.name}</td>
                   <td className="tabular text-right">{t.days === 0 ? 'On delivery' : t.days}</td>
                   <td className="tabular text-right">{t.customerCount ?? 0}</td>
-                  <td>{t.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}</td>
+                  <td>{t.isActive ? <Badge tone="green">{translate("Active")}</Badge> : <Badge>{translate("Inactive")}</Badge>}</td>
                   <td className="text-right">
                     <div className="flex justify-end gap-1">
                       <button className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}><Pencil className="size-4" /></button>

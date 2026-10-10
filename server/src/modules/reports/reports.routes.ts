@@ -145,7 +145,7 @@ reportsRouter.get('/finance', requirePermission('report.finance'), async (req, r
     prisma.$queryRaw<{ customerId: string; name: string; outstanding: Prisma.Decimal; overdue: Prisma.Decimal }[]>`
       SELECT c.id AS "customerId", c.name,
         SUM(i.total - i."amountPaid") AS outstanding,
-        COALESCE(SUM(i.total - i."amountPaid") FILTER (WHERE i."dueDate" < CURRENT_DATE), 0) AS overdue
+        COALESCE(SUM(i.total - i."amountPaid") FILTER (WHERE i."dueDate" < ${startOfTodayUtc()}::date), 0) AS overdue
       FROM "Invoice" i JOIN "Customer" c ON c.id = i."customerId"
       WHERE i.status IN ('ISSUED','PARTIALLY_PAID')
       GROUP BY c.id, c.name ORDER BY outstanding DESC LIMIT 10`,

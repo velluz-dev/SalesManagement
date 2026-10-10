@@ -15,6 +15,7 @@ import { EMPTY, date, money } from '../../lib/format';
 import type { Quotation } from '../../lib/types';
 import { ApprovalTimeline } from '../approvals/ApprovalTimeline';
 import { CreateContractModal } from '../contracts/ContractForms';
+import { translate } from '../../i18n';
 
 type ActionKey = 'submit' | 'withdraw' | 'send' | 'accept' | 'decline' | 'cancel' | 'revise';
 
@@ -78,20 +79,20 @@ export default function QuotationDetailPage() {
         description={<><Link to={`/customers/${q.customer.id}`} className="hover:underline">{q.customer.name}</Link>, owned by {q.owner.name}</>}
         actions={
           <>
-            {canEdit && <ButtonLink to={`/quotations/${q.id}/edit`} variant="secondary" icon={Pencil}>Edit</ButtonLink>}
-            {canEdit && <Button variant="ghost" icon={Ban} onClick={() => setAction('cancel')}>Cancel</Button>}
+            {canEdit && <ButtonLink to={`/quotations/${q.id}/edit`} variant="secondary" icon={Pencil}>{translate("Edit")}</ButtonLink>}
+            {canEdit && <Button variant="ghost" icon={Ban} onClick={() => setAction('cancel')}>{translate("Cancel")}</Button>}
             {can('quotation.submit') && (s === 'DRAFT' || s === 'REJECTED') && <Button icon={Send} onClick={() => setAction('submit')}>{s === 'REJECTED' ? 'Resubmit' : 'Submit for approval'}</Button>}
-            {can('quotation.submit') && s === 'PENDING_APPROVAL' && <Button variant="secondary" icon={Undo2} onClick={() => setAction('withdraw')}>Withdraw</Button>}
-            {can('quotation.update') && s === 'APPROVED' && <Button variant="secondary" icon={Mail} onClick={() => setAction('send')}>Mark as sent</Button>}
+            {can('quotation.submit') && s === 'PENDING_APPROVAL' && <Button variant="secondary" icon={Undo2} onClick={() => setAction('withdraw')}>{translate("Withdraw")}</Button>}
+            {can('quotation.update') && s === 'APPROVED' && <Button variant="secondary" icon={Mail} onClick={() => setAction('send')}>{translate("Mark as sent")}</Button>}
             {can('quotation.update') && (s === 'APPROVED' || s === 'SENT') && (
               <>
-                <Button variant="success" icon={CheckCheck} onClick={() => setAction('accept')}>Accepted</Button>
-                <Button variant="secondary" icon={ThumbsDown} onClick={() => setAction('decline')}>Declined</Button>
+                <Button variant="success" icon={CheckCheck} onClick={() => setAction('accept')}>{translate("Accepted")}</Button>
+                <Button variant="secondary" icon={ThumbsDown} onClick={() => setAction('decline')}>{translate("Declined")}</Button>
               </>
             )}
-            {can('quotation.update') && ['APPROVED', 'SENT', 'DECLINED'].includes(s) && !activeInvoice && <Button variant="secondary" icon={GitBranch} onClick={() => setAction('revise')}>Revise</Button>}
+            {can('quotation.update') && ['APPROVED', 'SENT', 'DECLINED'].includes(s) && !activeInvoice && <Button variant="secondary" icon={GitBranch} onClick={() => setAction('revise')}>{translate("Revise")}</Button>}
             {can('contract.manage') && s === 'ACCEPTED' && !q.contract && !activeInvoice && (
-              <Button variant="secondary" icon={FileSignature} onClick={() => setCreatingContract(true)}>Create contract</Button>
+              <Button variant="secondary" icon={FileSignature} onClick={() => setCreatingContract(true)}>{translate("Create contract")}</Button>
             )}
             {can('order.create') && s === 'ACCEPTED' && !activeInvoice && (
               <ButtonLink
@@ -99,10 +100,10 @@ export default function QuotationDetailPage() {
                 variant="secondary"
                 icon={ClipboardList}
               >
-                Create sales order
+                {translate("Create sales order")}
               </ButtonLink>
             )}
-            {can('invoice.create') && (s === 'ACCEPTED' || s === 'APPROVED') && !activeInvoice && !hasOrders && <ButtonLink to={`/invoices/new?quotationId=${q.id}`} icon={Receipt}>Create invoice</ButtonLink>}
+            {can('invoice.create') && (s === 'ACCEPTED' || s === 'APPROVED') && !activeInvoice && !hasOrders && <ButtonLink to={`/invoices/new?quotationId=${q.id}`} icon={Receipt}>{translate("Create invoice")}</ButtonLink>}
           </>
         }
       />
@@ -111,18 +112,18 @@ export default function QuotationDetailPage() {
         <div role="alert" className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           <p className="font-medium">Rejected by {latestRejection.decidedBy?.name}</p>
           {latestRejection.decisionComment && <p className="mt-0.5">“{latestRejection.decisionComment}”</p>}
-          <p className="mt-1 text-rose-700">Edit the quotation and resubmit it for approval.</p>
+          <p className="mt-1 text-rose-700">{translate("Edit the quotation and resubmit it for approval.")}</p>
         </div>
       )}
       {s === 'SUPERSEDED' && q.revision && (
         <div className="mb-6 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
-          This version has been superseded by <Link className="font-medium underline" to={`/quotations/${q.revision.id}`}>v{q.revision.version}</Link> and is read-only.
+          {translate("This version has been superseded by")} <Link className="font-medium underline" to={`/quotations/${q.revision.id}`}>v{q.revision.version}</Link> and is read-only.
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Summary">
+          <Card title={translate("Summary")}>
             <DescriptionList
               columns={3}
               items={[
@@ -144,17 +145,17 @@ export default function QuotationDetailPage() {
               ]}
             />
           </Card>
-          <Card title="Line items" bodyClassName="p-0">
+          <Card title={translate("Line items")} bodyClassName="p-0">
             <div className="relative overflow-x-auto">
               <table className="table-base w-full min-w-[640px]">
                 <thead>
                   <tr>
-                    <th>Description</th>
-                    <th className="text-right">Qty</th>
-                    <th className="text-right">Unit price</th>
-                    <th className="text-right">Disc.</th>
-                    <th className="text-right">Tax</th>
-                    <th className="text-right">Total</th>
+                    <th>{translate("Description")}</th>
+                    <th className="text-right">{translate("Qty")}</th>
+                    <th className="text-right">{translate("Unit price")}</th>
+                    <th className="text-right">{translate("Disc.")}</th>
+                    <th className="text-right">{translate("Tax")}</th>
+                    <th className="text-right">{translate("Total")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,19 +173,19 @@ export default function QuotationDetailPage() {
               </table>
             </div>
             <dl className="tabular ml-auto max-w-xs space-y-1.5 px-5 py-4 text-sm">
-              <div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd>{money(q.subtotal, { currency: q.currency })}</dd></div>
-              <div className="flex justify-between text-slate-600"><dt>Discount</dt><dd>−{money(q.discountTotal, { currency: q.currency })}</dd></div>
-              <div className="flex justify-between text-slate-600"><dt>Tax</dt><dd>{money(q.taxTotal, { currency: q.currency })}</dd></div>
-              <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold"><dt>Total</dt><dd>{money(q.total, { currency: q.currency })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Subtotal")}</dt><dd>{money(q.subtotal, { currency: q.currency })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Discount")}</dt><dd>−{money(q.discountTotal, { currency: q.currency })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Tax")}</dt><dd>{money(q.taxTotal, { currency: q.currency })}</dd></div>
+              <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold"><dt>{translate("Total")}</dt><dd>{money(q.total, { currency: q.currency })}</dd></div>
             </dl>
           </Card>
           {(q.notes || q.terms) && (
-            <Card title="Notes & terms">
+            <Card title={translate("Notes & terms")}>
               <DescriptionList items={[{ label: 'Notes', value: <span className="whitespace-pre-wrap">{q.notes ?? EMPTY}</span> }, { label: 'Terms', value: <span className="whitespace-pre-wrap">{q.terms ?? EMPTY}</span> }]} />
             </Card>
           )}
         </div>
-        <Card title="Approval history">
+        <Card title={translate("Approval history")}>
           <ApprovalTimeline requests={q.approvalRequests ?? []} currency={q.currency} />
         </Card>
       </div>

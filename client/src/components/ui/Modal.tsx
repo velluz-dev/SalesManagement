@@ -5,6 +5,7 @@ import { cn } from '../../lib/cn';
 import { Button } from './Button';
 import { Field, FormError, Textarea } from './Form';
 import { errorMessage } from '../../lib/api';
+import { tNode, translate } from '../../i18n';
 
 export function Modal({
   open,
@@ -74,10 +75,10 @@ export function Modal({
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 id={titleId} className="text-base font-semibold text-slate-900">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
+            <h2 id={titleId} className="text-base font-semibold text-slate-900">{translate(title)}</h2>
+            {description && <p className="mt-0.5 text-sm text-slate-500">{tNode(description)}</p>}
           </div>
-          <button data-close onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label="Close dialog">
+          <button data-close onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label={translate('Close dialog')}>
             <X className="size-5" />
           </button>
         </div>
@@ -122,7 +123,7 @@ export function ConfirmDialog({
 
   const submit = async () => {
     if (reason && reasonRequired && text.trim().length < 3) {
-      setError(`${reason} is required (at least 3 characters)`);
+      setError(translate('{field} is required (at least 3 characters)', { field: translate(reason) }));
       return;
     }
     setBusy(true);
@@ -145,13 +146,13 @@ export function ConfirmDialog({
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button variant={tone} onClick={submit} loading={busy}>{confirmLabel}</Button>
+          <Button variant="secondary" onClick={onClose} disabled={busy}>{translate("Cancel")}</Button>
+          <Button variant={tone} onClick={submit} loading={busy}>{translate(confirmLabel)}</Button>
         </>
       }
     >
       <div className="space-y-4">
-        <div className="text-sm text-slate-600">{message}</div>
+        <div className="text-sm text-slate-600">{tNode(message)}</div>
         {reason && (
           <Field label={reason} required={reasonRequired}>
             <Textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />

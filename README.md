@@ -42,6 +42,7 @@ cp server/.env.test.example server/.env.test    # test database (must end in _te
 | `SESSION_IDLE_MINUTES` / `SESSION_ABSOLUTE_HOURS` | Session idle timeout / absolute lifetime | `120` / `12` |
 | `COOKIE_SECURE` | Mark cookies `Secure` (always on when `NODE_ENV=production`) | `false` |
 | `OVERDUE_SCAN_MINUTES` | Overdue-invoice notification scan interval (0 = off) | `60` |
+| `BUSINESS_TIMEZONE` | Time zone for calendar dates (today, due dates, overdue) | `Asia/Yangon` |
 
 > **Using Docker for PostgreSQL:** `docker compose up -d db`, then set
 > `DATABASE_URL=postgresql://crm:crm@localhost:5432/sales_crm?schema=public`.
@@ -137,6 +138,17 @@ client/
   src/features/       Pages per module (dashboard, leads, quotations, approvals, invoices, admin, …)
 docs/                 ARCHITECTURE.md, API.md
 ```
+
+## Languages (English / မြန်မာ)
+
+The interface supports English and Myanmar (Burmese, Unicode). Users switch with the **EN / မြန်မာ** toggle in the top bar or on the sign-in page; the choice is remembered in that browser.
+
+- Translations live in `client/src/i18n/my.ts`, keyed by the English text. Any text without an entry stays in English.
+- Shared components (page titles, form labels, hints and errors, buttons, table headers, filters, dialogs, toasts, empty states, menus) translate automatically. Text built with values uses placeholders, e.g. `translate('{count} open invoices', { count })`.
+- Status, stage, method and role names use `enum.<CODE>` keys; a test fails if a code has no Burmese name.
+- Myanmar uses the Noto Sans Myanmar font, taller line spacing, Burmese month names and Western digits for amounts.
+- Server error messages that appear in the dictionary are shown translated.
+- Have new or changed Burmese wording reviewed by a native speaker before release.
 
 ## 8. Security notes
 

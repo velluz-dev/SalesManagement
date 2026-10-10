@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Contact, Plus } from 'lucide-react';
-import { LEAD_SOURCES, LEAD_STATUSES, enumLabel } from '@shared';
+import { LEAD_SOURCES, LEAD_STATUSES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -44,13 +45,13 @@ export default function LeadsPage() {
   return (
     <div>
       <PageHeader
-        title="Leads"
+        title={translate("Leads")}
         description="Potential deals to qualify and convert."
-        actions={can('lead.create') && <Button icon={Plus} onClick={() => setCreating(true)}>New lead</Button>}
+        actions={can('lead.create') && <Button icon={Plus} onClick={() => setCreating(true)}>{translate("New lead")}</Button>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search title, contact, company…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search title, contact, company…")} className="sm:w-80" />
           <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={enumOptions(LEAD_STATUSES, enumLabel)} />
           <FilterSelect label="Source" value={lp.filters.source ?? ''} onChange={(v) => lp.setFilter('source', v)} options={enumOptions(LEAD_SOURCES, enumLabel)} />
         </Toolbar>
@@ -64,7 +65,7 @@ export default function LeadsPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={(l) => navigate(`/leads/${l.id}`)}
-          empty={<EmptyState icon={Contact} title="No leads found" description="Adjust filters or create a new lead." />}
+          empty={<EmptyState icon={Contact} title={translate("No leads found")} description="Adjust filters or create a new lead." />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

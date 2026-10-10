@@ -101,7 +101,7 @@ ApprovalRule table) rather than hard-coded.
 
 | # | Rule | Configurable via |
 |---|---|---|
-| B1 | Approver is resolved from **ApprovalRule** rows by quotation total (`minAmount ≤ total < maxAmount`). Seed: `< 50,000` to submitter's team manager (Sales Manager); `≥ 50,000` to any Director. Single-step approval. | Settings > Approval rules |
+| B1 | Approver is resolved from **ApprovalRule** rows by quotation total (`minAmount ≤ total < maxAmount`). Seed: `< 100,000,000 MMK` to submitter's team manager (Sales Manager); `≥ 100,000,000 MMK` to any Director. Single-step approval. | Settings > Approval rules |
 | B2 | If the rule targets the team manager but none exists, or the manager is the requester, the request goes to the **fallback role** (default `DIRECTOR`). | `approval.fallbackRoleCode` |
 | B3 | Self-approval is blocked (requester or quotation owner ≠ approver) unless enabled. | `approval.allowSelfApproval` (default false) |
 | B4 | Quotation lifecycle: `DRAFT to PENDING_APPROVAL to APPROVED / REJECTED`; `REJECTED`, edit, then resubmit; `APPROVED to SENT to ACCEPTED / DECLINED`; `DRAFT/REJECTED to CANCELLED`. Only DRAFT and REJECTED are editable. | Fixed |
@@ -112,7 +112,7 @@ ApprovalRule table) rather than hard-coded.
 | B9 | Payments cannot exceed the outstanding balance (no overpayment/credit notes in scope). Voiding a payment requires a reason and re-opens the balance. | Fixed |
 | B10 | Credit exposure = sum of outstanding balances of the customer's issued invoices. Issuing an invoice that exceeds the limit (or for a customer on credit hold) returns a warning, or is blocked if configured. | `credit.blockOnExceed` (default false) |
 | B11 | Target achievement basis: amount of opportunities **Closed Won** in the period (default) or invoiced amount. | `targets.achievementBasis` |
-| B12 | Default quotation validity 30 days, default tax rate 0%, default payment terms 30 days, currency USD. | settings |
+| B12 | Default quotation validity 30 days, default tax rate 0%, default payment terms 30 days, currency **Myanmar Kyat (MMK)**, shown as whole kyat with the code after the amount (`125,000,000 MMK`). Calendar dates ("today", due dates, overdue) use Myanmar time, `Asia/Yangon` (UTC+06:30); override with the `BUSINESS_TIMEZONE` env variable. | settings / env |
 | B13 | Teams: each salesperson belongs to at most one team, and each team has one manager. "Team scope" = members of teams the user manages. | Admin > Teams |
 | B14 | Target setters cannot set their own target; managers set targets only for their team members/teams (company-wide setters need `target.read.all`). | role permissions |
 | B15 | Payments cannot be future-dated; invoices created from a quotation keep the quotation's line items (edits only to notes while draft). | Fixed |

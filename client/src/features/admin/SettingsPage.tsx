@@ -10,11 +10,12 @@ import { Button } from '../../components/ui/Button';
 import { Card, PageHeader } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
-import { Checkbox, Field, FormError, Input, Select } from '../../components/ui/Form';
+import { Checkbox, Field, FormError, Input, NumberInput, Select } from '../../components/ui/Form';
 import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import type { Role } from '../../lib/types';
+import { translate } from '../../i18n';
 
 interface ApprovalRule {
   id: string;
@@ -46,7 +47,7 @@ function SettingsForm({ definitions, values, editable }: { definitions: SettingD
     }
   };
   return (
-    <Card title="System settings" description="Business policies are configurable rather than hard-coded." actions={editable && <Button icon={Save} disabled={!Object.keys(changed).length} onClick={save}>Save settings</Button>}>
+    <Card title={translate("System settings")} description="Business policies are configurable rather than hard-coded." actions={editable && <Button icon={Save} disabled={!Object.keys(changed).length} onClick={save}>{translate("Save settings")}</Button>}>
       <FormError message={error} />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {definitions.map((d) => (
@@ -63,7 +64,7 @@ function SettingsForm({ definitions, values, editable }: { definitions: SettingD
                     {d.options.map((o) => <option key={o} value={o}>{d.optionLabels?.[o] ?? o}</option>)}
                   </Select>
                 ) : d.type === 'number' ? (
-                  <Input type="number" min={d.min} max={d.max} value={String(draft[d.key] ?? '')} disabled={!editable} onChange={(e) => setDraft((x) => ({ ...x, [d.key]: e.target.value === '' ? '' : Number(e.target.value) }))} />
+                  <NumberInput decimals={d.key.endsWith('TaxRate') ? 2 : 0} maxValue={d.max} value={String(draft[d.key] ?? '')} disabled={!editable} onChange={(e) => setDraft((x) => ({ ...x, [d.key]: e.target.value === '' ? '' : Number(e.target.value) }))} />
                 ) : (
                   <Input value={String(draft[d.key] ?? '')} disabled={!editable} onChange={(e) => setDraft((x) => ({ ...x, [d.key]: e.target.value }))} />
                 )}
@@ -104,22 +105,22 @@ function RuleForm({ rule, roles, onClose }: { rule?: ApprovalRule; roles: Role[]
     }
   };
   return (
-    <Modal open onClose={onClose} title={rule ? 'Edit approval rule' : 'New approval rule'} size="lg" footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={submit} loading={save.isPending}>Save rule</Button></>}>
+    <Modal open onClose={onClose} title={rule ? 'Edit approval rule' : 'New approval rule'} size="lg" footer={<><Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button><Button onClick={submit} loading={save.isPending}>{translate("Save rule")}</Button></>}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2"><FormError message={error} /></div>
         <Field label="Name" required className="sm:col-span-2"><Input value={v.name} onChange={set('name')} /></Field>
-        <Field label="Minimum amount (inclusive)" required><Input inputMode="decimal" value={v.minAmount} onChange={set('minAmount')} /></Field>
-        <Field label="Maximum amount (exclusive)" hint="Leave empty for no upper limit."><Input inputMode="decimal" value={v.maxAmount} onChange={set('maxAmount')} /></Field>
+        <Field label="Minimum amount (inclusive)" required><NumberInput decimals={2} value={v.minAmount} onChange={set('minAmount')} /></Field>
+        <Field label="Maximum amount (exclusive)" hint="Leave empty for no upper limit."><NumberInput decimals={2} value={v.maxAmount} onChange={set('maxAmount')} /></Field>
         <Field label="Approver">
           <Select value={v.approverType} onChange={set('approverType')}>
-            <option value="TEAM_MANAGER">Requester's team manager</option>
-            <option value="ROLE">Any holder of a role</option>
+            <option value="TEAM_MANAGER">{translate("Requester's team manager")}</option>
+            <option value="ROLE">{translate("Any holder of a role")}</option>
           </Select>
         </Field>
         <Field label="Approver role" hint="Only roles with approval authority are listed.">
           <Select value={v.approverRoleId} onChange={set('approverRoleId')}>{approverRoles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</Select>
         </Field>
-        <Field label="Priority" hint="Higher wins when ranges overlap."><Input type="number" min={0} max={1000} value={v.priority} onChange={set('priority')} /></Field>
+        <Field label="Priority" hint="Higher wins when ranges overlap."><NumberInput decimals={0} maxValue={1000} value={v.priority} onChange={set('priority')} /></Field>
         <div className="flex items-end pb-2"><Checkbox label="Active" checked={v.isActive} onChange={(e) => setV((x) => ({ ...x, isActive: e.target.checked }))} /></div>
       </div>
     </Modal>
@@ -141,17 +142,17 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="System configuration and quotation approval routing." />
+      <PageHeader title={translate("Settings")} description="System configuration and quotation approval routing." />
       <SettingsForm definitions={settings.data.definitions} values={settings.data.values} editable={editable} />
       <Card
-        title="Quotation approval rules"
+        title={translate("Quotation approval rules")}
         description="The rule whose amount range contains the quotation total decides who must approve it."
-        actions={editable && roles.data && <Button size="sm" icon={Plus} onClick={() => setEditingRule('new')}>Add rule</Button>}
+        actions={editable && roles.data && <Button size="sm" icon={Plus} onClick={() => setEditingRule('new')}>{translate("Add rule")}</Button>}
         bodyClassName="p-0"
       >
         <div className="relative overflow-x-auto">
           <table className="table-base w-full min-w-[640px]">
-            <thead><tr><th>Rule</th><th>Amount range</th><th>Approver</th><th className="text-center">Priority</th><th>Status</th>{editable && <th />}</tr></thead>
+            <thead><tr><th>{translate("Rule")}</th><th>{translate("Amount range")}</th><th>{translate("Approver")}</th><th className="text-center">{translate("Priority")}</th><th>{translate("Status")}</th>{editable && <th />}</tr></thead>
             <tbody>
               {rules.data?.map((r) => (
                 <tr key={r.id}>
@@ -159,7 +160,7 @@ export default function SettingsPage() {
                   <td className="tabular">{money(r.minAmount)} to {r.maxAmount ? `under ${money(r.maxAmount)}` : 'no limit'}</td>
                   <td>{r.approverType === 'TEAM_MANAGER' ? `Team manager (${r.approverRole.name})` : `Any ${r.approverRole.name}`}</td>
                   <td className="text-center">{r.priority}</td>
-                  <td>{r.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}</td>
+                  <td>{r.isActive ? <Badge tone="green">{translate("Active")}</Badge> : <Badge>{translate("Inactive")}</Badge>}</td>
                   {editable && (
                     <td className="text-right">
                       <div className="flex justify-end gap-1">
@@ -170,7 +171,7 @@ export default function SettingsPage() {
                   )}
                 </tr>
               ))}
-              {!rules.data?.length && <tr><td colSpan={6} className="py-8 text-center text-slate-500">No rules yet. Quotations can't be submitted until you add one.</td></tr>}
+              {!rules.data?.length && <tr><td colSpan={6} className="py-8 text-center text-slate-500">{translate("No rules yet. Quotations can't be submitted until you add one.")}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -179,7 +180,7 @@ export default function SettingsPage() {
       <ConfirmDialog
         open={!!deletingRule}
         onClose={() => setDeletingRule(null)}
-        title="Delete approval rule?"
+        title={translate("Delete approval rule?")}
         message="Quotations in this amount range cannot be submitted until another rule covers it. Existing requests keep their history."
         tone="danger"
         confirmLabel="Delete rule"

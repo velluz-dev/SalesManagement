@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn';
 import { Skeleton } from './Spinner';
 import { EmptyState, ErrorState } from './EmptyState';
 import type { Paged } from '../../lib/api';
+import { tNode, translate } from '../../i18n';
 
 export interface Column<T> {
   key: string;
@@ -77,7 +78,7 @@ export function DataTable<T extends { id: string }>({
                   <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
                     {labelled.map((c) => (
                       <div key={c.key} className="min-w-0">
-                        <dt className="text-xs text-slate-500">{c.header}</dt>
+                        <dt className="text-xs text-slate-500">{tNode(c.header)}</dt>
                         <dd className="mt-0.5 truncate text-sm text-slate-900">{c.cell(row)}</dd>
                       </div>
                     ))}
@@ -102,11 +103,11 @@ export function DataTable<T extends { id: string }>({
                         className={cn('inline-flex items-center gap-1 hover:text-slate-800', active && 'text-slate-800')}
                         onClick={() => onSort({ sort: c.sortKey, order: active && sort?.order === 'desc' ? 'asc' : 'desc' })}
                       >
-                        {c.header}
+                        {tNode(c.header)}
                         {active ? (sort?.order === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-40" />}
                       </button>
                     ) : (
-                      c.header
+                      tNode(c.header)
                     )}
                   </th>
                 );
@@ -140,7 +141,7 @@ export function DataTable<T extends { id: string }>({
           </tbody>
         </table>
       </div>
-      {!loading && rows && rows.length === 0 && (empty ?? <EmptyState title="No records found" description="Try adjusting your search or filters." />)}
+      {!loading && rows && rows.length === 0 && (empty ?? <EmptyState title={translate("No records found")} description="Try adjusting your search or filters." />)}
       {loading && rows && <div className="h-0.5 animate-pulse bg-brand-200" aria-hidden />}
     </div>
   );
@@ -151,14 +152,14 @@ export function Pagination({ meta, onPage, onPageSize }: { meta?: Paged<unknown>
   const from = meta.total === 0 ? 0 : (meta.page - 1) * meta.pageSize + 1;
   const to = Math.min(meta.page * meta.pageSize, meta.total);
   return (
-    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
+    <nav aria-label={translate('Pagination')} className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
       <div className="flex items-center gap-3">
         <span className="tabular">
-          {from} to {to} of {meta.total}
+          {translate('{from}–{to} of {total}', { from, to, total: meta.total })}
         </span>
         {onPageSize && (
           <label className="hidden items-center gap-2 sm:flex">
-            <span className="sr-only">Rows per page</span>
+            <span className="sr-only">{translate('Rows per page')}</span>
             <select
               className="h-8 rounded-md border border-slate-300 bg-white px-2 text-sm"
               value={meta.pageSize}
@@ -176,18 +177,18 @@ export function Pagination({ meta, onPage, onPageSize }: { meta?: Paged<unknown>
           className="rounded-md p-1.5 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
           onClick={() => onPage(meta.page - 1)}
           disabled={meta.page <= 1}
-          aria-label="Previous page"
+          aria-label={translate('Previous page')}
         >
           <ChevronLeft className="size-4" />
         </button>
         <span className="tabular px-2">
-          Page {meta.page} of {meta.totalPages}
+          {translate('Page {page} of {pages}', { page: meta.page, pages: meta.totalPages })}
         </span>
         <button
           className="rounded-md p-1.5 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent"
           onClick={() => onPage(meta.page + 1)}
           disabled={meta.page >= meta.totalPages}
-          aria-label="Next page"
+          aria-label={translate('Next page')}
         >
           <ChevronRight className="size-4" />
         </button>

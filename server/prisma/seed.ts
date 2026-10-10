@@ -59,6 +59,7 @@ async function main() {
   const roles = await seedBase(prisma, { resetRolePermissions: true });
   await prisma.systemSetting.upsert({ where: { key: 'system.demoData' }, create: { key: 'system.demoData', value: true }, update: { value: true } });
   await prisma.systemSetting.update({ where: { key: 'company.name' }, data: { value: 'Acme Trading Co. (Demo)' } });
+  await prisma.systemSetting.update({ where: { key: 'company.currency' }, data: { value: 'MMK' } });
 
   const passwordHash = await hash(DEMO_PASSWORD, { memoryCost: 19_456, timeCost: 2, parallelism: 1 });
   const mkUser = (email: string, name: string, roleIds: string[]) =>
@@ -116,7 +117,7 @@ async function main() {
       await prisma.customerCredit.create({
         data: {
           customerId: c.id,
-          creditLimit: pick([25_000, 50_000, 75_000, 100_000, 150_000]),
+          creditLimit: pick([50_000_000, 100_000_000, 150_000_000, 200_000_000, 300_000_000]),
           onHold: i === 9,
           notes: i === 9 ? 'On hold pending overdue settlement (demo)' : null,
           updatedById: finance.id,
@@ -139,7 +140,7 @@ async function main() {
         phone: `+1 555 02${String(i).padStart(2, '0')}`,
         source: pick(['WEBSITE', 'REFERRAL', 'EVENT', 'COLD_CALL', 'PARTNER'] as const),
         status: pick(leadStatuses),
-        estimatedValue: between(5, 120) * 1000,
+        estimatedValue: between(10, 250) * 1_000_000,
         ownerId: owner.id,
         createdAt: daysAgo(between(1, 120)),
       },
@@ -161,7 +162,7 @@ async function main() {
           customerId: customer.id,
           ownerId: customer.ownerId,
           stage,
-          amount: between(8, 140) * 1000,
+          amount: between(15, 300) * 1_000_000,
           probability: probability[stage],
           expectedCloseDate: closed ? closedAt : daysAhead(between(5, 120)),
           closedAt,
@@ -188,16 +189,16 @@ async function main() {
   }
 
   const catalog = [
-    ['SRV-IMPL', 'Implementation services', 'day', 'Services', 1200],
-    ['LIC-ANNUAL', 'Annual software license', 'license', 'Software', 18000],
-    ['HW-BUNDLE', 'Hardware bundle', 'set', 'Hardware', 4500],
-    ['SUP-PREM', 'Premium support plan', 'year', 'Support', 6000],
-    ['TRN-WS', 'Training workshop', 'session', 'Services', 2500],
-    ['INT-PKG', 'Integration package', 'package', 'Software', 9500],
-    ['CBL-CAT6', 'Cat6 network cable (305 m)', 'box', 'Hardware', 180],
-    ['SW-24P', '24-port managed switch', 'unit', 'Hardware', 950],
-    ['UPS-3K', '3 kVA online UPS', 'unit', 'Hardware', 1650],
-    ['LEGACY-SCAN', 'Barcode scanner (discontinued)', 'unit', 'Hardware', 240],
+    ['SRV-IMPL', 'Implementation services', 'day', 'Services', 2_500_000],
+    ['LIC-ANNUAL', 'Annual software license', 'license', 'Software', 38_000_000],
+    ['HW-BUNDLE', 'Hardware bundle', 'set', 'Hardware', 9_500_000],
+    ['SUP-PREM', 'Premium support plan', 'year', 'Support', 12_500_000],
+    ['TRN-WS', 'Training workshop', 'session', 'Services', 5_000_000],
+    ['INT-PKG', 'Integration package', 'package', 'Software', 20_000_000],
+    ['CBL-CAT6', 'Cat6 network cable (305 m)', 'box', 'Hardware', 380_000],
+    ['SW-24P', '24-port managed switch', 'unit', 'Hardware', 2_000_000],
+    ['UPS-3K', '3 kVA online UPS', 'unit', 'Hardware', 3_500_000],
+    ['LEGACY-SCAN', 'Barcode scanner (discontinued)', 'unit', 'Hardware', 500_000],
   ] as const;
   const products = [];
   for (const [code, name, unit, category, price] of catalog) {
@@ -244,7 +245,7 @@ async function main() {
     const totals = calculateTotals(items);
     const created = daysAgo(between(3, 90));
     const ownerUser = await prisma.user.findUniqueOrThrow({ where: { id: owner.id }, include: { team: true } });
-    const approverIsDirector = totals.total.gte(50_000);
+    const approverIsDirector = totals.total.gte(100_000_000);
     const approverId = approverIsDirector ? director.id : (ownerUser.team?.managerId ?? director.id);
 
     const q = await prisma.quotation.create({
@@ -256,7 +257,7 @@ async function main() {
         status: flow.status,
         issueDate: created,
         validUntil: new Date(Math.max(created.getTime() + 30 * DAY, daysAhead(10).getTime())),
-        currency: 'USD',
+        currency: 'MMK',
         notes: 'Sample quotation (demo data)',
         terms: 'Payment due within customer terms. Prices exclude delivery.',
         ...totals,
@@ -319,7 +320,7 @@ async function main() {
         startDate: start,
         endDate: new Date(start.getTime() + 365 * DAY),
         value: q.total,
-        currency: 'USD',
+        currency: 'MMK',
         terms: 'Deliveries scheduled per sales order. Payment per customer terms.',
         createdById: q.ownerId,
         createdAt: start,
@@ -337,7 +338,7 @@ async function main() {
         status: delivered ? 'DELIVERED' : 'PENDING',
         orderDate: new Date(start.getTime() + 2 * DAY),
         deliveryDate: delivered ? new Date(start.getTime() + 9 * DAY) : daysAhead(7),
-        currency: 'USD',
+        currency: 'MMK',
         ...totals,
         confirmedAt: delivered ? new Date(start.getTime() + 3 * DAY) : null,
         deliveredAt: delivered ? new Date(start.getTime() + 9 * DAY) : null,
@@ -356,7 +357,7 @@ async function main() {
           status: 'PAID',
           issueDate,
           dueDate: new Date(issueDate.getTime() + 30 * DAY),
-          currency: 'USD',
+          currency: 'MMK',
           ...totals,
           amountPaid: totals.total,
           createdById: finance.id,
@@ -384,7 +385,7 @@ async function main() {
       status: 'CONFIRMED',
       orderDate: daysAgo(2),
       deliveryDate: daysAhead(5),
-      currency: 'USD',
+      currency: 'MMK',
       ...calculateTotals(dealerLines),
       confirmedAt: daysAgo(1),
       notes: 'Restock order (demo)',
@@ -411,7 +412,7 @@ async function main() {
         status: isDraft ? 'DRAFT' : plan === 'PAID' ? 'PAID' : paid.gt(0) ? 'PARTIALLY_PAID' : 'ISSUED',
         issueDate: isDraft ? null : issueDate,
         dueDate: isDraft ? null : dueDate,
-        currency: 'USD',
+        currency: 'MMK',
         ...totals,
         amountPaid: paid,
         createdById: finance.id,
@@ -435,7 +436,7 @@ async function main() {
 
   for (let m = 1; m <= 5; m++) {
     const customer = customers[m]!;
-    const items = [{ position: 1, description: 'Monthly managed service (demo)', quantity: new Prisma.Decimal(1), unitPrice: new Prisma.Decimal(between(6, 20) * 1000), discountPercent: new Prisma.Decimal(0), taxRate: new Prisma.Decimal(0) }];
+    const items = [{ position: 1, description: 'Monthly managed service (demo)', quantity: new Prisma.Decimal(1), unitPrice: new Prisma.Decimal(between(12, 40) * 1_000_000), discountPercent: new Prisma.Decimal(0), taxRate: new Prisma.Decimal(0) }];
     const totals = calculateTotals(items);
     const issueDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - m, 5));
     const inv = await prisma.invoice.create({
@@ -471,11 +472,11 @@ async function main() {
   for (const s of sales) {
     const team = [sales[0]!.id, sales[1]!.id].includes(s.id) ? manager : manager2;
     await prisma.salesTarget.create({
-      data: { userId: s.id, periodType: 'MONTH', periodStart: mStart, periodEnd: mEnd, amount: pick([60_000, 80_000, 100_000]), setById: team.id },
+      data: { userId: s.id, periodType: 'MONTH', periodStart: mStart, periodEnd: mEnd, amount: pick([120_000_000, 160_000_000, 200_000_000]), setById: team.id },
     });
   }
-  await prisma.salesTarget.create({ data: { teamId: enterprise.id, periodType: 'QUARTER', periodStart: qStart, periodEnd: qEnd, amount: 600_000, setById: director.id } });
-  await prisma.salesTarget.create({ data: { teamId: smb.id, periodType: 'QUARTER', periodStart: qStart, periodEnd: qEnd, amount: 400_000, setById: director.id } });
+  await prisma.salesTarget.create({ data: { teamId: enterprise.id, periodType: 'QUARTER', periodStart: qStart, periodEnd: qEnd, amount: 1_200_000_000, setById: director.id } });
+  await prisma.salesTarget.create({ data: { teamId: smb.id, periodType: 'QUARTER', periodStart: qStart, periodEnd: qEnd, amount: 800_000_000, setById: director.id } });
 
   await prisma.auditLog.create({ data: { actorId: admin.id, action: 'system.seeded', entityType: 'System', after: { demo: true } } });
 

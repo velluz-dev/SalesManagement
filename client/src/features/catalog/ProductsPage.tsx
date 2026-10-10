@@ -10,11 +10,12 @@ import { DataTable, Pagination, type Column } from '../../components/ui/DataTabl
 import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
-import { Checkbox, Field, FormError, Input, Textarea } from '../../components/ui/Form';
+import { Checkbox, Field, FormError, Input, NumberInput, Textarea } from '../../components/ui/Form';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
 import { EMPTY, money } from '../../lib/format';
 import type { Product } from '../../lib/types';
+import { translate } from '../../i18n';
 
 interface ProductValues {
   code: string;
@@ -72,7 +73,7 @@ function ProductForm({ product, onClose }: { product?: Product; onClose: () => v
       description={product ? 'Price changes apply to new quotations and orders only; existing documents keep their prices.' : undefined}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{product ? 'Save' : 'Add product'}</Button>
         </>
       }
@@ -81,7 +82,7 @@ function ProductForm({ product, onClose }: { product?: Product; onClose: () => v
         <div className="sm:col-span-2"><FormError message={error} /></div>
         <Field label="Code" required hint="Shown on quotations, e.g. CBL-CAT6"><Input className="uppercase" {...register('code')} /></Field>
         <Field label="Name" required><Input {...register('name')} /></Field>
-        <Field label="List price" required><Input inputMode="decimal" {...register('listPrice')} /></Field>
+        <Field label="List price" required><NumberInput decimals={2} {...register('listPrice')} /></Field>
         <Field label="Unit" hint="e.g. unit, box, day, license"><Input {...register('unit')} /></Field>
         <Field label="Category" className="sm:col-span-2"><Input {...register('category')} /></Field>
         <Field label="Description" className="sm:col-span-2"><Textarea {...register('description')} /></Field>
@@ -117,11 +118,11 @@ export default function ProductsPage() {
     { key: 'category', header: 'Category', cell: (p) => p.category ?? EMPTY, hideOnMobile: true },
     { key: 'unit', header: 'Unit', cell: (p) => p.unit, hideOnMobile: true },
     { key: 'price', header: 'List price', sortKey: 'listPrice', align: 'right', cell: (p) => <span className="tabular font-medium">{money(p.listPrice)}</span> },
-    ...(canManage ? [{ key: 'status', header: 'Status', cell: (p: Product) => (p.isActive ? <Badge tone="green">Available</Badge> : <Badge>Discontinued</Badge>) }] : []),
+    ...(canManage ? [{ key: 'status', header: 'Status', cell: (p: Product) => (p.isActive ? <Badge tone="green">{translate("Available")}</Badge> : <Badge>{translate("Discontinued")}</Badge>) }] : []),
     ...(canManage
       ? [{
           key: 'edit',
-          header: <span className="sr-only">Edit</span>,
+          header: <span className="sr-only">{translate("Edit")}</span>,
           align: 'right' as const,
           cell: (p: Product) => (
             <button onClick={() => setEditing(p)} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`Edit ${p.name}`}>
@@ -135,13 +136,13 @@ export default function ProductsPage() {
   return (
     <div>
       <PageHeader
-        title="Products"
+        title={translate("Products")}
         description="The catalog used on quotations and sales orders."
-        actions={canManage && <Button icon={Plus} onClick={() => setEditing('new')}>New product</Button>}
+        actions={canManage && <Button icon={Plus} onClick={() => setEditing('new')}>{translate("New product")}</Button>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search code, name, category…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search code, name, category…")} className="sm:w-80" />
           <FilterSelect label="Category" value={lp.filters.category ?? ''} onChange={(v) => lp.setFilter('category', v)} options={(categories.data ?? []).map((c) => ({ value: c, label: c }))} />
           {canManage && (
             <FilterSelect label="Status" value={lp.filters.isActive ?? ''} onChange={(v) => lp.setFilter('isActive', v)} options={[{ value: 'true', label: 'Available' }, { value: 'false', label: 'Discontinued' }]} />
@@ -156,7 +157,7 @@ export default function ProductsPage() {
           onRetry={refetch}
           sort={lp}
           onSort={lp.setSort}
-          empty={<EmptyState icon={Package} title="No products found" description={canManage ? 'Add your first product to start quoting from the catalog.' : undefined} />}
+          empty={<EmptyState icon={Package} title={translate("No products found")} description={canManage ? 'Add your first product to start quoting from the catalog.' : undefined} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

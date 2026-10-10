@@ -26,7 +26,7 @@ model Invoice {
   status        InvoiceStatus @default(DRAFT)
   issueDate     DateTime?     @db.Date
   dueDate       DateTime?     @db.Date
-  currency      String        @default("USD") @db.VarChar(3)
+  currency      String        @default("MMK") @db.VarChar(3)
   notes         String?
   subtotal      Decimal       @default(0) @db.Decimal(14, 2)
   discountTotal Decimal       @default(0) @db.Decimal(14, 2)

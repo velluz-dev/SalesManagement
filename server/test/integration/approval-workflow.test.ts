@@ -69,7 +69,7 @@ describe('quotation approval workflow', () => {
   });
 
   it('routes high-value quotations to the director pool; managers cannot decide them', async () => {
-    const q = await createQuotation(sA1, customerId, [item(30000, 2)]);
+    const q = await createQuotation(sA1, customerId, [item(60_000_000, 2)]); // 120M MMK
     await sA1.post(`/api/quotations/${q.id}/submit`).send({}).expect(200);
     const req = await pendingRequest(q.id);
     expect(req.assignedToId).toBeNull();
@@ -96,7 +96,7 @@ describe('quotation approval workflow', () => {
     await prisma.userRole.create({ data: { userId: org.users.director.id, roleId: sellerRole.id } });
     const d = await login('director@test.local');
     const cust = await createCustomer(d, 'Director customer');
-    const q = await createQuotation(d, cust, [item(60000)]);
+    const q = await createQuotation(d, cust, [item(120_000_000)]);
     const res = await d.post(`/api/quotations/${q.id}/submit`).send({});
     expect(res.status).toBe(422);
 

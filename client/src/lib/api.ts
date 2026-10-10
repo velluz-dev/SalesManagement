@@ -1,3 +1,4 @@
+import { translate } from '../i18n';
 export interface ApiErrorDetail {
   path: string;
   message: string;
@@ -63,4 +64,5 @@ export const api = {
   delete: <T>(path: string) => request<T>('DELETE', path),
 };
 
-export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong');
+/** User-facing error text; known server messages are shown in the current language. */
+export const errorMessage = (e: unknown) => translate(e instanceof Error ? e.message : 'Something went wrong');

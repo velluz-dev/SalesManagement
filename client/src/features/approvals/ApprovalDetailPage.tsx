@@ -14,6 +14,7 @@ import { api } from '../../lib/api';
 import { EMPTY, date, dateTime, money } from '../../lib/format';
 import type { ApprovalRequest, Quotation } from '../../lib/types';
 import { ApprovalTimeline } from './ApprovalTimeline';
+import { translate } from '../../i18n';
 
 export default function ApprovalDetailPage() {
   const { id = '' } = useParams();
@@ -47,8 +48,8 @@ export default function ApprovalDetailPage() {
         actions={
           r.canDecide && (
             <>
-              <Button variant="danger" icon={X} onClick={() => setDecision('REJECT')}>Reject</Button>
-              <Button variant="success" icon={Check} onClick={() => setDecision('APPROVE')}>Approve</Button>
+              <Button variant="danger" icon={X} onClick={() => setDecision('REJECT')}>{translate("Reject")}</Button>
+              <Button variant="success" icon={Check} onClick={() => setDecision('APPROVE')}>{translate("Approve")}</Button>
             </>
           )
         }
@@ -61,7 +62,7 @@ export default function ApprovalDetailPage() {
       )}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Request">
+          <Card title={translate("Request")}>
             <DescriptionList
               columns={3}
               items={[
@@ -76,14 +77,14 @@ export default function ApprovalDetailPage() {
           </Card>
           {q && (
             <Card
-              title="Quotation contents"
-              actions={<Link className="text-sm font-medium text-brand-600" to={`/quotations/${q.id}`}>Open quotation</Link>}
+              title={translate("Quotation contents")}
+              actions={<Link className="text-sm font-medium text-brand-600" to={`/quotations/${q.id}`}>{translate("Open quotation")}</Link>}
               bodyClassName="p-0"
             >
               <div className="relative overflow-x-auto">
                 <table className="table-base w-full min-w-[560px]">
                   <thead>
-                    <tr><th>Description</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Disc.</th><th className="text-right">Total</th></tr>
+                    <tr><th>{translate("Description")}</th><th className="text-right">{translate("Qty")}</th><th className="text-right">{translate("Unit price")}</th><th className="text-right">{translate("Disc.")}</th><th className="text-right">{translate("Total")}</th></tr>
                   </thead>
                   <tbody>
                     {q.items?.map((i) => (
@@ -105,7 +106,7 @@ export default function ApprovalDetailPage() {
             </Card>
           )}
         </div>
-        <Card title="History">
+        <Card title={translate("History")}>
           <ApprovalTimeline requests={[r]} currency={currency} />
         </Card>
       </div>

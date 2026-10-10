@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { enumLabel } from '@shared';
+import { currentLang, enumLabel } from '../../i18n';
 import { cn } from '../../lib/cn';
 
 export type Tone = 'gray' | 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'indigo' | 'teal';
@@ -42,7 +42,7 @@ const STATUS_LABELS: Record<string, string> = {
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
   return (
     <Badge tone={STATUS_TONES[status] ?? 'gray'} className={className}>
-      {STATUS_LABELS[status] ?? enumLabel(status)}
+      {(currentLang() === 'en' && STATUS_LABELS[status]) || enumLabel(status)}
     </Badge>
   );
 }

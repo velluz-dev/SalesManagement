@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Wallet } from 'lucide-react';
-import { PAYMENT_METHODS, enumLabel } from '@shared';
+import { PAYMENT_METHODS } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
 import { DataTable, Pagination, type Column } from '../../components/ui/DataTable';
@@ -34,26 +35,26 @@ export default function PaymentsPage() {
       header: 'Amount',
       sortKey: 'amount',
       align: 'right',
-      cell: (p) => (p.voidedAt ? <span className="flex items-center justify-end gap-2"><Badge>Void</Badge><span className="tabular text-slate-400 line-through">{money(p.amount)}</span></span> : <span className="tabular font-medium">{money(p.amount)}</span>),
+      cell: (p) => (p.voidedAt ? <span className="flex items-center justify-end gap-2"><Badge>{translate("Void")}</Badge><span className="tabular text-slate-400 line-through">{money(p.amount)}</span></span> : <span className="tabular font-medium">{money(p.amount)}</span>),
     },
   ];
 
   return (
     <div>
-      <PageHeader title="Payments" description="Customer payments recorded against invoices." />
+      <PageHeader title={translate("Payments")} description="Customer payments recorded against invoices." />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search reference, invoice, customer…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search reference, invoice, customer…")} className="sm:w-80" />
           <FilterSelect label="Method" value={lp.filters.method ?? ''} onChange={(v) => lp.setFilter('method', v)} options={PAYMENT_METHODS.map((m) => ({ value: m, label: enumLabel(m) }))} />
           <label className="flex items-center gap-2 text-sm text-slate-600">
-            From <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.from ?? ''} onChange={(e) => lp.setFilter('from', e.target.value)} />
+            {translate("From")} <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.from ?? ''} onChange={(e) => lp.setFilter('from', e.target.value)} />
           </label>
           <label className="flex items-center gap-2 text-sm text-slate-600">
-            To <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.to ?? ''} onChange={(e) => lp.setFilter('to', e.target.value)} />
+            {translate("To")} <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.to ?? ''} onChange={(e) => lp.setFilter('to', e.target.value)} />
           </label>
           <label className="flex items-center gap-2 text-sm text-slate-600">
             <input type="checkbox" className="size-4 rounded border-slate-300" checked={lp.filters.includeVoided === 'true'} onChange={(e) => lp.setFilter('includeVoided', e.target.checked ? 'true' : '')} />
-            Include voided
+            {translate("Include voided")}
           </label>
         </Toolbar>
         <DataTable
@@ -65,7 +66,7 @@ export default function PaymentsPage() {
           onRetry={refetch}
           sort={lp}
           onSort={lp.setSort}
-          empty={<EmptyState icon={Wallet} title="No payments found" />}
+          empty={<EmptyState icon={Wallet} title={translate("No payments found")} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

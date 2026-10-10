@@ -13,6 +13,7 @@ import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import { date, dateTime, money } from '../../lib/format';
 import type { SalesOrder } from '../../lib/types';
+import { translate } from '../../i18n';
 
 export default function SalesOrderDetailPage() {
   const { id = '' } = useParams();
@@ -46,11 +47,11 @@ export default function SalesOrderDetailPage() {
         description={<><Link to={`/customers/${o.customer.id}`} className="hover:underline">{o.customer.name}</Link> · Owner: {o.owner.name}</>}
         actions={
           <>
-            {update && (o.status === 'PENDING' || o.status === 'CONFIRMED') && !activeInvoice && <Button variant="ghost" icon={Ban} onClick={() => setDialog('cancel')}>Cancel order</Button>}
-            {update && o.status === 'PENDING' && <Button icon={CheckCircle2} onClick={() => setDialog('confirm')}>Confirm order</Button>}
-            {update && o.status === 'CONFIRMED' && <Button variant="success" icon={Truck} onClick={() => setDialog('deliver')}>Mark delivered</Button>}
+            {update && (o.status === 'PENDING' || o.status === 'CONFIRMED') && !activeInvoice && <Button variant="ghost" icon={Ban} onClick={() => setDialog('cancel')}>{translate("Cancel order")}</Button>}
+            {update && o.status === 'PENDING' && <Button icon={CheckCircle2} onClick={() => setDialog('confirm')}>{translate("Confirm order")}</Button>}
+            {update && o.status === 'CONFIRMED' && <Button variant="success" icon={Truck} onClick={() => setDialog('deliver')}>{translate("Mark delivered")}</Button>}
             {can('invoice.create') && (o.status === 'CONFIRMED' || o.status === 'DELIVERED') && !activeInvoice && (
-              <ButtonLink to={`/invoices/new?salesOrderId=${o.id}`} icon={Receipt}>Create invoice</ButtonLink>
+              <ButtonLink to={`/invoices/new?salesOrderId=${o.id}`} icon={Receipt}>{translate("Create invoice")}</ButtonLink>
             )}
           </>
         }
@@ -60,10 +61,10 @@ export default function SalesOrderDetailPage() {
       )}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Line items" bodyClassName="p-0">
+          <Card title={translate("Line items")} bodyClassName="p-0">
             <div className="overflow-x-auto">
               <table className="table-base w-full min-w-[640px]">
-                <thead><tr><th>Item</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Disc.</th><th className="text-right">Tax</th><th className="text-right">Total</th></tr></thead>
+                <thead><tr><th>{translate("Item")}</th><th className="text-right">{translate("Qty")}</th><th className="text-right">{translate("Unit price")}</th><th className="text-right">{translate("Disc.")}</th><th className="text-right">{translate("Tax")}</th><th className="text-right">{translate("Total")}</th></tr></thead>
                 <tbody>
                   {o.items?.map((i) => (
                     <tr key={i.id}>
@@ -82,14 +83,14 @@ export default function SalesOrderDetailPage() {
               </table>
             </div>
             <dl className="tabular ml-auto max-w-xs space-y-1.5 px-5 py-4 text-sm">
-              <div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd>{money(o.subtotal, { currency: cur })}</dd></div>
-              <div className="flex justify-between text-slate-600"><dt>Discount</dt><dd>−{money(o.discountTotal, { currency: cur })}</dd></div>
-              <div className="flex justify-between text-slate-600"><dt>Tax</dt><dd>{money(o.taxTotal, { currency: cur })}</dd></div>
-              <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold"><dt>Total</dt><dd>{money(o.total, { currency: cur })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Subtotal")}</dt><dd>{money(o.subtotal, { currency: cur })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Discount")}</dt><dd>−{money(o.discountTotal, { currency: cur })}</dd></div>
+              <div className="flex justify-between text-slate-600"><dt>{translate("Tax")}</dt><dd>{money(o.taxTotal, { currency: cur })}</dd></div>
+              <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold"><dt>{translate("Total")}</dt><dd>{money(o.total, { currency: cur })}</dd></div>
             </dl>
           </Card>
         </div>
-        <Card title="Order details">
+        <Card title={translate("Order details")}>
           <DescriptionList
             columns={1}
             items={[
@@ -107,7 +108,7 @@ export default function SalesOrderDetailPage() {
       <ConfirmDialog
         open={dialog === 'confirm'}
         onClose={() => setDialog(null)}
-        title="Confirm this order?"
+        title={translate("Confirm this order?")}
         message="A credit check runs against the customer’s limit and hold status. Confirmed orders can no longer be edited."
         confirmLabel="Confirm order"
         onConfirm={() => confirm.mutateAsync(undefined)}
@@ -115,7 +116,7 @@ export default function SalesOrderDetailPage() {
       <ConfirmDialog
         open={dialog === 'deliver'}
         onClose={() => setDialog(null)}
-        title="Mark as delivered?"
+        title={translate("Mark as delivered?")}
         message="Records today as the delivery date."
         confirmLabel="Mark delivered"
         tone="success"
@@ -124,7 +125,7 @@ export default function SalesOrderDetailPage() {
       <ConfirmDialog
         open={dialog === 'cancel'}
         onClose={() => setDialog(null)}
-        title="Cancel this order?"
+        title={translate("Cancel this order?")}
         message="Cancelled orders stay on record and cannot be reopened."
         confirmLabel="Cancel order"
         tone="danger"

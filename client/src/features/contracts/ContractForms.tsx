@@ -8,6 +8,7 @@ import { Field, FormError, Input, Textarea } from '../../components/ui/Form';
 import { api, errorMessage } from '../../lib/api';
 import { money, todayIso } from '../../lib/format';
 import type { Contract } from '../../lib/types';
+import { translate } from '../../i18n';
 
 interface Values {
   title: string;
@@ -58,13 +59,13 @@ export function CreateContractModal({ quotation, onClose }: {
     <Modal
       open
       onClose={onClose}
-      title="Create contract"
+      title={translate("Create contract")}
       description={`From ${quotation.number}. Contract value: ${money(quotation.total, { currency: quotation.currency })}`}
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Create contract</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Create contract")}</Button>
         </>
       }
     >
@@ -105,8 +106,8 @@ export function EditContractModal({ contract, onClose }: { contract: Contract; o
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Save</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Save")}</Button>
         </>
       }
     >

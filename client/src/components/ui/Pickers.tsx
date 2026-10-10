@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useLookup } from '../../hooks/useApi';
 import { Select } from './Form';
+import { translate } from '../../i18n';
 
 type SelectProps = Omit<ComponentProps<typeof Select>, 'children'> & { placeholder?: string };
 
@@ -10,7 +11,7 @@ function LookupSelect({ kind, query, placeholder = 'Select…', ...rest }: Selec
   const { data, isLoading } = useLookup(kind, query ?? {});
   return (
     <Select {...rest} disabled={rest.disabled || isLoading}>
-      <option value="">{isLoading ? 'Loading…' : placeholder}</option>
+      <option value="">{translate(isLoading ? 'Loading…' : placeholder)}</option>
       {data?.map((o) => (
         <option key={o.id} value={o.id}>{o.name}</option>
       ))}
@@ -18,9 +19,9 @@ function LookupSelect({ kind, query, placeholder = 'Select…', ...rest }: Selec
   );
 }
 
-export const CustomerSelect = (p: SelectProps) => <LookupSelect kind="customers" placeholder="Select a customer…" {...p} />;
+export const CustomerSelect = (p: SelectProps) => <LookupSelect kind="customers" placeholder={translate("Select a customer…")} {...p} />;
 export const UserSelect = (p: SelectProps) => <LookupSelect kind="users" placeholder="Select a user…" {...p} />;
-export const TeamSelect = (p: SelectProps) => <LookupSelect kind="teams" placeholder="Select a team…" {...p} />;
+export const TeamSelect = (p: SelectProps) => <LookupSelect kind="teams" placeholder={translate("Select a team…")} {...p} />;
 export const OpportunitySelect = ({ customerId, ...p }: SelectProps & { customerId?: string }) => (
   <LookupSelect kind="opportunities" query={{ customerId: customerId || undefined }} placeholder="No linked opportunity" {...p} />
 );
@@ -36,7 +37,7 @@ export function PaymentTermSelect({ placeholder = 'Default terms', ...rest }: Se
   });
   return (
     <Select {...rest} disabled={rest.disabled || isLoading}>
-      <option value="">{isLoading ? 'Loading…' : placeholder}</option>
+      <option value="">{translate(isLoading ? 'Loading…' : placeholder)}</option>
       {data?.map((t) => (
         <option key={t.id} value={t.id}>{t.name}{t.name.toLowerCase().includes(String(t.days)) || t.days === 0 ? '' : ` (${t.days} days)`}</option>
       ))}

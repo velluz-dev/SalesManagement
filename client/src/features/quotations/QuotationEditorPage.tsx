@@ -15,6 +15,7 @@ import { useToast } from '../../components/ui/Toast';
 import { emptyLine, itemsPayload, LineItemsEditor, validateItems, type LineItemValues, type WithItems } from '../../components/LineItemsEditor';
 import { useAuth } from '../../auth/AuthProvider';
 import type { Quotation } from '../../lib/types';
+import { translate } from '../../i18n';
 
 interface Values extends WithItems {
   customerId: string;
@@ -105,7 +106,7 @@ function Editor({ quotation }: { quotation?: Quotation }) {
       />
       <div className="space-y-6">
         <FormError message={error} />
-        <Card title="Customer & terms">
+        <Card title={translate("Customer & terms")}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field label="Customer" required error={formState.errors.customerId?.message}>
               <CustomerSelect {...register('customerId', { onChange: () => setValue('opportunityId', '') })} />
@@ -118,7 +119,7 @@ function Editor({ quotation }: { quotation?: Quotation }) {
             </Field>
           </div>
         </Card>
-        <Card title="Line items">
+        <Card title={translate("Line items")}>
           <LineItemsEditor
             setValue={setValue as never}
             control={control as never}
@@ -128,7 +129,7 @@ function Editor({ quotation }: { quotation?: Quotation }) {
             defaultTaxRate={defaultTax}
           />
         </Card>
-        <Card title="Notes">
+        <Card title={translate("Notes")}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Notes to customer"><Textarea rows={4} {...register('notes')} /></Field>
             <Field label="Terms & conditions"><Textarea rows={4} {...register('terms')} /></Field>
@@ -146,7 +147,7 @@ export default function QuotationEditorPage() {
   if (isLoading) return <FullPageSpinner />;
   if (error || !data) return <ErrorState error={error} onRetry={refetch} />;
   if (!['DRAFT', 'REJECTED'].includes(data.status)) {
-    return <EmptyState title="This quotation is read-only" description="Only draft or rejected quotations can be edited. Use “Revise” to create a new version." />;
+    return <EmptyState title={translate("This quotation is read-only")} description="Only draft or rejected quotations can be edited. Use “Revise” to create a new version." />;
   }
   return <Editor quotation={data} />;
 }

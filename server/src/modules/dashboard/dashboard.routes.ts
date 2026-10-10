@@ -170,7 +170,7 @@ async function financeSection() {
       SELECT m.month,
         (SELECT SUM(total) FROM "Invoice" WHERE status IN ('ISSUED','PARTIALLY_PAID','PAID') AND to_char("issueDate", 'YYYY-MM') = m.month) AS invoiced,
         (SELECT SUM(amount) FROM "Payment" WHERE "voidedAt" IS NULL AND to_char("paidAt", 'YYYY-MM') = m.month) AS collected
-      FROM (SELECT to_char(generate_series(${from}::date, CURRENT_DATE, interval '1 month'), 'YYYY-MM') AS month) m
+      FROM (SELECT to_char(generate_series(${from}::date, ${startOfTodayUtc()}::date, interval '1 month'), 'YYYY-MM') AS month) m
       ORDER BY 1`,
     agingBuckets(),
     prisma.invoice.findMany({
@@ -227,7 +227,7 @@ async function adminSection(actor: Actor) {
           SELECT to_char(d, 'YYYY-MM-DD') AS day,
             (SELECT COUNT(*) FROM "AuditLog" WHERE action = 'auth.login' AND "createdAt"::date = d) AS success,
             (SELECT COUNT(*) FROM "AuditLog" WHERE action = 'auth.login_failed' AND "createdAt"::date = d) AS failed
-          FROM generate_series(CURRENT_DATE - 6, CURRENT_DATE, interval '1 day') d ORDER BY 1`
+          FROM generate_series(${startOfTodayUtc()}::date - 6, ${startOfTodayUtc()}::date, interval '1 day') d ORDER BY 1`
       : Promise.resolve([]),
   ]);
   return {

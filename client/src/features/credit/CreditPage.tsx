@@ -10,12 +10,13 @@ import { DataTable, Pagination, type Column } from '../../components/ui/DataTabl
 import { FilterSelect, PageHeader, ProgressBar, SearchInput, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
-import { Checkbox, Field, FormError, Input, Textarea } from '../../components/ui/Form';
+import { Checkbox, Field, FormError, Input, NumberInput, Textarea } from '../../components/ui/Form';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
 import { EMPTY, money } from '../../lib/format';
 import type { CustomerCredit, PaymentTermRef, UserRef } from '../../lib/types';
 import { PaymentTermSelect } from '../../components/ui/Pickers';
+import { translate } from '../../i18n';
 
 interface CreditRow {
   id: string;
@@ -60,15 +61,15 @@ function CreditForm({ row, onClose }: { row: CreditRow; onClose: () => void }) {
       description={`Current exposure ${money(row.exposure)}`}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Save</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Save")}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <div className="sm:col-span-2"><FormError message={error} /></div>
-        <Field label="Credit limit" required><Input inputMode="decimal" {...register('creditLimit')} /></Field>
-        <Field label="Payment terms" hint="Sets the due date of this customer's invoices."><PaymentTermSelect placeholder="System default" {...register('paymentTermId')} /></Field>
+        <Field label="Credit limit" required><NumberInput decimals={2} {...register('creditLimit')} /></Field>
+        <Field label="Payment terms" hint="Sets the due date of this customer's invoices."><PaymentTermSelect placeholder={translate("System default")} {...register('paymentTermId')} /></Field>
         <Checkbox className="sm:col-span-2" label="Place customer on credit hold" {...register('onHold')} />
         <Field label="Notes" className="sm:col-span-2"><Textarea {...register('notes')} /></Field>
       </form>
@@ -95,7 +96,7 @@ export default function CreditPage() {
       ),
     },
     { key: 'limit', header: 'Limit', align: 'right', cell: (r) => <span className="tabular">{r.credit ? money(r.credit.creditLimit) : EMPTY}</span> },
-    { key: 'terms', header: 'Terms', cell: (r) => r.paymentTerm?.name ?? <span className="text-xs text-slate-400">Default</span>, hideOnMobile: true },
+    { key: 'terms', header: 'Terms', cell: (r) => r.paymentTerm?.name ?? <span className="text-xs text-slate-400">{translate("Default")}</span>, hideOnMobile: true },
     { key: 'exposure', header: 'Exposure', align: 'right', cell: (r) => <span className="tabular font-medium">{money(r.exposure)}</span> },
     { key: 'overdue', header: 'Overdue', align: 'right', cell: (r) => <span className={`tabular ${Number(r.overdue) > 0 ? 'font-medium text-rose-600' : ''}`}>{money(r.overdue)}</span>, hideOnMobile: true },
     {
@@ -104,7 +105,7 @@ export default function CreditPage() {
       className: 'w-44',
       hideOnMobile: true,
       cell: (r) =>
-        r.utilization === null ? <span className="text-xs text-slate-400">No limit set</span> : (
+        r.utilization === null ? <span className="text-xs text-slate-400">{translate("No limit set")}</span> : (
           <div className="flex items-center gap-2"><ProgressBar value={100 - Math.min(100, r.utilization)} label="Available credit" /><span className="tabular w-12 text-right text-xs">{r.utilization}%</span></div>
         ),
     },
@@ -113,23 +114,23 @@ export default function CreditPage() {
       header: 'Status',
       cell: (r) => (
         <span className="flex flex-wrap gap-1">
-          {r.credit?.onHold && <Badge tone="red">On hold</Badge>}
-          {r.overLimit && <Badge tone="amber">Over limit</Badge>}
-          {!r.credit?.onHold && !r.overLimit && <Badge tone="green">OK</Badge>}
+          {r.credit?.onHold && <Badge tone="red">{translate("On hold")}</Badge>}
+          {r.overLimit && <Badge tone="amber">{translate("Over limit")}</Badge>}
+          {!r.credit?.onHold && !r.overLimit && <Badge tone="green">{translate("OK")}</Badge>}
         </span>
       ),
     },
     ...(can('credit.manage')
-      ? [{ key: 'edit', header: <span className="sr-only">Edit</span>, align: 'right' as const, cell: (r: CreditRow) => <button onClick={() => setEditing(r)} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`Edit credit for ${r.name}`}><Pencil className="size-4" /></button> }]
+      ? [{ key: 'edit', header: <span className="sr-only">{translate("Edit")}</span>, align: 'right' as const, cell: (r: CreditRow) => <button onClick={() => setEditing(r)} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`Edit credit for ${r.name}`}><Pencil className="size-4" /></button> }]
       : []),
   ];
 
   return (
     <div>
-      <PageHeader title="Customer credit" description="Credit limits, terms and exposure from outstanding invoices." />
+      <PageHeader title={translate("Customer credit")} description="Credit limits, terms and exposure from outstanding invoices." />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search customer…" className="sm:w-72" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search customer…")} className="sm:w-72" />
           <FilterSelect label="Hold" allLabel="Any" value={lp.filters.onHold ?? ''} onChange={(v) => lp.setFilter('onHold', v)} options={[{ value: 'true', label: 'On hold' }, { value: 'false', label: 'Not on hold' }]} />
           <FilterSelect label="Limit" allLabel="Any" value={lp.filters.overLimit ?? ''} onChange={(v) => lp.setFilter('overLimit', v)} options={[{ value: 'true', label: 'Over limit' }, { value: 'false', label: 'Within limit' }]} />
         </Toolbar>
@@ -142,7 +143,7 @@ export default function CreditPage() {
           onRetry={refetch}
           sort={lp}
           onSort={lp.setSort}
-          empty={<EmptyState icon={ShieldCheck} title="No customers found" />}
+          empty={<EmptyState icon={ShieldCheck} title={translate("No customers found")} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

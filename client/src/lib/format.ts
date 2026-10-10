@@ -1,32 +1,39 @@
-import { enumLabel } from '@shared';
+import { currentLocale, enumLabel, translate } from '../i18n';
 
-export const EMPTY = 'N/A';
+/** Placeholder for a missing value; a dash reads the same in every language. */
+export const EMPTY = '—';
 
-let currency = 'USD';
+let currency = 'MMK';
 export const setCurrency = (c: string) => {
   currency = c;
 };
 
-const moneyFormatters = new Map<string, Intl.NumberFormat>();
-function moneyFormatter(cur: string, compact: boolean) {
+/** Currencies quoted without minor units in everyday use. */
+const WHOLE_UNIT = new Set(['MMK', 'JPY']);
+/** Currencies shown as "1,250,000 MMK" (code after the amount), as is usual in Myanmar business documents. */
+const CODE_SUFFIX = new Set(['MMK']);
+
+const formatters = new Map<string, Intl.NumberFormat>();
+function formatter(cur: string, compact: boolean) {
   const key = `${cur}|${compact}`;
-  let f = moneyFormatters.get(key);
+  let f = formatters.get(key);
   if (!f) {
-    f = new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: cur,
-      notation: compact ? 'compact' : 'standard',
-      maximumFractionDigits: compact ? 1 : 2,
-      minimumFractionDigits: compact ? 0 : 2,
-    });
-    moneyFormatters.set(key, f);
+    const whole = WHOLE_UNIT.has(cur);
+    const digits = compact ? { maximumFractionDigits: 1, minimumFractionDigits: 0 } : { maximumFractionDigits: whole ? 0 : 2, minimumFractionDigits: whole ? 0 : 2 };
+    f = CODE_SUFFIX.has(cur)
+      ? new Intl.NumberFormat('en-US', { notation: compact ? 'compact' : 'standard', ...digits })
+      : new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, notation: compact ? 'compact' : 'standard', ...digits });
+    formatters.set(key, f);
   }
   return f;
 }
 
+/** Formats an amount in the company currency, e.g. "125,000,000 MMK" or compact "125M MMK". */
 export function money(v: string | number | null | undefined, opts: { compact?: boolean; currency?: string } = {}) {
   if (v === null || v === undefined || v === '') return EMPTY;
-  return moneyFormatter(opts.currency ?? currency, !!opts.compact).format(Number(v));
+  const cur = opts.currency ?? currency;
+  const text = formatter(cur, !!opts.compact).format(Number(v));
+  return CODE_SUFFIX.has(cur) ? `${text} ${cur}` : text;
 }
 
 export function number(v: number | string | null | undefined) {
@@ -37,17 +44,17 @@ export function number(v: number | string | null | undefined) {
 export function date(v: string | Date | null | undefined) {
   if (!v) return EMPTY;
   const d = typeof v === 'string' ? new Date(v) : v;
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return d.toLocaleDateString(currentLocale(), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 export function dateTime(v: string | Date | null | undefined) {
   if (!v) return EMPTY;
-  return new Date(v).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  return new Date(v).toLocaleString(currentLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export function relativeTime(v: string | Date) {
   const diff = (new Date(v).getTime() - Date.now()) / 1000;
-  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(currentLocale(), { numeric: 'auto' });
   const abs = Math.abs(diff);
   if (abs < 60) return rtf.format(Math.round(diff), 'second');
   if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute');
@@ -58,9 +65,13 @@ export function relativeTime(v: string | Date) {
 
 export const label = (v: string | null | undefined) => (v ? enumLabel(v) : EMPTY);
 
-export const todayIso = () => new Date().toISOString().slice(0, 10);
+/** Today's date (YYYY-MM-DD) in the user's local calendar; the UTC date would lag in Myanmar until 06:30. */
+export const todayIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export function monthLabel(ym: string) {
   const [y, m] = ym.split('-').map(Number);
-  return new Date(Date.UTC(y!, m! - 1, 1)).toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
+  return new Date(Date.UTC(y!, m! - 1, 1)).toLocaleDateString(currentLocale(), { month: 'short', timeZone: 'UTC' });
 }

@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { DescriptionList } from '../../components/ui/Layout';
 import { EMPTY, dateTime } from '../../lib/format';
 import type { AuditLog } from '../../lib/types';
+import { translate } from '../../i18n';
 
 function Json({ value }: { value: unknown }) {
   if (value === null || value === undefined) return <p className="text-sm text-slate-400">{EMPTY}</p>;
@@ -25,7 +26,7 @@ export default function AuditLogPage() {
 
   const columns: Column<AuditLog>[] = [
     { key: 'createdAt', header: 'Time', sortKey: 'createdAt', cell: (l) => <span className="whitespace-nowrap">{dateTime(l.createdAt)}</span> },
-    { key: 'actor', header: 'Actor', cell: (l) => l.actor?.name ?? <span className="text-slate-400">System / anonymous</span> },
+    { key: 'actor', header: 'Actor', cell: (l) => l.actor?.name ?? <span className="text-slate-400">{translate("System / anonymous")}</span> },
     { key: 'action', header: 'Action', cell: (l) => <code className={`rounded px-1.5 py-0.5 text-xs ${l.action.includes('failed') ? 'bg-rose-50 text-rose-700' : 'bg-slate-100'}`}>{l.action}</code> },
     { key: 'entity', header: 'Entity', cell: (l) => <span className="text-xs">{l.entityType}{l.entityId && <span className="block text-slate-400">{l.entityId.slice(0, 8)}…</span>}</span>, hideOnMobile: true },
     { key: 'ip', header: 'IP', cell: (l) => <span className="text-xs text-slate-500">{l.ip ?? EMPTY}</span>, hideOnMobile: true },
@@ -33,14 +34,14 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <PageHeader title="Audit log" description="Immutable record of sign-ins, administrative, sales-workflow and financial actions." />
+      <PageHeader title={translate("Audit log")} description="Immutable record of sign-ins, administrative, sales-workflow and financial actions." />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search action, entity, actor…" className="sm:w-72" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search action, entity, actor…")} className="sm:w-72" />
           <FilterSelect label="Action" value={lp.filters.action ?? ''} onChange={(v) => lp.setFilter('action', v)} options={(facets.data?.actions ?? []).map((a) => ({ value: a, label: a }))} />
           <FilterSelect label="Entity" value={lp.filters.entityType ?? ''} onChange={(v) => lp.setFilter('entityType', v)} options={(facets.data?.entityTypes ?? []).map((a) => ({ value: a, label: a }))} />
-          <label className="flex items-center gap-2 text-sm text-slate-600">From <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.from ?? ''} onChange={(e) => lp.setFilter('from', e.target.value)} /></label>
-          <label className="flex items-center gap-2 text-sm text-slate-600">To <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.to ?? ''} onChange={(e) => lp.setFilter('to', e.target.value)} /></label>
+          <label className="flex items-center gap-2 text-sm text-slate-600">{translate("From")} <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.from ?? ''} onChange={(e) => lp.setFilter('from', e.target.value)} /></label>
+          <label className="flex items-center gap-2 text-sm text-slate-600">{translate("To")} <input type="date" className="h-10 rounded-lg border border-slate-300 px-2" value={lp.filters.to ?? ''} onChange={(e) => lp.setFilter('to', e.target.value)} /></label>
         </Toolbar>
         <DataTable
           caption="Audit log entries"
@@ -52,7 +53,7 @@ export default function AuditLogPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={setSelected}
-          empty={<EmptyState icon={ScrollText} title="No audit entries" />}
+          empty={<EmptyState icon={ScrollText} title={translate("No audit entries")} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>
@@ -71,8 +72,8 @@ export default function AuditLogPage() {
               ]}
             />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div><p className="mb-1.5 text-xs font-medium text-slate-500">Before</p><Json value={selected.before} /></div>
-              <div><p className="mb-1.5 text-xs font-medium text-slate-500">After</p><Json value={selected.after} /></div>
+              <div><p className="mb-1.5 text-xs font-medium text-slate-500">{translate("Before")}</p><Json value={selected.before} /></div>
+              <div><p className="mb-1.5 text-xs font-medium text-slate-500">{translate("After")}</p><Json value={selected.after} /></div>
             </div>
           </div>
         )}

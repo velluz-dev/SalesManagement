@@ -2,7 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { enumLabel } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { Button } from '../../components/ui/Button';
 import { Field, FormError, PasswordInput } from '../../components/ui/Form';
@@ -49,14 +49,14 @@ export function ProfilePage() {
   if (!me) return null;
   return (
     <div className="max-w-3xl">
-      <PageHeader title="My profile" description="Your account details and security settings." />
+      <PageHeader title={translate("My profile")} description="Your account details and security settings." />
       {forced && (
         <div role="alert" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Your administrator requires you to set a new password before continuing.
+          {translate("Your administrator requires you to set a new password before continuing.")}
         </div>
       )}
       <div className="space-y-6">
-        <Card title="Account">
+        <Card title={translate("Account")}>
           <DescriptionList
             items={[
               { label: 'Name', value: me.user.name },
@@ -67,7 +67,7 @@ export function ProfilePage() {
             ]}
           />
         </Card>
-        <Card title="Change password" description="Use at least 10 characters with letters and numbers.">
+        <Card title={translate("Change password")} description="Use at least 10 characters with letters and numbers.">
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-sm space-y-4" noValidate>
             <FormError message={error} />
             <Field label="Current password" error={formState.errors.currentPassword?.message} required>
@@ -79,7 +79,7 @@ export function ProfilePage() {
             <Field label="Confirm new password" error={formState.errors.confirm?.message} required>
               <PasswordInput autoComplete="new-password" {...register('confirm')} />
             </Field>
-            <Button type="submit" loading={formState.isSubmitting}>Update password</Button>
+            <Button type="submit" loading={formState.isSubmitting}>{translate("Update password")}</Button>
           </form>
         </Card>
       </div>

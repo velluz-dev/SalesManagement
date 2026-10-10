@@ -12,6 +12,7 @@ import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { cn } from '../../lib/cn';
 import type { Role } from '../../lib/types';
+import { translate } from '../../i18n';
 
 interface PermissionGroup {
   group: string;
@@ -52,9 +53,9 @@ export default function RolesPage() {
 
   return (
     <div>
-      <PageHeader title="Roles & permissions" description="Permissions are enforced by the API on every request; menus and buttons follow them automatically." />
+      <PageHeader title={translate("Roles & permissions")} description="Permissions are enforced by the API on every request; menus and buttons follow them automatically." />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
-        <Card title="Roles" bodyClassName="p-2">
+        <Card title={translate("Roles")} bodyClassName="p-2">
           <ul className="space-y-1">
             {roles.data?.map((r) => (
               <li key={r.id}>
@@ -74,13 +75,13 @@ export default function RolesPage() {
           </ul>
         </Card>
         <Card
-          title={<span className="flex items-center gap-2">{role.name} {role.isSystem && <Badge>System role</Badge>}</span>}
+          title={<span className="flex items-center gap-2">{role.name} {role.isSystem && <Badge>{translate("System role")}</Badge>}</span>}
           description={role.description ?? undefined}
-          actions={editable && <Button icon={Save} disabled={!dirty} onClick={() => setConfirm(true)}>Save changes</Button>}
+          actions={editable && <Button icon={Save} disabled={!dirty} onClick={() => setConfirm(true)}>{translate("Save changes")}</Button>}
         >
           {ownRole && (
             <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              <Lock className="mt-0.5 size-4 shrink-0" /> You hold this role, so you cannot change its permissions (prevents self-escalation).
+              <Lock className="mt-0.5 size-4 shrink-0" /> {translate("You hold this role, so you cannot change its permissions (prevents self-escalation).")}
             </div>
           )}
           <div className="space-y-6">
@@ -113,8 +114,8 @@ export default function RolesPage() {
         message={
           <div className="space-y-2">
             <p>This affects {role.userCount} user(s) on their next request and is recorded in the audit log.</p>
-            {added.length > 0 && <p><strong>Adding:</strong> <code className="text-xs">{added.join(', ')}</code></p>}
-            {removed.length > 0 && <p><strong>Removing:</strong> <code className="text-xs">{removed.join(', ')}</code></p>}
+            {added.length > 0 && <p><strong>{translate("Adding:")}</strong> <code className="text-xs">{added.join(', ')}</code></p>}
+            {removed.length > 0 && <p><strong>{translate("Removing:")}</strong> <code className="text-xs">{removed.join(', ')}</code></p>}
           </div>
         }
         confirmLabel="Save permissions"

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Briefcase, Columns3, List, Plus } from 'lucide-react';
-import { OPPORTUNITY_STAGES, enumLabel } from '@shared';
+import { OPPORTUNITY_STAGES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -43,7 +44,7 @@ function Board() {
             <p className="tabular text-xs text-slate-500">Weighted {money(s.weighted, { compact: true })}</p>
           </header>
           <ul className="max-h-[60vh] space-y-2 overflow-y-auto p-2">
-            {!s.items.length && <li className="px-2 py-6 text-center text-xs text-slate-400">No deals</li>}
+            {!s.items.length && <li className="px-2 py-6 text-center text-xs text-slate-400">{translate("No deals")}</li>}
             {s.items.map((o) => (
               <li key={o.id}>
                 <Link to={`/opportunities/${o.id}`} className="block rounded-md border border-slate-200 bg-white p-3 hover:border-brand-400">
@@ -94,11 +95,11 @@ export default function OpportunitiesPage() {
   return (
     <div>
       <PageHeader
-        title="Pipeline"
+        title={translate("Pipeline")}
         description="Sales opportunities by stage."
         actions={
           <>
-            <div className="inline-flex rounded-md border border-slate-300 bg-white p-0.5" role="group" aria-label="View">
+            <div className="inline-flex rounded-md border border-slate-300 bg-white p-0.5" role="group" aria-label={translate("View")}>
               {(['list', 'board'] as const).map((v) => (
                 <button
                   key={v}
@@ -110,7 +111,7 @@ export default function OpportunitiesPage() {
                 </button>
               ))}
             </div>
-            {can('opportunity.create') && <Button icon={Plus} onClick={() => setCreating(true)}>New opportunity</Button>}
+            {can('opportunity.create') && <Button icon={Plus} onClick={() => setCreating(true)}>{translate("New opportunity")}</Button>}
           </>
         }
       />
@@ -119,7 +120,7 @@ export default function OpportunitiesPage() {
       ) : (
         <div className="card overflow-hidden">
           <Toolbar>
-            <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search opportunity or customer…" className="sm:w-80" />
+            <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search opportunity or customer…")} className="sm:w-80" />
             <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={[{ value: 'open', label: 'Open' }, { value: 'won', label: 'Won' }, { value: 'lost', label: 'Lost' }]} />
             <FilterSelect label="Stage" value={lp.filters.stage ?? ''} onChange={(v) => lp.setFilter('stage', v)} options={enumOptions(OPPORTUNITY_STAGES, enumLabel)} />
           </Toolbar>
@@ -133,7 +134,7 @@ export default function OpportunitiesPage() {
             sort={lp}
             onSort={lp.setSort}
             onRowClick={(o) => navigate(`/opportunities/${o.id}`)}
-            empty={<EmptyState icon={Briefcase} title="No opportunities found" />}
+            empty={<EmptyState icon={Briefcase} title={translate("No opportunities found")} />}
           />
           <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
         </div>

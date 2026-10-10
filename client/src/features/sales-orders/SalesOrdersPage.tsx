@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
-import { SALES_ORDER_STATUSES, enumLabel } from '@shared';
+import { SALES_ORDER_STATUSES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -40,13 +41,13 @@ export default function SalesOrdersPage() {
   return (
     <div>
       <PageHeader
-        title="Sales orders"
+        title={translate("Sales orders")}
         description="Orders to fulfil, from contracts, accepted quotations or entered directly."
-        actions={can('order.create') && <ButtonLink to="/sales-orders/new" icon={Plus}>New order</ButtonLink>}
+        actions={can('order.create') && <ButtonLink to="/sales-orders/new" icon={Plus}>{translate("New order")}</ButtonLink>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search order number or customer…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search order number or customer…")} className="sm:w-80" />
           <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={SALES_ORDER_STATUSES.map((s) => ({ value: s, label: enumLabel(s) }))} />
         </Toolbar>
         <DataTable
@@ -59,7 +60,7 @@ export default function SalesOrdersPage() {
           sort={lp}
           onSort={lp.setSort}
           onRowClick={(o) => navigate(`/sales-orders/${o.id}`)}
-          empty={<EmptyState icon={ClipboardList} title="No sales orders found" />}
+          empty={<EmptyState icon={ClipboardList} title={translate("No sales orders found")} />}
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />
       </div>

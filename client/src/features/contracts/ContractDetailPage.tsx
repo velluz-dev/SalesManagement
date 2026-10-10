@@ -13,6 +13,7 @@ import { api } from '../../lib/api';
 import { date, money } from '../../lib/format';
 import type { Contract } from '../../lib/types';
 import { EditContractModal } from './ContractForms';
+import { translate } from '../../i18n';
 
 export default function ContractDetailPage() {
   const { id = '' } = useParams();
@@ -37,10 +38,10 @@ export default function ContractDetailPage() {
         actions={
           manage && (
             <>
-              <Button variant="ghost" icon={Ban} onClick={() => setDialog('cancel')}>Cancel</Button>
-              <Button variant="secondary" icon={Pencil} onClick={() => setDialog('edit')}>Edit</Button>
-              <Button variant="secondary" icon={CheckCheck} onClick={() => setDialog('complete')}>Mark completed</Button>
-              {can('order.create') && <ButtonLink to={`/sales-orders/new?contractId=${c.id}`} icon={Plus}>New sales order</ButtonLink>}
+              <Button variant="ghost" icon={Ban} onClick={() => setDialog('cancel')}>{translate("Cancel")}</Button>
+              <Button variant="secondary" icon={Pencil} onClick={() => setDialog('edit')}>{translate("Edit")}</Button>
+              <Button variant="secondary" icon={CheckCheck} onClick={() => setDialog('complete')}>{translate("Mark completed")}</Button>
+              {can('order.create') && <ButtonLink to={`/sales-orders/new?contractId=${c.id}`} icon={Plus}>{translate("New sales order")}</ButtonLink>}
             </>
           )
         }
@@ -50,7 +51,7 @@ export default function ContractDetailPage() {
       )}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Contract details">
+          <Card title={translate("Contract details")}>
             <DescriptionList
               columns={3}
               items={[
@@ -63,7 +64,7 @@ export default function ContractDetailPage() {
                   value: c.documentUrl ? (
                     // Only http(s) links are accepted by the API.
                     <a className="inline-flex items-center gap-1 text-brand-600 hover:underline" href={c.documentUrl} target="_blank" rel="noopener noreferrer">
-                      Open document <ExternalLink className="size-3.5" />
+                      {translate("Open document")} <ExternalLink className="size-3.5" />
                     </a>
                   ) : (
                     'Not attached'
@@ -75,9 +76,9 @@ export default function ContractDetailPage() {
             {c.terms && <p className="mt-5 border-t border-slate-100 pt-4 text-sm whitespace-pre-wrap text-slate-700">{c.terms}</p>}
           </Card>
         </div>
-        <Card title="Sales orders">
+        <Card title={translate("Sales orders")}>
           {!c.orders?.length ? (
-            <p className="text-sm text-slate-500">No orders under this contract yet.</p>
+            <p className="text-sm text-slate-500">{translate("No orders under this contract yet.")}</p>
           ) : (
             <ul className="-my-2 divide-y divide-slate-100">
               {c.orders.map((o) => (
@@ -96,7 +97,7 @@ export default function ContractDetailPage() {
       <ConfirmDialog
         open={dialog === 'complete'}
         onClose={() => setDialog(null)}
-        title="Mark contract as completed?"
+        title={translate("Mark contract as completed?")}
         message="Completed contracts are read-only and no new orders can be added."
         confirmLabel="Mark completed"
         onConfirm={() => complete.mutateAsync(undefined)}
@@ -104,7 +105,7 @@ export default function ContractDetailPage() {
       <ConfirmDialog
         open={dialog === 'cancel'}
         onClose={() => setDialog(null)}
-        title="Cancel contract?"
+        title={translate("Cancel contract?")}
         message="Only possible when every order under it is cancelled. The contract stays on record."
         confirmLabel="Cancel contract"
         tone="danger"

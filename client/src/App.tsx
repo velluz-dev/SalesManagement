@@ -7,6 +7,7 @@ import { FullPageSpinner } from './components/ui/Spinner';
 import { EmptyState } from './components/ui/EmptyState';
 import { LoginPage } from './features/auth/LoginPage';
 import { ProfilePage } from './features/auth/ProfilePage';
+import { translate } from './i18n';
 
 const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage'));
 const CustomersPage = lazy(() => import('./features/customers/CustomersPage'));
@@ -108,7 +109,7 @@ export function App() {
                   <Route path="admin/audit" element={guard(['audit.read'], <AuditLogPage />)} />
                   <Route path="admin/settings" element={guard(['settings.read'], <SettingsPage />)} />
 
-                  <Route path="404" element={<EmptyState title="Page not found" description="The page you are looking for does not exist." />} />
+                  <Route path="404" element={<EmptyState title={translate("Page not found")} description="The page you are looking for does not exist." />} />
                   <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
               </Suspense>

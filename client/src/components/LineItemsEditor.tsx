@@ -2,12 +2,13 @@ import { useFieldArray, type Control, type FieldErrors, type UseFormRegister, ty
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { Input, Select } from './ui/Form';
+import { Input, NumberInput, Select } from './ui/Form';
 import { documentTotals, lineTotals } from '../lib/totals';
 import { money } from '../lib/format';
 import { api, type Paged } from '../lib/api';
 import { useAuth } from '../auth/AuthProvider';
 import type { Product } from '../lib/types';
+import { translate } from '../i18n';
 
 export interface LineItemValues {
   productId: string;
@@ -65,12 +66,12 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="text-left text-xs font-medium text-slate-500">
-              <th className="py-2 pr-2">Description</th>
-              <th className="w-24 px-2 py-2">Qty</th>
-              <th className="w-32 px-2 py-2">Unit price</th>
-              <th className="w-24 px-2 py-2">Disc. %</th>
-              <th className="w-24 px-2 py-2">Tax %</th>
-              <th className="w-32 px-2 py-2 text-right">Line total</th>
+              <th className="py-2 pr-2">{translate("Description")}</th>
+              <th className="w-24 px-2 py-2">{translate("Qty")}</th>
+              <th className="w-32 px-2 py-2">{translate("Unit price")}</th>
+              <th className="w-24 px-2 py-2">{translate("Disc. %")}</th>
+              <th className="w-24 px-2 py-2">{translate("Tax %")}</th>
+              <th className="w-32 px-2 py-2 text-right">{translate("Line total")}</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -87,7 +88,7 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
                         value={items[i]?.productId ?? ''}
                         onChange={(e) => pickProduct(i, e.target.value)}
                       >
-                        <option value="">Custom item (no product)</option>
+                        <option value="">{translate("Custom item (no product)")}</option>
                         {products.data?.map((p) => (
                           <option key={p.id} value={p.id}>{p.code} · {p.name} ({money(p.listPrice, { currency })}/{p.unit})</option>
                         ))}
@@ -96,10 +97,10 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
                     <Input aria-label={`Line ${i + 1} description`} invalid={!!err(i, 'description')} {...register(`items.${i}.description`)} />
                     {err(i, 'description') && <p className="mt-1 text-xs text-rose-600">{err(i, 'description')}</p>}
                   </td>
-                  <td className="px-2 py-1.5"><Input aria-label={`Line ${i + 1} quantity`} inputMode="decimal" invalid={!!err(i, 'quantity')} {...register(`items.${i}.quantity`)} /></td>
-                  <td className="px-2 py-1.5"><Input aria-label={`Line ${i + 1} unit price`} inputMode="decimal" invalid={!!err(i, 'unitPrice')} {...register(`items.${i}.unitPrice`)} /></td>
-                  <td className="px-2 py-1.5"><Input aria-label={`Line ${i + 1} discount percent`} inputMode="decimal" invalid={!!err(i, 'discountPercent')} {...register(`items.${i}.discountPercent`)} /></td>
-                  <td className="px-2 py-1.5"><Input aria-label={`Line ${i + 1} tax rate`} inputMode="decimal" invalid={!!err(i, 'taxRate')} {...register(`items.${i}.taxRate`)} /></td>
+                  <td className="px-2 py-1.5"><NumberInput aria-label={`Line ${i + 1} quantity`} decimals={2} maxIntegerDigits={10} invalid={!!err(i, 'quantity')} {...register(`items.${i}.quantity`)} /></td>
+                  <td className="px-2 py-1.5"><NumberInput aria-label={`Line ${i + 1} unit price`} decimals={2} invalid={!!err(i, 'unitPrice')} {...register(`items.${i}.unitPrice`)} /></td>
+                  <td className="px-2 py-1.5"><NumberInput aria-label={`Line ${i + 1} discount percent`} decimals={2} maxValue={100} invalid={!!err(i, 'discountPercent')} {...register(`items.${i}.discountPercent`)} /></td>
+                  <td className="px-2 py-1.5"><NumberInput aria-label={`Line ${i + 1} tax rate`} decimals={2} maxValue={100} invalid={!!err(i, 'taxRate')} {...register(`items.${i}.taxRate`)} /></td>
                   <td className="tabular px-2 py-3.5 text-right font-medium">{money(line.total / 100, { currency })}</td>
                   <td className="py-1.5 pl-1">
                     <button
@@ -120,12 +121,12 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
       </div>
       {typeof errors?.items?.message === 'string' && <p className="mt-2 text-xs text-rose-600">{errors.items.message}</p>}
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <Button variant="secondary" size="sm" icon={Plus} onClick={() => append(emptyLine(defaultTaxRate))} disabled={fields.length >= 100}>Add line</Button>
+        <Button variant="secondary" size="sm" icon={Plus} onClick={() => append(emptyLine(defaultTaxRate))} disabled={fields.length >= 100}>{translate("Add line")}</Button>
         <dl className="tabular w-full max-w-xs space-y-1.5 text-sm">
-          <div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd>{money(totals.subtotal, { currency })}</dd></div>
-          <div className="flex justify-between text-slate-600"><dt>Discount</dt><dd>−{money(totals.discountTotal, { currency })}</dd></div>
-          <div className="flex justify-between text-slate-600"><dt>Tax</dt><dd>{money(totals.taxTotal, { currency })}</dd></div>
-          <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold text-slate-900"><dt>Total</dt><dd>{money(totals.total, { currency })}</dd></div>
+          <div className="flex justify-between text-slate-600"><dt>{translate("Subtotal")}</dt><dd>{money(totals.subtotal, { currency })}</dd></div>
+          <div className="flex justify-between text-slate-600"><dt>{translate("Discount")}</dt><dd>−{money(totals.discountTotal, { currency })}</dd></div>
+          <div className="flex justify-between text-slate-600"><dt>{translate("Tax")}</dt><dd>{money(totals.taxTotal, { currency })}</dd></div>
+          <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-semibold text-slate-900"><dt>{translate("Total")}</dt><dd>{money(totals.total, { currency })}</dd></div>
         </dl>
       </div>
     </div>

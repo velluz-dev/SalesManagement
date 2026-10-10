@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CUSTOMER_TYPES, enumLabel } from '@shared';
+import { CUSTOMER_TYPES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
@@ -73,7 +74,7 @@ export function CustomerFormModal({ open, onClose, customer, onSaved }: { open: 
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
           <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{customer ? 'Save changes' : 'Create customer'}</Button>
         </>
       }

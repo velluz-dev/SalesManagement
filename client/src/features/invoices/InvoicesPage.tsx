@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { AlarmClock, Plus, Receipt } from 'lucide-react';
-import { INVOICE_STATUSES, enumLabel } from '@shared';
+import { INVOICE_STATUSES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useList } from '../../hooks/useApi';
 import { useListParams } from '../../hooks/useListParams';
@@ -52,11 +53,11 @@ export default function InvoicesPage({ overdueOnly = false }: { overdueOnly?: bo
       <PageHeader
         title={overdueOnly ? 'Overdue invoices' : 'Invoices'}
         description={overdueOnly ? 'Issued invoices past their due date with an outstanding balance.' : 'Customer invoices and their payment status.'}
-        actions={can('invoice.create') && !overdueOnly && <ButtonLink to="/invoices/new" icon={Plus}>New invoice</ButtonLink>}
+        actions={can('invoice.create') && !overdueOnly && <ButtonLink to="/invoices/new" icon={Plus}>{translate("New invoice")}</ButtonLink>}
       />
       <div className="card overflow-hidden">
         <Toolbar>
-          <SearchInput value={lp.q} onChange={lp.setQ} placeholder="Search invoice or customer…" className="sm:w-80" />
+          <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search invoice or customer…")} className="sm:w-80" />
           {!overdueOnly && (
             <>
               <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={INVOICE_STATUSES.map((s) => ({ value: s, label: s === 'ISSUED' ? 'Unpaid' : enumLabel(s) }))} />
@@ -76,8 +77,8 @@ export default function InvoicesPage({ overdueOnly = false }: { overdueOnly?: bo
           onRowClick={(i) => navigate(`/invoices/${i.id}`)}
           empty={
             overdueOnly
-              ? <EmptyState icon={AlarmClock} title="No overdue invoices" description="All issued invoices are within their payment terms." />
-              : <EmptyState icon={Receipt} title="No invoices found" />
+              ? <EmptyState icon={AlarmClock} title={translate("No overdue invoices")} description="All issued invoices are within their payment terms." />
+              : <EmptyState icon={Receipt} title={translate("No invoices found")} />
           }
         />
         <Pagination meta={data?.meta} onPage={lp.setPage} onPageSize={lp.setPageSize} />

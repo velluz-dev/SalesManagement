@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Pencil, Plus } from 'lucide-react';
-import { OPPORTUNITY_STAGES, enumLabel } from '@shared';
+import { OPPORTUNITY_STAGES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button, ButtonLink } from '../../components/ui/Button';
@@ -39,16 +40,16 @@ export default function OpportunityDetailPage() {
         description={<><Link to={`/customers/${o.customer.id}`} className="hover:underline">{o.customer.name}</Link>, owned by {o.owner.name}</>}
         actions={
           <>
-            {can('opportunity.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>Edit</Button>}
+            {can('opportunity.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>{translate("Edit")}</Button>}
             {can('quotation.create') && o.stage !== 'CLOSED_LOST' && (
-              <ButtonLink to={`/quotations/new?customerId=${o.customerId}&opportunityId=${o.id}`} icon={Plus}>Create quotation</ButtonLink>
+              <ButtonLink to={`/quotations/new?customerId=${o.customerId}&opportunityId=${o.id}`} icon={Plus}>{translate("Create quotation")}</ButtonLink>
             )}
           </>
         }
       />
 
       {can('opportunity.update') && (
-        <nav aria-label="Stage" className="card mb-6 flex overflow-x-auto p-1.5">
+        <nav aria-label={translate("Stage")} className="card mb-6 flex overflow-x-auto p-1.5">
           {OPPORTUNITY_STAGES.map((s, i) => (
             <button
               key={s}
@@ -70,7 +71,7 @@ export default function OpportunityDetailPage() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Details">
+          <Card title={translate("Details")}>
             <DescriptionList
               items={[
                 { label: 'Amount', value: money(o.amount) },
@@ -85,9 +86,9 @@ export default function OpportunityDetailPage() {
           </Card>
           <ActivityPanel filter={{ opportunityId: o.id }} link={{ opportunityId: o.id, customerId: o.customerId }} />
         </div>
-        <Card title="Quotations">
+        <Card title={translate("Quotations")}>
           {!o.quotations?.length ? (
-            <p className="text-sm text-slate-500">No quotations linked yet.</p>
+            <p className="text-sm text-slate-500">{translate("No quotations linked yet.")}</p>
           ) : (
             <ul className="-my-2 divide-y divide-slate-100">
               {o.quotations.map((q) => (

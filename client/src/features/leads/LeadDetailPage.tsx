@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowRightLeft, Pencil } from 'lucide-react';
-import { enumLabel } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
-import { Checkbox, Field, FormError, Input } from '../../components/ui/Form';
+import { Checkbox, Field, FormError, Input, NumberInput } from '../../components/ui/Form';
 import { CustomerSelect } from '../../components/ui/Pickers';
 import { FullPageSpinner } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
@@ -77,23 +77,23 @@ function ConvertModal({ lead, open, onClose }: { lead: Lead; open: boolean; onCl
     <Modal
       open={open}
       onClose={onClose}
-      title="Convert lead"
+      title={translate("Convert lead")}
       description="Creates or links a customer and optionally an opportunity, in a single step."
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button icon={ArrowRightLeft} onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Convert</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button icon={ArrowRightLeft} onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Convert")}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         <FormError message={error} />
         <fieldset className="space-y-3">
-          <legend className="mb-2 text-sm font-semibold text-slate-900">Customer</legend>
+          <legend className="mb-2 text-sm font-semibold text-slate-900">{translate("Customer")}</legend>
           <div className="flex gap-4 text-sm">
-            <label className="flex items-center gap-2"><input type="radio" value="new" {...register('mode')} /> Create new customer</label>
-            <label className="flex items-center gap-2"><input type="radio" value="existing" {...register('mode')} /> Link existing customer</label>
+            <label className="flex items-center gap-2"><input type="radio" value="new" {...register('mode')} /> {translate("Create new customer")}</label>
+            <label className="flex items-center gap-2"><input type="radio" value="existing" {...register('mode')} /> {translate("Link existing customer")}</label>
           </div>
           {mode === 'new' ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -105,12 +105,12 @@ function ConvertModal({ lead, open, onClose }: { lead: Lead; open: boolean; onCl
           )}
         </fieldset>
         <fieldset className="space-y-3">
-          <legend className="mb-2 text-sm font-semibold text-slate-900">Opportunity</legend>
+          <legend className="mb-2 text-sm font-semibold text-slate-900">{translate("Opportunity")}</legend>
           <Checkbox label="Create an opportunity" {...register('createOpportunity')} />
           {createOpp && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Field label="Name" required className="sm:col-span-3"><Input {...register('opportunityName')} /></Field>
-              <Field label="Amount" required><Input inputMode="decimal" {...register('amount')} /></Field>
+              <Field label="Amount" required><NumberInput decimals={2} {...register('amount')} /></Field>
               <Field label="Expected close"><Input type="date" {...register('expectedCloseDate')} /></Field>
             </div>
           )}
@@ -141,15 +141,15 @@ export default function LeadDetailPage() {
         actions={
           !converted && (
             <>
-              {can('lead.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>Edit</Button>}
-              {can('lead.convert') && lead.status !== 'UNQUALIFIED' && <Button icon={ArrowRightLeft} onClick={() => setConverting(true)}>Convert</Button>}
+              {can('lead.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>{translate("Edit")}</Button>}
+              {can('lead.convert') && lead.status !== 'UNQUALIFIED' && <Button icon={ArrowRightLeft} onClick={() => setConverting(true)}>{translate("Convert")}</Button>}
             </>
           )
         }
       />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <Card title="Lead details">
+          <Card title={translate("Lead details")}>
             <DescriptionList
               items={[
                 { label: 'Contact', value: lead.contactName },
@@ -167,7 +167,7 @@ export default function LeadDetailPage() {
           <ActivityPanel filter={{ leadId: lead.id }} link={{ leadId: lead.id }} />
         </div>
         {converted && (
-          <Card title="Conversion">
+          <Card title={translate("Conversion")}>
             <p className="text-sm text-slate-600">
               Converted to{' '}
               {lead.convertedCustomer ? <Link className="font-medium text-brand-600" to={`/customers/${lead.convertedCustomer.id}`}>{lead.convertedCustomer.name}</Link> : 'a customer'}.

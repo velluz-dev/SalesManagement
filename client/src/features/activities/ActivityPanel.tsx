@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CalendarCheck, CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
-import { ACTIVITY_TYPES, enumLabel } from '@shared';
+import { ACTIVITY_TYPES } from '@shared';
+import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useList } from '../../hooks/useApi';
 import { Card } from '../../components/ui/Layout';
@@ -41,11 +42,11 @@ export function ActivityFormModal({ open, onClose, link }: { open: boolean; onCl
     <Modal
       open={open}
       onClose={onClose}
-      title="New activity"
+      title={translate("New activity")}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>Add activity</Button>
+          <Button variant="secondary" onClick={onClose}>{translate("Cancel")}</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={formState.isSubmitting}>{translate("Add activity")}</Button>
         </>
       }
     >
@@ -85,11 +86,11 @@ export function ActivityRow({ a, canManage }: { a: Activity; canManage: boolean 
         {a.description && <p className="mt-1 text-sm text-slate-600">{a.description}</p>}
       </div>
       {canManage && (
-        <button onClick={() => setConfirm(true)} className="text-slate-300 hover:text-rose-600" aria-label="Delete activity">
+        <button onClick={() => setConfirm(true)} className="text-slate-300 hover:text-rose-600" aria-label={translate("Delete activity")}>
           <Trash2 className="size-4" />
         </button>
       )}
-      <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} title="Delete activity?" message={`"${a.subject}" will be permanently removed.`} tone="danger" confirmLabel="Delete" onConfirm={() => remove.mutateAsync(undefined)} />
+      <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} title={translate("Delete activity?")} message={`"${a.subject}" will be permanently removed.`} tone="danger" confirmLabel="Delete" onConfirm={() => remove.mutateAsync(undefined)} />
     </li>
   );
 }
@@ -102,11 +103,11 @@ export function ActivityPanel({ filter, link }: { filter: Link; link: Link }) {
   if (!enabled) return null;
   return (
     <Card
-      title="Activities"
-      actions={can('activity.manage') && <Button size="sm" variant="secondary" icon={Plus} onClick={() => setAdding(true)}>Add</Button>}
+      title={translate("Activities")}
+      actions={can('activity.manage') && <Button size="sm" variant="secondary" icon={Plus} onClick={() => setAdding(true)}>{translate("Add")}</Button>}
     >
       {!data?.data.length ? (
-        <div className="flex items-center gap-2 text-sm text-slate-500"><CalendarCheck className="size-4" /> No activities logged yet.</div>
+        <div className="flex items-center gap-2 text-sm text-slate-500"><CalendarCheck className="size-4" /> {translate("No activities logged yet.")}</div>
       ) : (
         <ul className="-my-3 divide-y divide-slate-100">{data.data.map((a) => <ActivityRow key={a.id} a={a} canManage={can('activity.manage')} />)}</ul>
       )}
