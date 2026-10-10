@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Pencil, Plus } from 'lucide-react';
+import { useAuth } from '../../auth/AuthProvider';
+import { useDetail, useList } from '../../hooks/useApi';
+import { Button, ButtonLink } from '../../components/ui/Button';
+import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
+import { Badge, InvoiceStatusBadge, StatusBadge } from '../../components/ui/Badge';
+import { FullPageSpinner } from '../../components/ui/Spinner';
+import { ErrorState } from '../../components/ui/EmptyState';
+import { date, money } from '../../lib/format';
+import type { Customer, Invoice, Opportunity, Quotation } from '../../lib/types';
+import { CustomerFormModal } from './CustomerForm';
+
+function MiniList<T extends { id: string }>({ rows, empty, render }: { rows?: T[]; empty: string; render: (r: T) => React.ReactNode }) {
+  if (!rows) return <p className="text-sm text-slate-400">Loading…</p>;
+  if (!rows.length) return <p className="text-sm text-slate-500">{empty}</p>;
+  return <ul className="-my-2 divide-y divide-slate-100">{rows.map((r) => <li key={r.id} className="py-2">{render(r)}</li>)}</ul>;
+}
+
+export default function CustomerDetailPage() {
+  const { id = '' } = useParams();
+  const { can, canAny } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const { data: c, isLoading, error, refetch } = useDetail<Customer>(['customers', id], `/customers/${id}`);
+  const canOpps = canAny('opportunity.read.own', 'opportunity.read.team', 'opportunity.read.all');
+  const canQuotes = canAny('quotation.read.own', 'quotation.read.team', 'quotation.read.all');
+  const opps = useList<Opportunity>('opportunities', { customerId: id, pageSize: 10 }, { enabled: canOpps });
+  const quotes = useList<Quotation>('quotations', { customerId: id, pageSize: 10 }, { enabled: canQuotes });
+  const invoices = useList<Invoice>('invoices', { customerId: id, pageSize: 10 }, { enabled: can('invoice.read') });
+
+  if (isLoading) return <FullPageSpinner />;
+  if (error || !c) return <ErrorState error={error} onRetry={refetch} />;
+
+  return (
+    <div>
+      <PageHeader
+        back={{ to: '/customers', label: 'Customers' }}
+        title={c.name}
+        badge={c.isActive ? <Badge tone="green">Active</Badge> : <Badge>Inactive</Badge>}
+        description={[c.industry, `Owner: ${c.owner.name}`].filter(Boolean).join(' · ')}
+        actions={
+          <>
+            {can('customer.update') && <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>Edit</Button>}
+            {can('quotation.create') && <ButtonLink to={`/quotations/new?customerId=${c.id}`} icon={Plus}>New quotation</ButtonLink>}
+          </>
+        }
+      />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          <Card title="Details">
+            <DescriptionList
+              items={[
+                { label: 'Email', value: c.email },
+                { label: 'Phone', value: c.phone },
+                { label: 'Industry', value: c.industry },
+                { label: 'Tax ID', value: c.taxId },
+                { label: 'Address', value: c.address },
+                { label: 'Customer since', value: date(c.createdAt) },
+              ]}
+            />
+          </Card>
+          {canOpps && (
+            <Card title="Opportunities">
+              <MiniList
+                rows={opps.data?.data}
+                empty="No opportunities yet."
+                render={(o) => (
+                  <Link to={`/opportunities/${o.id}`} className="flex items-center justify-between gap-3 text-sm hover:underline">
+                    <span className="truncate">{o.name}</span>
+                    <span className="flex items-center gap-3"><StatusBadge status={o.stage} /><span className="tabular">{money(o.amount)}</span></span>
+                  </Link>
+                )}
+              />
+            </Card>
+          )}
+          {canQuotes && (
+            <Card title="Quotations">
+              <MiniList
+                rows={quotes.data?.data}
+                empty="No quotations yet."
+                render={(q) => (
+                  <Link to={`/quotations/${q.id}`} className="flex items-center justify-between gap-3 text-sm hover:underline">
+                    <span>{q.number} v{q.version}</span>
+                    <span className="flex items-center gap-3"><StatusBadge status={q.status} /><span className="tabular">{money(q.total, { currency: q.currency })}</span></span>
+                  </Link>
+                )}
+              />
+            </Card>
+          )}
+        </div>
+        <div className="space-y-6">
+          {can('credit.read') && (
+            <Card title="Credit" actions={<Link to={`/credit?q=${encodeURIComponent(c.name)}`} className="text-sm font-medium text-brand-600">Manage</Link>}>
+              {c.credit ? (
+                <DescriptionList
+                  columns={1}
+                  items={[
+                    { label: 'Credit limit', value: money(c.credit.creditLimit) },
+                    { label: 'Payment terms', value: `${c.credit.paymentTermsDays} days` },
+                    { label: 'Status', value: c.credit.onHold ? <Badge tone="red">On hold</Badge> : <Badge tone="green">Good standing</Badge> },
+                  ]}
+                />
+              ) : (
+                <p className="text-sm text-slate-500">No credit terms configured. Default payment terms apply.</p>
+              )}
+            </Card>
+          )}
+          {can('invoice.read') && (
+            <Card title="Invoices">
+              <MiniList
+                rows={invoices.data?.data}
+                empty="No invoices yet."
+                render={(i) => (
+                  <Link to={`/invoices/${i.id}`} className="flex items-center justify-between gap-3 text-sm hover:underline">
+                    <span>{i.number}</span>
+                    <span className="flex items-center gap-3"><InvoiceStatusBadge status={i.status} isOverdue={i.isOverdue} /><span className="tabular">{money(i.balance)}</span></span>
+                  </Link>
+                )}
+              />
+            </Card>
+          )}
+        </div>
+      </div>
+      <CustomerFormModal open={editing} onClose={() => setEditing(false)} customer={c} onSaved={() => refetch()} />
+    </div>
+  );
+}
