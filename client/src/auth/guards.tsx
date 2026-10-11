@@ -8,10 +8,10 @@ import { ShieldAlert } from 'lucide-react';
 import { translate } from '../i18n';
 
 export function RequireAuth() {
-  const { me, loading } = useAuth();
+  const { me, loading, signedOut } = useAuth();
   const location = useLocation();
   if (loading) return <FullPageSpinner />;
-  if (!me) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!me) return <Navigate to="/login" replace state={signedOut ? null : { from: location.pathname + location.search }} />;
   if (me.user.mustChangePassword && location.pathname !== '/profile') {
     return <Navigate to="/profile" replace state={{ forced: true }} />;
   }

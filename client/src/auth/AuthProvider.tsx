@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Permission } from '@shared';
 import { api, ApiError, setUnauthorizedHandler } from '../lib/api';
@@ -31,6 +31,7 @@ interface AuthState {
   me: Me | null;
   settings: PublicSettings | null;
   loading: boolean;
+  signedOut: boolean;
   can: (p: Permission) => boolean;
   canAny: (...p: Permission[]) => boolean;
   login: (identifier: string, password: string) => Promise<void>;
@@ -42,6 +43,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
+  const [signedOut, setSignedOut] = useState(false);
   const meQuery = useQuery({
     queryKey: ['me'],
     queryFn: async () => {
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (identifier: string, password: string) => {
       await api.post('/auth/login', { identifier, password });
       const { data } = await api.get<{ data: Me }>('/auth/me');
+      setSignedOut(false);
       resetSession(data);
     },
     [resetSession],
@@ -94,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.post('/auth/logout').catch(() => undefined);
+    setSignedOut(true);
     resetSession(null);
   }, [resetSession]);
 
@@ -101,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     me,
     settings: settingsQuery.data ?? null,
     loading: meQuery.isLoading,
+    signedOut,
     can,
     canAny,
     login,

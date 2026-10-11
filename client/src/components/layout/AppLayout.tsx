@@ -29,7 +29,6 @@ const initialsOf = (name: string) => name.split(' ').map((p) => p[0]).slice(0, 2
 
 function SidebarAccount() {
   const { me, logout } = useAuth();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setOpen(false), open);
@@ -50,10 +49,7 @@ function SidebarAccount() {
           </Link>
           <button
             role="menuitem"
-            onClick={async () => {
-              await logout();
-              navigate('/login');
-            }}
+            onClick={() => logout()}
             className="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-300 hover:bg-white/5"
           >
             <LogOut className="size-4" /> {translate('Sign out')}
@@ -280,7 +276,7 @@ function NotificationBell() {
       >
         <Bell className="size-5" />
         {unread > 0 && (
-          <span className="tabular absolute -top-0.5 -right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] leading-4 font-bold text-white ring-2 ring-[#f5f6fa]">
+          <span className="tabular absolute -top-0.5 -right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] leading-4 font-bold text-white ring-2 ring-[#f5f6fa]">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
