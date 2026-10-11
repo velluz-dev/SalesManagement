@@ -813,4 +813,18 @@ export const my: Record<string, string> = {
   'enum.FINANCE_OFFICER': 'ငွေစာရင်းအရာရှိ',
   'enum.DIRECTOR': 'ဒါရိုက်တာ',
   'enum.SYSTEM_ADMIN': 'စနစ်စီမံခန့်ခွဲသူ',
+
+  'Active sessions': 'အသုံးပြုနေသော ဆက်ရှင်များ',
+  'Signed in right now': 'ယခု ဝင်ရောက်ထားသူများ',
+  'Sign-ins this week': 'ဤအပတ် ဝင်ရောက်မှု',
+  '{count} failed attempts': 'မအောင်မြင်သော ကြိုးပမ်းမှု {count} ခု',
+  '{active} active, {inactive} inactive': 'အသုံးပြုနေ {active}၊ ရပ်ဆိုင်းထား {inactive}',
+  'Sign-ins, last 7 days': 'နောက်ဆုံး ၇ ရက်အတွင်း ဝင်ရောက်မှု',
+  'Users by role': 'အခန်းကဏ္ဍအလိုက် အသုံးပြုသူများ',
+  'Recent activity': 'လတ်တလော လုပ်ဆောင်ချက်များ',
+  System: 'စနစ်',
+  Successful: 'အောင်မြင်',
+  Failed: 'မအောင်မြင်',
+  'No activity yet.': 'လုပ်ဆောင်ချက် မရှိသေးပါ။',
+  "Here's what's happening across your workspace today.": 'ယနေ့ သင့်လုပ်ငန်းခွင်တွင် ဖြစ်ပျက်နေသည်များ။',
 };

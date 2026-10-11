@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight, Bell, CheckCircle2, ChevronDown, CircleAlert, FileText,
-  Info, MoreHorizontal, Receipt, Trophy, UserPlus, TrendingUp, CircleDot, Wallet,
+  Info, LogIn, MonitorSmartphone, MoreHorizontal, Receipt, Trophy, UserPlus, Users, TrendingUp, CircleDot, Wallet,
 } from 'lucide-react';
 import { currentLocale, enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
@@ -13,6 +13,7 @@ import { Card, StatCard } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ErrorState, EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Spinner';
+import { cn } from '../../lib/cn';
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -65,13 +66,10 @@ interface Dashboard {
 const FUNNEL_COLORS = ['#4c3fc8', '#5b4fe3', '#6a62ef', '#8180f7', '#a3a8fc'];
 const FUNNEL_ORDER = ['PROSPECTING', 'QUALIFICATION', 'PROPOSAL', 'NEGOTIATION'];
 
-/* ---------- Sales Performance (area chart like the mock) ---------- */
-
 type PerformancePeriod = 'month' | 'six-months';
 
 const yTick = (v: number) => (v >= 1_000_000_000 ? `${+(v / 1_000_000_000).toFixed(1)}B` : v >= 1_000_000 ? `${Math.round(v / 1_000_000)}M` : v >= 1000 ? `${Math.round(v / 1000)}K` : String(v));
 
-/** Real data only: this month = cumulative won sales per day vs the pace to this month's targets; six months = won per month. */
 function PerformanceChart({ sales, period }: { sales: NonNullable<Dashboard['sales']>; period: PerformancePeriod }) {
   const monthName = new Date().toLocaleDateString(currentLocale(), { month: 'short' });
   const hasTarget = period === 'month' && Number(sales.monthTarget) > 0;
@@ -116,10 +114,7 @@ function PerformanceChart({ sales, period }: { sales: NonNullable<Dashboard['sal
   );
 }
 
-/* ---------- Sales Funnel ---------- */
-
 function Funnel({ pipeline }: { pipeline: { stage: string; count: number; amount: string }[] }) {
-  // Pipeline order (not sorted by size), every open stage shown even when empty.
   const sorted = FUNNEL_ORDER.map((stage) => pipeline.find((p) => p.stage === stage) ?? { stage, count: 0, amount: '0' });
   if (!sorted.some((p) => p.count)) return <EmptyState title={translate("No open opportunities")} />;
   const top = Math.max(...sorted.map((p) => p.count)) || 1;
@@ -131,7 +126,6 @@ function Funnel({ pipeline }: { pipeline: { stage: string; count: number; amount
             <div
               className="flex h-[34px] items-center justify-center text-[11px] font-semibold text-white"
               style={{
-                // Width is proportional to the stage's count (kept visible when small).
                 width: `${Math.max(14, (p.count / top) * 100)}%`,
                 background: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
                 clipPath: 'polygon(0 0, 100% 0, calc(100% - 12px) 100%, 12px 100%)',
@@ -148,8 +142,6 @@ function Funnel({ pipeline }: { pipeline: { stage: string; count: number; amount
   );
 }
 
-/* ---------- Target donut ---------- */
-
 function TargetDonut({ target }: { target: SalesTarget }) {
   const pct = Math.max(0, Math.min(100, Math.round(target.percent)));
   const r = 44;
@@ -165,7 +157,7 @@ function TargetDonut({ target }: { target: SalesTarget }) {
             cy="55"
             r={r}
             fill="none"
-            stroke="#1baf7a"
+            stroke="#5b4fe3"
             strokeWidth="11"
             strokeLinecap="round"
             strokeDasharray={`${(pct / 100) * c} ${c}`}
@@ -194,13 +186,13 @@ function TargetDonut({ target }: { target: SalesTarget }) {
   );
 }
 
-/* ---------- Right rail cards ---------- */
-
-function PendingApprovalsCard({ a }: { a: NonNullable<Dashboard['approvals']> }) {
+function PendingApprovalsCard({ a, className }: { a: NonNullable<Dashboard['approvals']>; className?: string }) {
   return (
     <Card
+      className={cn('flex flex-col', className)}
+      bodyClassName="flex flex-1 flex-col"
       title={translate("Pending Approvals")}
-      actions={<span className="tabular flex size-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">{a.pendingCount}</span>}
+      actions={<span className="tabular flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{a.pendingCount}</span>}
     >
       {!a.oldest.length ? (
         <p className="text-[13px] text-slate-400">{translate("Nothing waiting for approval.")}</p>
@@ -225,7 +217,7 @@ function PendingApprovalsCard({ a }: { a: NonNullable<Dashboard['approvals']> })
           ))}
         </ul>
       )}
-      <Link to="/approvals" className="mt-3 flex items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
+      <Link to="/approvals" className="mt-auto flex pt-3 items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
         {translate("View all approvals")} <ArrowRight className="size-3.5" />
       </Link>
     </Card>
@@ -240,7 +232,7 @@ function notificationIcon(type: string) {
   return <Info className="size-4 shrink-0 text-brand-600" />;
 }
 
-function NotificationsCard() {
+function NotificationsCard({ className }: { className?: string }) {
   const { data } = useQuery({
     queryKey: ['notifications', 'rail'],
     queryFn: () => api.get<{ data: Notification[]; unread: number }>('/notifications', { pageSize: 4 }),
@@ -250,9 +242,11 @@ function NotificationsCard() {
   const unread = data?.unread ?? 0;
   return (
     <Card
+      className={cn('flex flex-col', className)}
+      bodyClassName="flex flex-1 flex-col"
       title={translate("Notifications")}
       actions={
-        <span className="tabular flex size-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+        <span className="tabular flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
           {unread || items.length}
         </span>
       }
@@ -273,23 +267,25 @@ function NotificationsCard() {
           ))}
         </ul>
       )}
-      <Link to="/notifications" className="mt-3 flex items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
+      <Link to="/notifications" className="mt-auto flex pt-3 items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
         {translate("View all notifications")} <ArrowRight className="size-3.5" />
       </Link>
     </Card>
   );
 }
 
-function MyTargetCard({ targets }: { targets: SalesTarget[] }) {
+function MyTargetCard({ targets, className }: { targets: SalesTarget[]; className?: string }) {
   const mine = targets[0];
   return (
-    <Card title={translate("My Sales Target")}>
+    <Card title={translate("My Sales Target")} className={cn('flex flex-col', className)} bodyClassName="flex flex-1 flex-col">
       {!mine ? (
         <p className="text-[13px] text-slate-400">{translate("No active target assigned.")}</p>
       ) : (
         <>
-          <TargetDonut target={mine} />
-          <Link to="/targets" className="mt-3 flex items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
+          <div className="flex flex-1 items-center">
+            <TargetDonut target={mine} />
+          </div>
+          <Link to="/targets" className="flex pt-3 items-center justify-center gap-1 text-[13px] font-medium text-brand-600 hover:underline">
             {translate("View Target Details")} <ArrowRight className="size-3.5" />
           </Link>
         </>
@@ -297,8 +293,6 @@ function MyTargetCard({ targets }: { targets: SalesTarget[] }) {
     </Card>
   );
 }
-
-/* ---------- Recent quotations ---------- */
 
 function RecentQuotationsCard() {
   const { canAny } = useAuth();
@@ -362,7 +356,94 @@ function RecentQuotationsCard() {
   );
 }
 
-/* ---------- Page ---------- */
+function AdminOverview({ a }: { a: NonNullable<Dashboard['admin']> }) {
+  const signIns = a.logins.reduce((n, l) => n + l.success, 0);
+  const failed = a.logins.reduce((n, l) => n + l.failed, 0);
+  const busiest = Math.max(1, ...a.logins.map((l) => l.success + l.failed));
+  const dayLabel = (day: string) =>
+    new Date(`${day}T00:00:00Z`).toLocaleDateString(currentLocale(), { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Users"
+          value={a.users.total}
+          sub={translate('{active} active, {inactive} inactive', { active: a.users.active, inactive: a.users.inactive })}
+          icon={Users}
+        />
+        <StatCard label="Active sessions" value={a.activeSessions} sub={translate('Signed in right now')} icon={MonitorSmartphone} />
+        <StatCard
+          label="Sign-ins this week"
+          value={signIns}
+          sub={translate('{count} failed attempts', { count: failed })}
+          icon={LogIn}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
+        <Card title={translate('Sign-ins, last 7 days')} className="lg:col-span-3">
+          <ul className="space-y-2.5">
+            {a.logins.map((l) => (
+              <li key={l.day} className="grid grid-cols-[4.5rem_minmax(0,1fr)_3rem] items-center gap-3 text-[13px]">
+                <span className="text-slate-500">{dayLabel(l.day)}</span>
+                <span className="flex h-2.5 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+                  <span className="bg-brand-500" style={{ width: `${(l.success / busiest) * 100}%` }} />
+                  <span className="bg-rose-500" style={{ width: `${(l.failed / busiest) * 100}%` }} />
+                </span>
+                <span className="tabular text-right font-medium text-slate-700">
+                  {l.success}
+                  {l.failed > 0 && <span className="ml-1 text-rose-600">+{l.failed}</span>}
+                  <span className="sr-only">{translate('{count} failed attempts', { count: l.failed })}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 flex gap-4 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-500" aria-hidden />{translate('Successful')}</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose-500" aria-hidden />{translate('Failed')}</span>
+          </p>
+        </Card>
+
+        <Card
+          title={translate('Users by role')}
+          className="lg:col-span-2"
+          actions={<Link to="/admin/roles" className="text-[13px] font-medium text-brand-600 hover:underline">{translate('Manage roles')}</Link>}
+        >
+          <ul className="divide-y divide-slate-100">
+            {a.roles.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-[13px]">
+                <span className="truncate text-slate-700">{enumLabel(r.code)}</span>
+                <span className="tabular rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">{r.users}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+
+      <Card
+        title={translate('Recent activity')}
+        actions={<Link to="/admin/audit" className="text-[13px] font-medium text-brand-600 hover:underline">{translate('Audit Log')}</Link>}
+      >
+        {!a.recentActivity.length ? (
+          <p className="text-[13px] text-slate-500">{translate('No activity yet.')}</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {a.recentActivity.map((e) => (
+              <li key={e.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5 text-[13px]">
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <code className={`shrink-0 rounded px-1.5 py-0.5 text-xs ${e.action.includes('failed') ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>{e.action}</code>
+                  <span className="truncate text-slate-700">{e.actor?.name ?? translate('System')}</span>
+                </span>
+                <span className="shrink-0 text-xs text-slate-400">{relativeTime(e.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </>
+  );
+}
 
 export default function DashboardPage() {
   const { me, canAny } = useAuth();
@@ -378,9 +459,10 @@ export default function DashboardPage() {
   const awaitingApproval = data?.sales?.quotationsByStatus.find((q) => q.status === 'PENDING_APPROVAL')?.count ?? 0;
   const wonNow = Number(data?.sales?.wonThisMonth.amount ?? 0);
   const wonBefore = Number(data?.sales?.wonLastMonth ?? 0);
-  // Percentage change only when last month had sales; otherwise there is nothing meaningful to compare.
   const wonChange = wonBefore > 0 ? { value: ((wonNow - wonBefore) / wonBefore) * 100, label: 'vs last month' } : null;
   const shownTarget = data?.sales ? (data.sales.myTarget ?? data.sales.targets[0] ?? null) : null;
+  const canReadQuotes = canAny('quotation.read.own', 'quotation.read.team', 'quotation.read.all');
+  const sideCards = !!data && (!!data.approvals || !data.sales);
 
   return (
     <div>
@@ -389,7 +471,9 @@ export default function DashboardPage() {
           <h1 className="text-[20px] font-bold tracking-tight text-slate-900">
             {translate('Welcome back, {name}!', { name: first })}
           </h1>
-          <p className="mt-0.5 text-[13px] text-slate-400">{translate("Here's what's happening with your sales today.")}</p>
+          <p className="mt-0.5 text-[13px] text-slate-400">
+            {translate(data && !data.sales && !data.finance && !data.approvals && data.admin ? "Here's what's happening across your workspace today." : "Here's what's happening with your sales today.")}
+          </p>
         </div>
       </div>
 
@@ -400,94 +484,96 @@ export default function DashboardPage() {
           {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-28" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          {/* main column */}
-          <div className="min-w-0 space-y-5">
-            {data.sales && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-                <StatCard
-                  label="Total Sales (MMK)"
-                  value={money(data.sales.wonThisMonth.amount, { compact: true })}
-                  change={wonChange}
-                  sub={translate('{count} deals won this month', { count: data.sales.wonThisMonth.count })}
-                  icon={TrendingUp}
-                  tone="brand"
-                />
-                <StatCard
-                  label="Open Opportunities"
-                  value={data.sales.openOpportunities.count}
-                  sub={translate('{amount} in open pipeline', { amount: money(data.sales.openOpportunities.amount, { compact: true }) })}
-                  icon={CircleDot}
-                  tone="blue"
-                />
-                <StatCard
-                  label="Pending Quotations"
-                  value={pendingQuotes}
-                  sub={translate('{count} awaiting approval', { count: awaitingApproval })}
-                  icon={FileText}
-                  tone="amber"
-                />
-                <StatCard
-                  label="Target Achievement"
-                  value={shownTarget ? `${Math.round(shownTarget.percent)}%` : '—'}
-                  sub={shownTarget ? translate('{achieved} of {target}', { achieved: money(shownTarget.achieved, { compact: true }), target: money(shownTarget.amount, { compact: true }) }) : 'No active target'}
-                  icon={Trophy}
-                  tone="green"
-                />
+        <div className="space-y-5">
+          {data.sales && (
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="flex min-w-0 flex-col gap-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+                  <StatCard
+                    label="Total Sales (MMK)"
+                    value={money(data.sales.wonThisMonth.amount, { compact: true })}
+                    change={wonChange}
+                    sub={translate('{count} deals won this month', { count: data.sales.wonThisMonth.count })}
+                    icon={TrendingUp}
+                  />
+                  <StatCard
+                    label="Open Opportunities"
+                    value={data.sales.openOpportunities.count}
+                    sub={translate('{amount} in open pipeline', { amount: money(data.sales.openOpportunities.amount, { compact: true }) })}
+                    icon={CircleDot}
+                  />
+                  <StatCard
+                    label="Pending Quotations"
+                    value={pendingQuotes}
+                    sub={translate('{count} awaiting approval', { count: awaitingApproval })}
+                    icon={FileText}
+                  />
+                  <StatCard
+                    label="Target Achievement"
+                    value={shownTarget ? `${Math.round(shownTarget.percent)}%` : '—'}
+                    sub={shownTarget ? translate('{achieved} of {target}', { achieved: money(shownTarget.achieved, { compact: true }), target: money(shownTarget.amount, { compact: true }) }) : 'No active target'}
+                    icon={Trophy}
+                  />
+                </div>
+                <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-5">
+                  <Card
+                    title={translate("Sales Performance")}
+                    className="lg:col-span-3"
+                    actions={
+                      <label className="relative inline-flex items-center rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:border-slate-300">
+                        <span className="sr-only">{translate("Chart period")}</span>
+                        <select
+                          value={period}
+                          onChange={(e) => setPeriod(e.target.value as PerformancePeriod)}
+                          className="cursor-pointer appearance-none bg-transparent py-1.5 pr-7 pl-2.5 focus:outline-none"
+                        >
+                          <option value="month">{translate("This Month")}</option>
+                          <option value="six-months">{translate("Last 6 Months")}</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 size-3.5 text-slate-400" aria-hidden />
+                      </label>
+                    }
+                  >
+                    <PerformanceChart sales={data.sales} period={period} />
+                  </Card>
+                  <Card title={translate("Sales Funnel")} className="lg:col-span-2">
+                    <Funnel pipeline={data.sales.pipeline} />
+                  </Card>
+                </div>
               </div>
-            )}
-
-            {data.sales && (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
-                <Card
-                  title={translate("Sales Performance")}
-                  className="lg:col-span-3"
-                  actions={
-                    <label className="relative inline-flex items-center rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:border-slate-300">
-                      <span className="sr-only">{translate("Chart period")}</span>
-                      <select
-                        value={period}
-                        onChange={(e) => setPeriod(e.target.value as PerformancePeriod)}
-                        className="cursor-pointer appearance-none bg-transparent py-1.5 pr-7 pl-2.5 focus:outline-none"
-                      >
-                        <option value="month">{translate("This Month")}</option>
-                        <option value="six-months">{translate("Last 6 Months")}</option>
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-2 size-3.5 text-slate-400" aria-hidden />
-                    </label>
-                  }
-                >
-                  <PerformanceChart sales={data.sales} period={period} />
-                </Card>
-                <Card title={translate("Sales Funnel")} className="lg:col-span-2">
-                  <Funnel pipeline={data.sales.pipeline} />
-                </Card>
+              <div className="grid min-w-0 grid-cols-1 gap-5 md:auto-cols-fr md:grid-flow-col xl:flex xl:flex-col">
+                <NotificationsCard />
+                <MyTargetCard targets={data.sales.targets} className="xl:flex-1" />
               </div>
-            )}
+            </div>
+          )}
 
-            {canAny('quotation.read.own', 'quotation.read.team', 'quotation.read.all') && <RecentQuotationsCard />}
+          {data.admin && <AdminOverview a={data.admin} />}
 
             {data.finance && (
               <Card title={translate("Finance overview")} actions={<Link to="/reports" className="text-[13px] font-medium text-brand-600 hover:underline">{translate("Reports")}</Link>}>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <StatCard label="Outstanding receivables" value={money(data.finance.receivables.amount, { compact: true })} sub={translate('{count} open invoices', { count: data.finance.receivables.count })} icon={Receipt} tone="blue" />
-                  <StatCard label="Overdue" value={money(data.finance.overdue.amount, { compact: true })} sub={translate('{count} past due', { count: data.finance.overdue.count })} icon={CircleAlert} tone="red" />
-                  <StatCard label="Collected this month" value={money(data.finance.paymentsThisMonth.amount, { compact: true })} sub={translate('{count} payments', { count: data.finance.paymentsThisMonth.count })} icon={Wallet} tone="green" />
+                  <StatCard label="Outstanding receivables" value={money(data.finance.receivables.amount, { compact: true })} sub={translate('{count} open invoices', { count: data.finance.receivables.count })} icon={Receipt} />
+                  <StatCard label="Overdue" value={money(data.finance.overdue.amount, { compact: true })} sub={translate('{count} past due', { count: data.finance.overdue.count })} icon={CircleAlert} />
+                  <StatCard label="Collected this month" value={money(data.finance.paymentsThisMonth.amount, { compact: true })} sub={translate('{count} payments', { count: data.finance.paymentsThisMonth.count })} icon={Wallet} />
                 </div>
               </Card>
             )}
-          </div>
 
-          {/* right rail */}
-          <div className="min-w-0 space-y-5">
-            {data.approvals && <PendingApprovalsCard a={data.approvals} />}
-            <NotificationsCard />
-            {data.sales && <MyTargetCard targets={data.sales.targets} />}
-          </div>
+          {(canReadQuotes || sideCards) && (
+            <div className={cn('grid grid-cols-1 gap-5', canReadQuotes && sideCards && 'xl:grid-cols-[minmax(0,1fr)_320px]')}>
+              {canReadQuotes && <RecentQuotationsCard />}
+              {sideCards && (
+                <div className={cn('grid min-w-0 grid-cols-1 gap-5 md:auto-cols-fr md:grid-flow-col', canReadQuotes && 'xl:flex xl:flex-col')}>
+                  {data.approvals && <PendingApprovalsCard a={data.approvals} className="xl:flex-1" />}
+                  {!data.sales && <NotificationsCard className="xl:flex-1" />}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* hidden affordances to keep icons/links reachable */}
       <div className="sr-only">
         <Link to="/leads">{translate("Leads")}</Link>
         <Link to="/overdue">{translate("Overdue")}</Link>

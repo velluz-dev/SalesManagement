@@ -68,9 +68,9 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
       <p className="text-sm text-slate-500">{translate("Scope:")} <strong>{data.scope === 'all' ? 'Company-wide' : data.scope === 'team' ? 'Your team' : 'Your own records'}</strong></p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Won revenue" value={money(won, { compact: true })} sub={`${wonCount} deals`} />
-        <StatCard label="Win rate" value={wonCount + lost ? `${Math.round((wonCount / (wonCount + lost)) * 100)}%` : EMPTY} sub={`${wonCount} won, ${lost} lost`} tone="green" />
-        <StatCard label="Open pipeline" value={money(open, { compact: true })} tone="teal" />
-        <StatCard label="Quotations issued" value={data.bySalesperson.reduce((s, r) => s + r.quotations, 0)} tone="amber" />
+        <StatCard label="Win rate" value={wonCount + lost ? `${Math.round((wonCount / (wonCount + lost)) * 100)}%` : EMPTY} sub={`${wonCount} won, ${lost} lost`} />
+        <StatCard label="Open pipeline" value={money(open, { compact: true })} />
+        <StatCard label="Quotations issued" value={data.bySalesperson.reduce((s, r) => s + r.quotations, 0)} />
       </div>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card title={translate("Won revenue by month")} className="xl:col-span-2">
@@ -128,9 +128,9 @@ function FinanceTab({ range }: { range: { from: string; to: string } }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Invoiced (period)" value={money(t.invoiced, { compact: true })} />
-        <StatCard label="Collected (period)" value={money(t.collected, { compact: true })} tone="green" />
-        <StatCard label="Outstanding (now)" value={money(t.outstanding, { compact: true })} tone="amber" />
-        <StatCard label="Overdue (now)" value={money(t.overdue, { compact: true })} tone="red" />
+        <StatCard label="Collected (period)" value={money(t.collected, { compact: true })} />
+        <StatCard label="Outstanding (now)" value={money(t.outstanding, { compact: true })} />
+        <StatCard label="Overdue (now)" value={money(t.overdue, { compact: true })} />
       </div>
       <Card title={translate("Invoiced vs collected by month")}>
         <BarsChart rows={data.monthly} xKey="month" xLabel="Month" xFormat={monthLabel} series={[{ key: 'invoiced', label: 'Invoiced' }, { key: 'collected', label: 'Collected' }]} height={300} />

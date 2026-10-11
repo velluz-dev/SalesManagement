@@ -76,39 +76,25 @@ export function Card({ title, description, actions, children, className, bodyCla
   );
 }
 
-export type StatTone = 'brand' | 'blue' | 'green' | 'amber' | 'red' | 'slate' | 'teal';
-
-const STAT_TONES: Record<StatTone, string> = {
-  brand: 'bg-brand-600',
-  blue: 'bg-blue-600',
-  green: 'bg-green-600',
-  amber: 'bg-amber-500',
-  red: 'bg-red-600',
-  slate: 'bg-slate-500',
-  teal: 'bg-teal-600',
-};
-
 /** KPI tile: solid icon square, label, value, and an optional period-over-period change. */
 export function StatCard({
   label,
   value,
   sub,
   icon: Icon,
-  tone = 'brand',
   change,
 }: {
   label: string;
   value: ReactNode;
   sub?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
-  tone?: StatTone;
   /** Percentage change vs the previous period; omitted when there is no comparable data. */
   change?: { value: number; label: string } | null;
 }) {
   return (
     <div className="card flex min-w-0 items-start gap-4 p-5">
       {Icon && (
-        <div className={cn('flex size-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm', STAT_TONES[tone])}>
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
           <Icon className="size-6" aria-hidden />
         </div>
       )}
