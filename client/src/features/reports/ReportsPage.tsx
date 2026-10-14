@@ -5,7 +5,7 @@ import { Download } from 'lucide-react';
 import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
-import { EMPTY, money, monthLabel, todayIso } from '../../lib/format';
+import { empty, money, monthLabel, todayIso } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, StatCard, Tabs } from '../../components/ui/Layout';
 import { ErrorState } from '../../components/ui/EmptyState';
@@ -80,7 +80,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
       <p className="text-sm text-slate-500">{translate("Scope:")} <strong>{data.scope === 'all' ? 'Company-wide' : data.scope === 'team' ? 'Your team' : 'Your own records'}</strong></p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Won revenue" value={money(won, { compact: true })} sub={`${wonCount} deals`} />
-        <StatCard label="Win rate" value={wonCount + lost ? `${Math.round((wonCount / (wonCount + lost)) * 100)}%` : EMPTY} sub={`${wonCount} won, ${lost} lost`} />
+        <StatCard label="Win rate" value={`${wonCount + lost ? Math.round((wonCount / (wonCount + lost)) * 100) : 0}%`} sub={`${wonCount} won, ${lost} lost`} />
         <StatCard label="Open pipeline" value={money(open, { compact: true })} />
         <StatCard label="Quotations issued" value={data.bySalesperson.reduce((s, r) => s + r.quotations, 0)} />
       </div>
@@ -135,7 +135,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
                   <td className="font-medium">{r.name}</td>
                   <td className="tabular text-right">{money(r.wonAmount)}</td>
                   <td className="tabular text-right">{r.wonCount}</td>
-                  <td className="tabular text-right">{r.winRate === null ? EMPTY : `${r.winRate}%`}</td>
+                  <td className="tabular text-right">{`${r.winRate ?? 0}%`}</td>
                   <td className="tabular text-right">{money(r.openAmount)}</td>
                   <td className="tabular text-right">{r.quotations}</td>
                   <td className="tabular text-right">{r.quotationsApproved}</td>

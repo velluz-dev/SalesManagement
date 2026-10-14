@@ -2,7 +2,7 @@ import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Search, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/cn';
-import { EMPTY } from '../../lib/format';
+import { empty } from '../../lib/format';
 import { tNode, translate } from '../../i18n';
 
 export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
@@ -133,7 +133,7 @@ export function DescriptionList({ items, columns = 2 }: { items: { label: string
       {items.map((i) => (
         <div key={i.label} className="min-w-0">
           <dt className="text-xs text-slate-500">{translate(i.label)}</dt>
-          <dd className="mt-1 text-sm break-words text-slate-900">{i.value ?? EMPTY}</dd>
+          <dd className="mt-1 text-sm break-words text-slate-900">{i.value ?? empty()}</dd>
         </div>
       ))}
     </dl>

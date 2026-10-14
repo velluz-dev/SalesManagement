@@ -11,7 +11,7 @@ import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
-import { EMPTY, date, dateTime, money } from '../../lib/format';
+import { empty, date, dateTime, money } from '../../lib/format';
 import type { ApprovalRequest, Quotation } from '../../lib/types';
 import { ApprovalTimeline } from './ApprovalTimeline';
 import { translate } from '../../i18n';
@@ -67,11 +67,11 @@ export default function ApprovalDetailPage() {
               columns={3}
               items={[
                 { label: 'Amount (at submission)', value: <span className="tabular font-semibold">{money(r.amount, { currency })}</span> },
-                { label: 'Rule', value: r.rule?.name ?? EMPTY },
+                { label: 'Rule', value: r.rule?.name ?? empty() },
                 { label: 'Approver', value: r.assignedTo?.name ?? `Any ${r.approverRole.name}` },
                 { label: 'Quotation owner', value: r.quotation?.owner.name },
-                { label: 'Decided by', value: r.decidedBy?.name ?? EMPTY },
-                { label: 'Decided at', value: r.decidedAt ? dateTime(r.decidedAt) : EMPTY },
+                { label: 'Decided by', value: r.decidedBy?.name ?? translate('Not decided yet') },
+                { label: 'Decided at', value: r.decidedAt ? dateTime(r.decidedAt) : translate('Not decided yet') },
               ]}
             />
           </Card>

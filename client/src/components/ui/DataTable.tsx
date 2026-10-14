@@ -155,7 +155,7 @@ export function Pagination({ meta, onPage, onPageSize }: { meta?: Paged<unknown>
     <nav aria-label={translate('Pagination')} className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
       <div className="flex items-center gap-3">
         <span className="tabular">
-          {translate('{from}–{to} of {total}', { from, to, total: meta.total })}
+          {meta.total === 0 ? translate('No results') : translate('{from} to {to} of {total}', { from, to, total: meta.total })}
         </span>
         {onPageSize && (
           <label className="hidden items-center gap-2 sm:flex">

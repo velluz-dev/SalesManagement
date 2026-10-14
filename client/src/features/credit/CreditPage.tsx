@@ -13,7 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, NumberInput, Textarea } from '../../components/ui/Form';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
-import { EMPTY, money } from '../../lib/format';
+import { empty, money } from '../../lib/format';
 import type { CustomerCredit, PaymentTermRef, UserRef } from '../../lib/types';
 import { PaymentTermSelect } from '../../components/ui/Pickers';
 import { translate } from '../../i18n';
@@ -95,7 +95,7 @@ export default function CreditPage() {
         </div>
       ),
     },
-    { key: 'limit', header: 'Limit', align: 'right', cell: (r) => <span className="tabular">{r.credit ? money(r.credit.creditLimit) : EMPTY}</span> },
+    { key: 'limit', header: 'Limit', align: 'right', cell: (r) => <span className="tabular">{r.credit ? money(r.credit.creditLimit) : translate('Not set')}</span> },
     { key: 'terms', header: 'Terms', cell: (r) => r.paymentTerm?.name ?? <span className="text-xs text-slate-400">{translate("Default")}</span>, hideOnMobile: true },
     { key: 'exposure', header: 'Exposure', align: 'right', cell: (r) => <span className="tabular font-medium">{money(r.exposure)}</span> },
     { key: 'overdue', header: 'Overdue', align: 'right', cell: (r) => <span className={`tabular ${Number(r.overdue) > 0 ? 'font-medium text-rose-600' : ''}`}>{money(r.overdue)}</span>, hideOnMobile: true },

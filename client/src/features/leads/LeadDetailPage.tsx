@@ -10,7 +10,7 @@ import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, NumberInput } from '../../components/ui/Form';
-import { CustomerSelect } from '../../components/ui/Pickers';
+import { CustomerSelect, EmptyHint } from '../../components/ui/Pickers';
 import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
@@ -34,7 +34,7 @@ interface ConvertValues {
 function ConvertModal({ lead, open, onClose }: { lead: Lead; open: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const { register, handleSubmit, watch, formState } = useForm<ConvertValues>({
+  const { register, handleSubmit, watch, setValue, formState } = useForm<ConvertValues>({
     defaultValues: {
       mode: 'new',
       customerId: '',
@@ -102,7 +102,7 @@ function ConvertModal({ lead, open, onClose }: { lead: Lead; open: boolean; onCl
               <Field label="Email"><Input type="email" {...register('customerEmail')} /></Field>
             </div>
           ) : (
-            <Field label="Existing customer" required><CustomerSelect {...register('customerId')} /></Field>
+            <Field label="Existing customer" required><CustomerSelect {...register('customerId')} empty={<EmptyHint text="No customers yet." action="Create a new customer instead" onClick={() => setValue('mode', 'new')} />} /></Field>
           )}
         </fieldset>
         <fieldset className="space-y-3">

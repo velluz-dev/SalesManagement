@@ -8,7 +8,8 @@ import { enumLabel, translate } from '../../i18n';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
-import { CustomerSelect, UserSelect } from '../../components/ui/Pickers';
+import { UserSelect } from '../../components/ui/Pickers';
+import { CustomerPicker } from '../customers/CustomerPicker';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
@@ -94,7 +95,7 @@ export function OpportunityFormModal({ open, onClose, opportunity, defaultCustom
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
         <div className="sm:col-span-2"><FormError message={error} /></div>
         <Field label="Name" error={formState.errors.name?.message} required className="sm:col-span-2"><Input {...register('name')} /></Field>
-        <Field label="Customer" error={formState.errors.customerId?.message} required className="sm:col-span-2"><CustomerSelect {...register('customerId')} /></Field>
+        <Field label="Customer" error={formState.errors.customerId?.message} required className="sm:col-span-2"><CustomerPicker {...register('customerId')} onCreated={(id) => setValue('customerId', id, { shouldValidate: true })} /></Field>
         <Field label="Stage" error={formState.errors.stage?.message}>
           <Select {...register('stage', { onChange: (e) => setValue('probability', String(DEFAULT_PROBABILITY[e.target.value] ?? 10)) })}>
             {OPPORTUNITY_STAGES.map((s) => <option key={s} value={s}>{enumLabel(s)}</option>)}

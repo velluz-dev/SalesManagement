@@ -11,7 +11,7 @@ import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
-import { EMPTY, date, money, todayIso } from '../../lib/format';
+import { empty, date, money, todayIso } from '../../lib/format';
 import type { Quotation, QuotationCredit } from '../../lib/types';
 import { ApprovalTimeline } from '../approvals/ApprovalTimeline';
 import { CreateContractModal } from '../contracts/ContractForms';
@@ -171,18 +171,18 @@ export default function QuotationDetailPage() {
                 { label: 'Valid until', value: date(q.validUntil) },
                 { label: 'Currency', value: q.currency },
                 { label: 'Payment terms', value: q.paymentTerm ? q.paymentTerm.name : translate("Customer's default terms") },
-                { label: 'Opportunity', value: q.opportunity ? <Link className="text-brand-600 hover:underline" to={`/opportunities/${q.opportunity.id}`}>{q.opportunity.name}</Link> : EMPTY },
-                { label: 'Previous version', value: q.parent ? <Link className="text-brand-600 hover:underline" to={`/quotations/${q.parent.id}`}>v{q.parent.version}</Link> : EMPTY },
-                { label: 'Contract', value: q.contract ? <Link className="text-brand-600 hover:underline" to={`/contracts/${q.contract.id}`}>{q.contract.number}</Link> : EMPTY },
+                { label: 'Opportunity', value: q.opportunity ? <Link className="text-brand-600 hover:underline" to={`/opportunities/${q.opportunity.id}`}>{q.opportunity.name}</Link> : empty() },
+                { label: 'Previous version', value: q.parent ? <Link className="text-brand-600 hover:underline" to={`/quotations/${q.parent.id}`}>v{q.parent.version}</Link> : empty() },
+                { label: 'Contract', value: q.contract ? <Link className="text-brand-600 hover:underline" to={`/contracts/${q.contract.id}`}>{q.contract.number}</Link> : empty() },
                 {
                   label: 'Sales orders',
                   value: hasOrders
                     ? q.salesOrders!.map((o, i) => (
                         <span key={o.id}>{i > 0 && ', '}<Link className="text-brand-600 hover:underline" to={`/sales-orders/${o.id}`}>{o.number}</Link></span>
                       ))
-                    : EMPTY,
+                    : empty(),
                 },
-                { label: 'Invoice', value: activeInvoice ? (can('invoice.read') ? <Link className="text-brand-600 hover:underline" to={`/invoices/${activeInvoice.id}`}>{activeInvoice.number}</Link> : activeInvoice.number) : EMPTY },
+                { label: 'Invoice', value: activeInvoice ? (can('invoice.read') ? <Link className="text-brand-600 hover:underline" to={`/invoices/${activeInvoice.id}`}>{activeInvoice.number}</Link> : activeInvoice.number) : empty() },
               ]}
             />
           </Card>
@@ -222,7 +222,7 @@ export default function QuotationDetailPage() {
           </Card>
           {(q.notes || q.terms) && (
             <Card title={translate("Notes & terms")}>
-              <DescriptionList items={[{ label: 'Notes', value: <span className="whitespace-pre-wrap">{q.notes ?? EMPTY}</span> }, { label: 'Terms', value: <span className="whitespace-pre-wrap">{q.terms ?? EMPTY}</span> }]} />
+              <DescriptionList items={[{ label: 'Notes', value: <span className="whitespace-pre-wrap">{q.notes ?? empty()}</span> }, { label: 'Terms', value: <span className="whitespace-pre-wrap">{q.terms ?? empty()}</span> }]} />
             </Card>
           )}
         </div>

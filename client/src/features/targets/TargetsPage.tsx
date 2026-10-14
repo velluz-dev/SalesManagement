@@ -12,7 +12,7 @@ import { FilterSelect, PageHeader, ProgressBar, Toolbar } from '../../components
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
 import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
-import { TeamSelect, UserSelect } from '../../components/ui/Pickers';
+import { EmptyHint, TeamSelect, UserSelect } from '../../components/ui/Pickers';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
 import { date, money } from '../../lib/format';
@@ -35,7 +35,7 @@ function periodIndex(t: SalesTarget) {
 }
 
 function TargetForm({ target, onClose }: { target?: SalesTarget; onClose: () => void }) {
-  const { me } = useAuth();
+  const { me, can } = useAuth();
   const now = new Date();
   const [error, setError] = useState<string | null>(null);
   const { register, handleSubmit, watch, formState } = useForm<TargetValues>({
@@ -105,7 +105,7 @@ function TargetForm({ target, onClose }: { target?: SalesTarget; onClose: () => 
             <UserSelect {...register('userId')} />
           </Field>
         ) : (
-          <Field label="Team" required className="sm:col-span-2"><TeamSelect {...register('teamId')} /></Field>
+          <Field label="Team" required className="sm:col-span-2"><TeamSelect {...register('teamId')} empty={can('team.manage') ? <EmptyHint text="No teams yet." action="Create a team" to="/admin/teams" /> : 'No teams yet. Ask an admin to create one.'} /></Field>
         )}
         <Field label="Period type">
           <Select {...register('periodType')}>{TARGET_PERIOD_TYPES.map((p) => <option key={p} value={p}>{enumLabel(p)}</option>)}</Select>

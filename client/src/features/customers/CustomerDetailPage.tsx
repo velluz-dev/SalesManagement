@@ -9,7 +9,7 @@ import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { Badge, InvoiceStatusBadge, StatusBadge } from '../../components/ui/Badge';
 import { DetailPageSkeleton, ListSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
-import { EMPTY, date, money } from '../../lib/format';
+import { empty, date, money } from '../../lib/format';
 import type { Customer, Invoice, Opportunity, Quotation } from '../../lib/types';
 import { CustomerFormModal } from './CustomerForm';
 import { ActivityPanel } from '../activities/ActivityPanel';
@@ -110,7 +110,7 @@ export default function CustomerDetailPage() {
                       : <span className="tabular">{money(0)}</span>,
                   },
                   { label: 'Credit limit', value: c.account.creditLimit ? money(c.account.creditLimit) : translate('Not set') },
-                  { label: 'Available credit', value: c.account.available ? <span className="tabular">{money(c.account.available)}</span> : EMPTY },
+                  { label: 'Available credit', value: c.account.available !== null ? <span className="tabular">{money(c.account.available)}</span> : translate('No limit') },
                   { label: 'Payment terms', value: c.paymentTerm ? `${c.paymentTerm.name} (${c.paymentTerm.days} days)` : translate('System default') },
                   { label: 'Status', value: c.account.onHold ? <Badge tone="red">{translate("On hold")}</Badge> : <Badge tone="green">{translate("Good standing")}</Badge> },
                 ]}

@@ -8,7 +8,7 @@ import { DataTable, Pagination, type Column } from '../../components/ui/DataTabl
 import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { EMPTY, date, money } from '../../lib/format';
+import { empty, date, money } from '../../lib/format';
 import type { Payment } from '../../lib/types';
 
 export default function PaymentsPage() {
@@ -28,7 +28,7 @@ export default function PaymentsPage() {
       ),
     },
     { key: 'method', header: 'Method', cell: (p) => enumLabel(p.method), hideOnMobile: true },
-    { key: 'reference', header: 'Reference', cell: (p) => p.reference ?? EMPTY, hideOnMobile: true },
+    { key: 'reference', header: 'Reference', cell: (p) => p.reference ?? empty(), hideOnMobile: true },
     { key: 'recordedBy', header: 'Recorded by', cell: (p) => p.recordedBy.name, hideOnMobile: true },
     {
       key: 'amount',

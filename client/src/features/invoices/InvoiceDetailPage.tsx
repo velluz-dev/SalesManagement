@@ -15,7 +15,7 @@ import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api, errorMessage } from '../../lib/api';
-import { EMPTY, date, dateTime, money, todayIso } from '../../lib/format';
+import { empty, date, dateTime, money, todayIso } from '../../lib/format';
 import type { Invoice, Payment } from '../../lib/types';
 
 function PaymentModal({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
@@ -179,7 +179,7 @@ export default function InvoiceDetailPage() {
                       <tr key={p.id} className={p.voidedAt ? 'text-slate-400' : ''}>
                         <td>{date(p.paidAt)}</td>
                         <td>{enumLabel(p.method)}</td>
-                        <td>{p.reference ?? EMPTY}</td>
+                        <td>{p.reference ?? empty()}</td>
                         <td>{p.recordedBy.name}</td>
                         <td className={`tabular text-right ${p.voidedAt ? 'line-through' : 'font-medium'}`}>{money(p.amount, { currency: inv.currency })}</td>
                         <td className="text-right">

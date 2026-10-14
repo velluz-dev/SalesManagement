@@ -10,7 +10,7 @@ import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { useToast } from '../../components/ui/Toast';
 import { api, ApiError, errorMessage } from '../../lib/api';
 import { useState } from 'react';
-import { EMPTY } from '../../lib/format';
+import { empty } from '../../lib/format';
 
 const schema = z
   .object({
@@ -62,8 +62,8 @@ export function ProfilePage() {
               { label: 'Name', value: me.user.name },
               { label: 'Username', value: me.user.username },
               { label: 'Email', value: me.user.email },
-              { label: 'Roles', value: me.roles.map(enumLabel).join(', ') || EMPTY },
-              { label: 'Team', value: me.user.team?.name ?? EMPTY },
+              { label: 'Roles', value: me.roles.map(enumLabel).join(', ') || empty() },
+              { label: 'Team', value: me.user.team?.name ?? translate('No team') },
             ]}
           />
         </Card>

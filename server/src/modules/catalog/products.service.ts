@@ -16,7 +16,7 @@ export const productSchema = z.strictObject({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z0-9][A-Z0-9._-]{1,39}$/, 'Use 2–40 letters, numbers, dots, dashes or underscores'),
+    .regex(/^[A-Z0-9][A-Z0-9._-]{1,39}$/, 'Use 2 to 40 letters, numbers, dots, dashes or underscores'),
   name: requiredText(160, 'Product name'),
   unit: z.string().trim().min(1, 'Unit is required').max(20).default('unit'),
   category: optionalText(80),

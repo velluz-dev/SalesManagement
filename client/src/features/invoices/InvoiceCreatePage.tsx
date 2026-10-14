@@ -7,7 +7,8 @@ import { api, ApiError, errorMessage, type Paged } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader } from '../../components/ui/Layout';
 import { Field, FormError, Select, Textarea } from '../../components/ui/Form';
-import { CustomerSelect } from '../../components/ui/Pickers';
+import { EmptyHint } from '../../components/ui/Pickers';
+import { CustomerPicker } from '../customers/CustomerPicker';
 import { useToast } from '../../components/ui/Toast';
 import { emptyLine, itemsPayload, LineItemsEditor, validateItems, type WithItems } from '../../components/LineItemsEditor';
 import { useAuth } from '../../auth/AuthProvider';
@@ -132,7 +133,7 @@ export default function InvoiceCreatePage() {
 
         {mode === 'order' ? (
           <Card title={translate("Sales order")}>
-            <Field label="Sales order" required hint={orders.data && !orders.data.length ? 'There are no confirmed or delivered orders to invoice.' : undefined}>
+            <Field label="Sales order" required hint={orders.data && !orders.data.length ? <EmptyHint text="There are no confirmed or delivered orders to invoice." action="Go to sales orders" to="/sales-orders" /> : undefined}>
               <Select {...register('salesOrderId')} disabled={orders.isLoading}>
                 <option value="">{orders.isLoading ? 'Loading…' : 'Select a sales order…'}</option>
                 {orders.data?.map((o) => (
@@ -151,7 +152,7 @@ export default function InvoiceCreatePage() {
           </Card>
         ) : mode === 'quotation' ? (
           <Card title={translate("Quotation")}>
-            <Field label="Quotation" required hint={quotes.data && !quotes.data.length ? 'There are no approved or accepted quotations to invoice.' : undefined}>
+            <Field label="Quotation" required hint={quotes.data && !quotes.data.length ? <EmptyHint text="There are no approved or accepted quotations to invoice." action="Go to quotations" to="/quotations" /> : undefined}>
               <Select {...register('quotationId')} disabled={quotes.isLoading}>
                 <option value="">{quotes.isLoading ? 'Loading…' : 'Select a quotation…'}</option>
                 {quotes.data?.map((q) => (
@@ -170,7 +171,7 @@ export default function InvoiceCreatePage() {
         ) : (
           <>
             <Card title={translate("Customer")}>
-              <Field label="Customer" required error={formState.errors.customerId?.message} className="max-w-md"><CustomerSelect {...register('customerId')} /></Field>
+              <Field label="Customer" required error={formState.errors.customerId?.message} className="max-w-xl"><CustomerPicker {...register('customerId')} onCreated={(id) => setValue('customerId', id, { shouldValidate: true })} /></Field>
             </Card>
             <Card title={translate("Line items")}>
               <LineItemsEditor setValue={setValue as never} control={control as never} register={register as never} errors={formState.errors as never} currency={settings?.['company.currency']} defaultTaxRate={String(settings?.['quotation.defaultTaxRate'] ?? 0)} />

@@ -107,7 +107,7 @@ export async function createContract(actor: Actor, input: z.infer<typeof createC
         quotationId: q.id,
         customerId: q.customerId,
         ownerId: q.ownerId,
-        title: input.title ?? `${q.customer.name} – ${q.number}`,
+        title: input.title ?? `${q.customer.name}, ${q.number}`,
         startDate,
         endDate: input.endDate ?? null,
         value: q.total,

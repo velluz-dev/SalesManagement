@@ -13,7 +13,7 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { enumOptions } from '../../components/ui/Pickers';
 import { cn } from '../../lib/cn';
-import { date, dateTime, EMPTY, isPast, money } from '../../lib/format';
+import { date, dateTime, empty, isPast, money } from '../../lib/format';
 import type { Lead } from '../../lib/types';
 import { LeadFormModal } from './LeadForm';
 
@@ -47,7 +47,7 @@ export default function LeadsPage() {
         l.nextFollowUpAt && !['CONVERTED', 'UNQUALIFIED'].includes(l.status) ? (
           <span className={cn('whitespace-nowrap', isPast(l.nextFollowUpAt) ? 'font-medium text-rose-600' : 'text-slate-600')}>{dateTime(l.nextFollowUpAt)}</span>
         ) : (
-          <span className="text-slate-400">{EMPTY}</span>
+          <span className="text-slate-400">{translate('Not scheduled')}</span>
         ),
     },
     { key: 'owner', header: 'Owner', cell: (l) => l.owner.name, hideOnMobile: true },

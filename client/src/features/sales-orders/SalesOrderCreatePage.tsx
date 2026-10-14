@@ -7,7 +7,8 @@ import { api, ApiError, errorMessage, type Paged } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader } from '../../components/ui/Layout';
 import { Field, FormError, Input, Select, Textarea } from '../../components/ui/Form';
-import { CustomerSelect } from '../../components/ui/Pickers';
+import { EmptyHint } from '../../components/ui/Pickers';
+import { CustomerPicker } from '../customers/CustomerPicker';
 import { useToast } from '../../components/ui/Toast';
 import { emptyLine, itemsPayload, LineItemsEditor, validateItems, type WithItems } from '../../components/LineItemsEditor';
 import { useAuth } from '../../auth/AuthProvider';
@@ -132,7 +133,7 @@ export default function SalesOrderCreatePage() {
 
         {mode === 'contract' && (
           <Card title={translate("Contract")}>
-            <Field label="Active contract" required hint={contracts.data && !contracts.data.length ? 'There are no active contracts you can order against.' : 'The order copies the contract’s quotation lines; you can adjust quantities while it is pending.'}>
+            <Field label="Active contract" required hint={contracts.data && !contracts.data.length ? <EmptyHint text="There are no active contracts you can order against." action="Order from a quotation instead" onClick={() => setMode('quotation')} /> : 'The order copies the contract’s quotation lines; you can adjust quantities while it is pending.'}>
               <Select {...register('contractId')} disabled={contracts.isLoading}>
                 <option value="">{contracts.isLoading ? 'Loading…' : 'Select a contract…'}</option>
                 {contracts.data?.map((c) => (
@@ -145,7 +146,7 @@ export default function SalesOrderCreatePage() {
         )}
         {mode === 'quotation' && (
           <Card title={translate("Accepted quotation")}>
-            <Field label="Quotation" required hint={quotes.data && !quotes.data.length ? 'There are no accepted quotations you can order.' : undefined}>
+            <Field label="Quotation" required hint={quotes.data && !quotes.data.length ? <EmptyHint text="There are no accepted quotations you can order." action="Go to quotations" to="/quotations" /> : undefined}>
               <Select {...register('quotationId')} disabled={quotes.isLoading}>
                 <option value="">{quotes.isLoading ? 'Loading…' : 'Select a quotation…'}</option>
                 {quotes.data?.map((q) => (
@@ -159,7 +160,7 @@ export default function SalesOrderCreatePage() {
         {mode === 'manual' && (
           <>
             <Card title={translate("Customer")}>
-              <Field label="Customer" required error={formState.errors.customerId?.message} className="max-w-md"><CustomerSelect {...register('customerId')} /></Field>
+              <Field label="Customer" required error={formState.errors.customerId?.message} className="max-w-xl"><CustomerPicker {...register('customerId')} onCreated={(id) => setValue('customerId', id, { shouldValidate: true })} /></Field>
             </Card>
             <Card title={translate("Line items")}>
               <LineItemsEditor setValue={setValue as never} control={control as never} register={register as never} errors={formState.errors as never} currency={settings?.['company.currency']} defaultTaxRate={String(settings?.['quotation.defaultTaxRate'] ?? 0)} />

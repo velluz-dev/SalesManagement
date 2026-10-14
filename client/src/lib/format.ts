@@ -1,6 +1,6 @@
 import { currentLocale, enumLabel, translate } from '../i18n';
 
-export const EMPTY = '—';
+export const empty = () => translate('None');
 
 let currency = 'MMK';
 export const setCurrency = (c: string) => {
@@ -26,25 +26,25 @@ function formatter(cur: string, compact: boolean) {
 }
 
 export function money(v: string | number | null | undefined, opts: { compact?: boolean; currency?: string } = {}) {
-  if (v === null || v === undefined || v === '') return EMPTY;
+  if (v === null || v === undefined || v === '') return empty();
   const cur = opts.currency ?? currency;
   const text = formatter(cur, !!opts.compact).format(Number(v));
   return CODE_SUFFIX.has(cur) ? `${text} ${cur}` : text;
 }
 
 export function number(v: number | string | null | undefined) {
-  if (v === null || v === undefined) return EMPTY;
+  if (v === null || v === undefined) return empty();
   return new Intl.NumberFormat().format(Number(v));
 }
 
 export function date(v: string | Date | null | undefined) {
-  if (!v) return EMPTY;
+  if (!v) return empty();
   const d = typeof v === 'string' ? new Date(v) : v;
   return d.toLocaleDateString(currentLocale(), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 export function dateTime(v: string | Date | null | undefined) {
-  if (!v) return EMPTY;
+  if (!v) return empty();
   return new Date(v).toLocaleString(currentLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
@@ -59,7 +59,7 @@ export function relativeTime(v: string | Date) {
   return date(v);
 }
 
-export const label = (v: string | null | undefined) => (v ? enumLabel(v) : EMPTY);
+export const label = (v: string | null | undefined) => (v ? enumLabel(v) : empty());
 
 export function toLocalInput(v: string | null | undefined) {
   if (!v) return '';

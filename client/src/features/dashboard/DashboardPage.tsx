@@ -583,7 +583,7 @@ function TeamPerformanceCard({ team, className }: { team: TeamPerformance; class
                     )}
                   </td>
                   <td className="tabular text-right font-medium text-slate-800">{money(r.achieved, { compact: true })}</td>
-                  <td className="tabular text-right text-slate-500">{r.target ? money(r.target, { compact: true }) : '—'}</td>
+                  <td className="tabular text-right text-slate-500">{r.target ? money(r.target, { compact: true }) : translate('Not set')}</td>
                   <td><AchievementBar percent={r.percent} /></td>
                   <td className="tabular text-right text-slate-600">{money(r.pipeline, { compact: true })}</td>
                   <td className="text-right">
@@ -767,8 +767,8 @@ export default function DashboardPage() {
                   />
                   <StatCard
                     label={myTarget || !team ? 'Target Achievement' : 'Team target achievement'}
-                    value={shownTarget ? `${Math.round(shownTarget.percent)}%` : '—'}
-                    sub={shownTarget ? translate('{achieved} of {target}', { achieved: money(shownTarget.achieved, { compact: true }), target: money(shownTarget.amount, { compact: true }) }) : 'No active target'}
+                    value={`${shownTarget ? Math.round(shownTarget.percent) : 0}%`}
+                    sub={shownTarget ? translate('{achieved} of {target}', { achieved: money(shownTarget.achieved, { compact: true }), target: money(shownTarget.amount, { compact: true }) }) : translate('No target set yet')}
                     icon={Trophy}
                   />
                 </div>

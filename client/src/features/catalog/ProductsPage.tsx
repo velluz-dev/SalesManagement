@@ -13,7 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, NumberInput, Textarea } from '../../components/ui/Form';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
-import { EMPTY, money } from '../../lib/format';
+import { empty, money } from '../../lib/format';
 import type { Product } from '../../lib/types';
 import { translate } from '../../i18n';
 
@@ -47,7 +47,7 @@ function ProductForm({ product, onClose }: { product?: Product; onClose: () => v
   });
   const onSubmit = async (v: ProductValues) => {
     setError(null);
-    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/.test(v.code.trim())) return setError('Code: 2–40 letters, numbers, dots, dashes or underscores');
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/.test(v.code.trim())) return setError('Code: 2 to 40 letters, numbers, dots, dashes or underscores');
     if (!v.name.trim()) return setError('Name is required');
     if (!/^\d{1,12}(\.\d{1,2})?$/.test(v.listPrice)) return setError('Enter a valid list price');
     try {
@@ -115,7 +115,7 @@ export default function ProductsPage() {
         </div>
       ),
     },
-    { key: 'category', header: 'Category', cell: (p) => p.category ?? EMPTY, hideOnMobile: true },
+    { key: 'category', header: 'Category', cell: (p) => p.category ?? empty(), hideOnMobile: true },
     { key: 'unit', header: 'Unit', cell: (p) => p.unit, hideOnMobile: true },
     { key: 'price', header: 'List price', sortKey: 'listPrice', align: 'right', cell: (p) => <span className="tabular font-medium">{money(p.listPrice)}</span> },
     ...(canManage ? [{ key: 'status', header: 'Status', cell: (p: Product) => (p.isActive ? <Badge tone="green">{translate("Available")}</Badge> : <Badge>{translate("Discontinued")}</Badge>) }] : []),

@@ -80,3 +80,65 @@
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+.scroll-dark {
+  scrollbar-gutter: stable;
+}
+
+.scroll-dark::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-dark::-webkit-scrollbar-button {
+  display: none;
+}
+
+.scroll-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-dark::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.scroll-dark:hover::-webkit-scrollbar-thumb,
+.scroll-dark:focus-within::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.18);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .scroll-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  }
+}
+
+.scroll-light::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-light::-webkit-scrollbar-button {
+  display: none;
+}
+
+.scroll-light::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-light::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: rgb(148 163 184 / 0.45) padding-box;
+}
+
+.scroll-light::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139 / 0.6) padding-box;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .scroll-light {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.45) transparent;
+  }
+}

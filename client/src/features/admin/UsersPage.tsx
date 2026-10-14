@@ -14,7 +14,7 @@ import { Checkbox, Field, FormError, Input, PasswordInput, Select } from '../../
 import { EmptyState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
 import { applyServerErrors } from '../../lib/forms';
-import { EMPTY, relativeTime } from '../../lib/format';
+import { empty, relativeTime } from '../../lib/format';
 import type { AdminUser, Role, Team } from '../../lib/types';
 import { translate } from '../../i18n';
 
@@ -264,7 +264,7 @@ export default function UsersPage() {
       ),
     },
     { key: 'roles', header: 'Roles', cell: (u) => <div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <Badge key={r.id} tone="indigo">{r.name}</Badge>) : <span className="text-xs text-slate-400">{translate("No roles")}</span>}</div> },
-    { key: 'team', header: 'Team', cell: (u) => u.team?.name ?? EMPTY, hideOnMobile: true },
+    { key: 'team', header: 'Team', cell: (u) => u.team?.name ?? translate('No team'), hideOnMobile: true },
     { key: 'status', header: 'Status', cell: (u) => (u.isActive ? <Badge tone="green">{translate("Active")}</Badge> : <Badge>{translate("Inactive")}</Badge>) },
     { key: 'lastLoginAt', header: 'Last sign-in', sortKey: 'lastLoginAt', cell: (u) => (u.lastLoginAt ? relativeTime(u.lastLoginAt) : 'Never'), hideOnMobile: true },
     { key: 'actions', header: <span className="sr-only">{translate("Actions")}</span>, align: 'right', cell: (u) => <RowMenu user={u} onAction={(kind) => setModal({ kind, user: u })} /> },

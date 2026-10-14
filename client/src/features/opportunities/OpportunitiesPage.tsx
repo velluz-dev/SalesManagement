@@ -16,7 +16,7 @@ import { Skeleton } from '../../components/ui/Spinner';
 import { enumOptions } from '../../components/ui/Pickers';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
-import { EMPTY, date, money } from '../../lib/format';
+import { empty, date, money } from '../../lib/format';
 import type { Opportunity } from '../../lib/types';
 import { OpportunityFormModal } from './OpportunityForm';
 
@@ -52,7 +52,7 @@ function Board() {
                   <p className="mt-0.5 text-xs text-slate-500">{o.customer.name}</p>
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="tabular font-semibold text-slate-800">{money(o.amount, { compact: true })}</span>
-                    <span className="text-slate-500">{o.expectedCloseDate ? date(o.expectedCloseDate) : EMPTY}</span>
+                    <span className="text-slate-500">{o.expectedCloseDate ? date(o.expectedCloseDate) : translate('No date')}</span>
                   </div>
                   <p className="mt-1 text-[11px] text-slate-400">{o.owner.name}, {o.probability}%</p>
                 </Link>

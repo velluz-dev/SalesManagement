@@ -12,7 +12,7 @@ import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
-import { EMPTY, date, dateTime, money } from '../../lib/format';
+import { empty, date, dateTime, money } from '../../lib/format';
 import type { Opportunity } from '../../lib/types';
 import { OpportunityFormModal } from './OpportunityForm';
 import { ActivityPanel } from '../activities/ActivityPanel';
@@ -78,8 +78,8 @@ export default function OpportunityDetailPage() {
                 { label: 'Probability', value: `${o.probability}%` },
                 { label: 'Weighted value', value: money((Number(o.amount) * o.probability) / 100) },
                 { label: 'Expected close', value: date(o.expectedCloseDate) },
-                { label: 'Closed at', value: o.closedAt ? dateTime(o.closedAt) : EMPTY },
-                { label: 'Source lead', value: o.lead ? <Link className="text-brand-600 hover:underline" to={`/leads/${o.lead.id}`}>{o.lead.title}</Link> : EMPTY },
+                { label: 'Closed at', value: o.closedAt ? dateTime(o.closedAt) : translate('Still open') },
+                { label: 'Source lead', value: o.lead ? <Link className="text-brand-600 hover:underline" to={`/leads/${o.lead.id}`}>{o.lead.title}</Link> : empty() },
               ]}
             />
             {o.notes && <p className="mt-5 border-t border-slate-100 pt-4 text-sm whitespace-pre-wrap text-slate-700">{o.notes}</p>}

@@ -7,6 +7,8 @@ import { Field, FormError, Textarea } from './Form';
 import { errorMessage } from '../../lib/api';
 import { tNode, translate } from '../../i18n';
 
+const openModals: string[] = [];
+
 export function Modal({
   open,
   onClose,
@@ -31,10 +33,12 @@ export function Modal({
 
   useEffect(() => {
     if (!open) return;
+    openModals.push(titleId);
     const previous = document.activeElement as HTMLElement | null;
     const first = panel.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-close])');
     (first ?? panel.current)?.focus();
     const onKey = (e: KeyboardEvent) => {
+      if (openModals[openModals.length - 1] !== titleId) return;
       if (e.key === 'Escape') onCloseRef.current();
       if (e.key === 'Tab' && panel.current) {
         const items = panel.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
@@ -54,16 +58,17 @@ export function Modal({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
+      openModals.splice(openModals.indexOf(titleId), 1);
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open]);
+  }, [open, titleId]);
 
   if (!open) return null;
   const widths = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4" onSubmit={(e) => e.stopPropagation()}>
       <div className="absolute inset-0 bg-slate-950/45" onClick={onClose} aria-hidden />
       <div
         ref={panel}
@@ -82,7 +87,7 @@ export function Modal({
             <X className="size-5" />
           </button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="scroll-light overflow-y-auto px-5 py-4">{children}</div>
         {footer && <div className="flex flex-wrap justify-end gap-2 rounded-b-lg border-t border-slate-200 bg-slate-50 px-5 py-3">{footer}</div>}
       </div>
     </div>,

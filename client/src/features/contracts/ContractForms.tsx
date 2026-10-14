@@ -27,7 +27,7 @@ export function CreateContractModal({ quotation, onClose }: {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const { register, handleSubmit, formState } = useForm<Values>({
-    defaultValues: { title: `${quotation.customer.name} – ${quotation.number}`, startDate: todayIso(), endDate: '', documentUrl: '', terms: quotation.terms ?? '' },
+    defaultValues: { title: `${quotation.customer.name}, ${quotation.number}`, startDate: todayIso(), endDate: '', documentUrl: '', terms: quotation.terms ?? '' },
   });
   const create = useAction((body: unknown) => api.post<{ data: Contract }>('/contracts', body), {
     invalidate: ['contracts', 'quotations'],

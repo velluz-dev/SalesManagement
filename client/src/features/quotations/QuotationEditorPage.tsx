@@ -8,7 +8,8 @@ import { useDetail } from '../../hooks/useApi';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader } from '../../components/ui/Layout';
 import { Field, FormError, Input, Textarea } from '../../components/ui/Form';
-import { CustomerSelect, OpportunitySelect, PaymentTermSelect } from '../../components/ui/Pickers';
+import { OpportunitySelect, PaymentTermSelect } from '../../components/ui/Pickers';
+import { CustomerPicker } from '../customers/CustomerPicker';
 import { FormPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState, EmptyState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
@@ -113,7 +114,13 @@ function Editor({ quotation }: { quotation?: Quotation }) {
         <Card title={translate("Customer & terms")}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Customer" required error={formState.errors.customerId?.message}>
-              <CustomerSelect {...register('customerId', { onChange: () => setValue('opportunityId', '') })} />
+              <CustomerPicker
+                {...register('customerId', { onChange: () => setValue('opportunityId', '') })}
+                onCreated={(id) => {
+                  setValue('customerId', id, { shouldValidate: true });
+                  setValue('opportunityId', '');
+                }}
+              />
             </Field>
             <Field label="Opportunity" error={formState.errors.opportunityId?.message}>
               <OpportunitySelect customerId={customerId} disabled={!customerId} {...register('opportunityId')} />

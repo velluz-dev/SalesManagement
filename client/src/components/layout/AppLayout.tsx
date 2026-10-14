@@ -84,7 +84,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex h-16 items-center px-5">
         <Logo />
       </div>
-      <div className="flex-1 space-y-5 overflow-y-auto px-3 pt-2 pb-6">
+      <div className="scroll-dark min-h-0 flex-1 space-y-5 overflow-y-auto pt-2 pr-1.5 pb-6 pl-3">
         {NAVIGATION.map((section) => {
           const items = section.items.filter((i) => !i.any.length || canAny(...i.any));
           if (!items.length) return null;

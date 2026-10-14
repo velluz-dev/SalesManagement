@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input, NumberInput, Select } from './ui/Form';
+import { EmptyHint } from './ui/Pickers';
 import { documentTotals, lineTotals } from '../lib/totals';
 import { money } from '../lib/format';
 import { api, type Paged } from '../lib/api';
@@ -45,6 +46,8 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const products = useSellableProducts();
+  const { can } = useAuth();
+  const noProducts = !!setValue && products.data?.length === 0;
   const showProducts = !!setValue && !!products.data?.length;
   const pickProduct = (i: number, id: string) => {
     setValue?.(`items.${i}.productId`, id);
@@ -60,6 +63,13 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
 
   return (
     <div>
+      {noProducts && (
+        <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          {can('product.manage')
+            ? <EmptyHint text="No products in the catalog yet. Type custom items below, or" action="add products" to="/products" />
+            : <EmptyHint text="No products in the catalog yet. Type custom items below." />}
+        </p>
+      )}
       <div className="relative overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
