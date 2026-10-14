@@ -1,13 +1,13 @@
 import { z } from 'zod';
-import { APPROVAL_STATUSES } from '../../shared';
+import { APPROVAL_STATUSES, APPROVER_TYPES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { notify } from '../../lib/notify';
-import { conflict, forbidden, notFound, unprocessable } from '../../lib/errors';
+import { badRequest, conflict, forbidden, notFound, unprocessable } from '../../lib/errors';
 import { contains, listQuery, pageArgs, paged } from '../../lib/pagination';
 import { getSetting } from '../../lib/settings';
-import { optionalText } from '../../lib/validation';
+import { money, optionalText, requiredText, uuid } from '../../lib/validation';
 import { ownerSelect } from '../../lib/ownership';
 import { isSelfApproval } from './approval-engine';
 
@@ -136,4 +136,61 @@ export async function decide(actor: Actor, id: string, input: z.infer<typeof dec
     });
   });
   return getApproval(actor, id);
+}
+
+export const ruleSchema = z
+  .strictObject({
+    name: requiredText(120, 'Name'),
+    minAmount: money,
+    maxAmount: money.nullable().optional(),
+    approverType: z.enum(APPROVER_TYPES),
+    approverRoleId: uuid,
+    priority: z.coerce.number().int().min(0).max(1000).default(0),
+    isActive: z.boolean().default(true),
+  })
+  .refine((r) => r.maxAmount == null || Number(r.maxAmount) > Number(r.minAmount), {
+    message: 'Maximum must be greater than minimum',
+    path: ['maxAmount'],
+  });
+
+async function assertApproverRole(roleId: string) {
+  const role = await prisma.role.findFirst({
+    where: { id: roleId, permissions: { some: { permission: { code: 'approval.decide' } } } },
+  });
+  if (!role) throw badRequest('The approver role must hold the approval.decide permission');
+}
+
+const ruleInclude = { approverRole: { select: { id: true, code: true, name: true } } } as const;
+
+export function listApprovalRules() {
+  return prisma.approvalRule.findMany({ include: ruleInclude, orderBy: [{ minAmount: 'asc' }, { priority: 'desc' }] });
+}
+
+export async function createApprovalRule(actor: Actor, input: z.infer<typeof ruleSchema>) {
+  await assertApproverRole(input.approverRoleId);
+  return prisma.$transaction(async (tx) => {
+    const r = await tx.approvalRule.create({ data: { ...input, maxAmount: input.maxAmount ?? null }, include: ruleInclude });
+    await audit(tx, actor, { action: 'approval_rule.created', entityType: 'ApprovalRule', entityId: r.id, after: r });
+    return r;
+  });
+}
+
+export async function updateApprovalRule(actor: Actor, id: string, input: z.infer<typeof ruleSchema>) {
+  await assertApproverRole(input.approverRoleId);
+  return prisma.$transaction(async (tx) => {
+    const before = await tx.approvalRule.findUnique({ where: { id } });
+    if (!before) throw notFound('Approval rule');
+    const r = await tx.approvalRule.update({ where: { id }, data: { ...input, maxAmount: input.maxAmount ?? null }, include: ruleInclude });
+    await audit(tx, actor, { action: 'approval_rule.updated', entityType: 'ApprovalRule', entityId: id, before, after: r });
+    return r;
+  });
+}
+
+export async function deleteApprovalRule(actor: Actor, id: string) {
+  await prisma.$transaction(async (tx) => {
+    const before = await tx.approvalRule.findUnique({ where: { id } });
+    if (!before) throw notFound('Approval rule');
+    await tx.approvalRule.delete({ where: { id } });
+    await audit(tx, actor, { action: 'approval_rule.deleted', entityType: 'ApprovalRule', entityId: id, before });
+  });
 }
