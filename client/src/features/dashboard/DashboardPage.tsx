@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ArrowRight, Bell, CheckCircle2, ChevronDown, CircleAlert, FileText,
-  Info, LogIn, MonitorSmartphone, MoreHorizontal, Receipt, Trophy, UserPlus, Users, TrendingUp, CircleDot, Wallet,
+  ArrowRight, Bell, CalendarClock, CheckCircle2, ChevronDown, CircleAlert, FileText, Handshake,
+  Info, ListChecks, LogIn, Mail, MonitorSmartphone, MoreHorizontal, Phone, Receipt, ShieldAlert, StickyNote, Trophy, UserPlus, Users, TrendingUp, CircleDot, Wallet,
+  type LucideIcon,
 } from 'lucide-react';
 import { currentLocale, enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
@@ -12,12 +13,38 @@ import { date, money, monthLabel, relativeTime } from '../../lib/format';
 import { Card, StatCard } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ErrorState, EmptyState } from '../../components/ui/EmptyState';
-import { Skeleton } from '../../components/ui/Spinner';
+import { ReportSkeleton, Skeleton } from '../../components/ui/Spinner';
 import { cn } from '../../lib/cn';
 import {
-  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import type { Notification, Quotation, SalesTarget, UserRef } from '../../lib/types';
+
+interface FollowUps {
+  total: number;
+  overdue: number;
+  items: { kind: 'activity' | 'lead'; id: string; type: string | null; title: string; related: string | null; link: string; dueAt: string; overdue: boolean; owner: UserRef }[];
+}
+
+interface PerformanceRow {
+  id: string;
+  name: string;
+  achieved: string;
+  target: string | null;
+  percent: number | null;
+  pipeline: string;
+  overdueFollowUps: number;
+}
+
+interface TeamPerformance {
+  basis: string;
+  members: (PerformanceRow & { team: { id: string; name: string } | null; openDeals: number })[];
+  teams: (PerformanceRow & { members: number })[] | null;
+}
+
+const FOLLOW_UP_ICONS: Record<string, LucideIcon> = { CALL: Phone, MEETING: Handshake, EMAIL: Mail, TASK: ListChecks, NOTE: StickyNote };
+
+const daysSince = (d: string) => Math.max(1, Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000));
 
 interface Dashboard {
   sales: null | {
@@ -33,6 +60,8 @@ interface Dashboard {
     pipeline: { stage: string; count: number; amount: string }[];
     targets: SalesTarget[];
     achievementBasis: string;
+    followUps: FollowUps;
+    team: TeamPerformance | null;
   };
   approvals: null | {
     pendingCount: number;
@@ -226,6 +255,8 @@ function PendingApprovalsCard({ a, className }: { a: NonNullable<Dashboard['appr
 
 function notificationIcon(type: string) {
   const t = type.toUpperCase();
+  if (t.includes('FOLLOW_UP')) return <CalendarClock className="size-4 shrink-0 text-brand-600" />;
+  if (t.includes('DUE_SOON') || t.includes('EXPIRED')) return <CalendarClock className="size-4 shrink-0 text-amber-600" />;
   if (t.includes('PAYMENT') || t.includes('APPROV')) return <CheckCircle2 className="size-4 shrink-0 text-green-600" />;
   if (t.includes('OVERDUE') || t.includes('FAIL') || t.includes('INVOICE')) return <CircleAlert className="size-4 shrink-0 text-red-600" />;
   if (t.includes('LEAD')) return <UserPlus className="size-4 shrink-0 text-brand-600" />;
@@ -274,8 +305,8 @@ function NotificationsCard({ className }: { className?: string }) {
   );
 }
 
-function MyTargetCard({ targets, className }: { targets: SalesTarget[]; className?: string }) {
-  const mine = targets[0];
+function MyTargetCard({ target, className }: { target: SalesTarget | null; className?: string }) {
+  const mine = target;
   return (
     <Card title={translate("My Sales Target")} className={cn('flex flex-col', className)} bodyClassName="flex flex-1 flex-col">
       {!mine ? (
@@ -445,8 +476,227 @@ function AdminOverview({ a }: { a: NonNullable<Dashboard['admin']> }) {
   );
 }
 
+function FollowUpsCard({ f, showOwner, limit = 8, className }: { f: FollowUps; showOwner: boolean; limit?: number; className?: string }) {
+  const { canAny } = useAuth();
+  const allLink = canAny('activity.read.own', 'activity.read.team', 'activity.read.all') ? '/activities?state=overdue' : '/leads?followUp=due';
+  return (
+    <Card
+      className={cn('flex flex-col', className)}
+      bodyClassName="flex flex-1 flex-col"
+      title={translate('Follow-ups due')}
+      description={f.overdue ? translate('{count} overdue', { count: f.overdue }) : undefined}
+      actions={<span className="tabular flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{f.total}</span>}
+    >
+      {!f.items.length ? (
+        <p className="text-[13px] text-slate-400">{translate('Nothing due today. Schedule the next call from a lead or deal.')}</p>
+      ) : (
+        <ul className="divide-y divide-slate-50">
+          {f.items.slice(0, limit).map((i) => {
+            const Icon = i.kind === 'lead' ? UserPlus : FOLLOW_UP_ICONS[i.type ?? ''] ?? CalendarClock;
+            return (
+              <li key={`${i.kind}-${i.id}`} className="py-2.5 first:pt-0 last:pb-0">
+                <Link to={i.link} className="group flex items-start gap-2.5">
+                  <span className={cn('mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg', i.overdue ? 'bg-rose-50 text-rose-600' : 'bg-brand-50 text-brand-600')}>
+                    <Icon className="size-3.5" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold text-slate-800 group-hover:text-brand-600">{i.title}</span>
+                    <span className="block truncate text-[11px] text-slate-400">
+                      {[i.related, showOwner ? i.owner.name : null].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                  <span className={cn('shrink-0 text-[11px] whitespace-nowrap', i.overdue ? 'font-medium text-rose-600' : 'text-slate-400')}>{relativeTime(i.dueAt)}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <Link to={allLink} className="mt-auto flex items-center justify-center gap-1 pt-3 text-[13px] font-medium text-brand-600 hover:underline">
+        {translate('View all follow-ups')} <ArrowRight className="size-3.5" />
+      </Link>
+    </Card>
+  );
+}
+
+function AchievementBar({ percent }: { percent: number | null }) {
+  if (percent === null) return <span className="text-xs text-slate-400">{translate('No target')}</span>;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full rounded-full bg-brand-600" style={{ width: `${Math.min(100, percent)}%` }} />
+      </div>
+      <span className="tabular w-9 text-right text-xs font-semibold text-slate-700">{percent}%</span>
+    </div>
+  );
+}
+
+function TeamPerformanceCard({ team, className }: { team: TeamPerformance; className?: string }) {
+  const [view, setView] = useState<'teams' | 'members'>(team.teams ? 'teams' : 'members');
+  const rows = view === 'teams' && team.teams ? team.teams : team.members;
+  return (
+    <Card
+      className={className}
+      title={translate(team.teams ? 'Performance this month' : 'Team performance this month')}
+      description={translate(team.basis === 'INVOICED' ? 'Achievement counts invoiced sales' : 'Achievement counts won deals')}
+      actions={
+        team.teams && (
+          <div className="inline-flex rounded-lg border border-slate-200 p-0.5 text-xs font-medium">
+            {(['teams', 'members'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={cn('rounded-md px-2.5 py-1', view === v ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-800')}
+              >
+                {translate(v === 'teams' ? 'By team' : 'By salesperson')}
+              </button>
+            ))}
+          </div>
+        )
+      }
+    >
+      {!rows.length ? (
+        <EmptyState icon={Users} title={translate('No salespeople yet')} />
+      ) : (
+        <div className="-mx-5 overflow-x-auto">
+          <table className="table-base w-full min-w-[620px]">
+            <thead>
+              <tr>
+                <th>{translate(view === 'teams' ? 'Team' : 'Salesperson')}</th>
+                <th className="text-right">{translate('Achieved')}</th>
+                <th className="text-right">{translate('Target')}</th>
+                <th>{translate('Progress')}</th>
+                <th className="text-right">{translate('Open pipeline')}</th>
+                <th className="text-right">{translate('Overdue follow-ups')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    <span className="font-medium text-slate-800">{r.name}</span>
+                    {'members' in r ? (
+                      <span className="block text-[11px] text-slate-400">{translate('{count} members', { count: r.members })}</span>
+                    ) : (
+                      r.team && view === 'members' && team.teams && <span className="block text-[11px] text-slate-400">{r.team.name}</span>
+                    )}
+                  </td>
+                  <td className="tabular text-right font-medium text-slate-800">{money(r.achieved, { compact: true })}</td>
+                  <td className="tabular text-right text-slate-500">{r.target ? money(r.target, { compact: true }) : '—'}</td>
+                  <td><AchievementBar percent={r.percent} /></td>
+                  <td className="tabular text-right text-slate-600">{money(r.pipeline, { compact: true })}</td>
+                  <td className="text-right">
+                    {r.overdueFollowUps ? (
+                      <span className="tabular inline-flex min-w-6 justify-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-600">{r.overdueFollowUps}</span>
+                    ) : (
+                      <span className="text-xs text-slate-400">0</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+const AGING_LABELS: Record<string, string> = { current: 'Not yet due', '1-30': '1 to 30 days', '31-60': '31 to 60 days', '61-90': '61 to 90 days', '90+': 'Over 90 days' };
+
+function FinanceOverview({ f }: { f: NonNullable<Dashboard['finance']> }) {
+  const largestBucket = Math.max(1, ...f.aging.map((a) => Number(a.amount)));
+  const chart = f.monthly.map((m) => ({ month: monthLabel(m.month), invoiced: Number(m.invoiced), collected: Number(m.collected) }));
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Outstanding receivables" value={money(f.receivables.amount, { compact: true })} sub={translate('{count} open invoices', { count: f.receivables.count })} icon={Receipt} />
+        <StatCard label="Overdue" value={money(f.overdue.amount, { compact: true })} sub={translate('{count} past due', { count: f.overdue.count })} icon={CircleAlert} />
+        <StatCard label="Collected this month" value={money(f.paymentsThisMonth.amount, { compact: true })} sub={translate('{count} payments', { count: f.paymentsThisMonth.count })} icon={Wallet} />
+        <StatCard
+          label="Credit risk"
+          value={f.credit.customersOverLimit}
+          sub={translate('{over} over limit, {hold} on hold', { over: f.credit.customersOverLimit, hold: f.credit.customersOnHold })}
+          icon={ShieldAlert}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
+        <Card title={translate('Invoiced vs collected')} className="lg:col-span-3" actions={<Link to="/reports?tab=finance" className="text-[13px] font-medium text-brand-600 hover:underline">{translate('Reports')}</Link>}>
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chart} margin={{ top: 8, right: 4, left: 4, bottom: 0 }} barGap={4}>
+                <CartesianGrid vertical={false} stroke="#eef0f6" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                <YAxis tickLine={false} axisLine={false} width={48} tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v: number) => money(v, { compact: true })} />
+                <Tooltip cursor={{ fill: '#f5f6fa' }} formatter={(v) => money(Number(v))} />
+                <Bar dataKey="invoiced" name={translate('Invoiced')} fill="#c6cbff" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                <Bar dataKey="collected" name={translate('Collected')} fill="#5b4fe3" radius={[4, 4, 0, 0]} maxBarSize={22} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-200" aria-hidden />{translate('Invoiced')}</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-600" aria-hidden />{translate('Collected')}</span>
+          </div>
+        </Card>
+        <Card title={translate('Receivables aging')} className="lg:col-span-2">
+          <ul className="space-y-3">
+            {f.aging.map((a) => (
+              <li key={a.bucket} className="grid grid-cols-[6.5rem_minmax(0,1fr)_4.5rem] items-center gap-3 text-[13px]">
+                <span className="text-slate-500">{translate(AGING_LABELS[a.bucket] ?? a.bucket)}</span>
+                <span className="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <span
+                    className={cn('block h-full rounded-full', a.bucket === 'current' ? 'bg-brand-300' : 'bg-brand-600')}
+                    style={{ width: `${(Number(a.amount) / largestBucket) * 100}%` }}
+                  />
+                </span>
+                <span className="tabular text-right font-medium text-slate-800">{money(a.amount, { compact: true })}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+      <Card
+        title={translate('Overdue invoices')}
+        actions={<Link to="/overdue" className="text-[13px] font-medium text-brand-600 hover:underline">{translate('View all')}</Link>}
+      >
+        {!f.overdueInvoices.length ? (
+          <p className="text-[13px] text-slate-400">{translate('No overdue invoices. Every customer is paying on time.')}</p>
+        ) : (
+          <div className="-mx-5 overflow-x-auto">
+            <table className="table-base w-full min-w-[560px]">
+              <thead>
+                <tr>
+                  <th>{translate('Invoice')}</th>
+                  <th>{translate('Customer')}</th>
+                  <th>{translate('Due')}</th>
+                  <th className="text-right">{translate('Balance')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {f.overdueInvoices.map((i) => (
+                  <tr key={i.id}>
+                    <td><Link to={`/invoices/${i.id}`} className="font-medium text-brand-600 hover:underline">{i.number}</Link></td>
+                    <td className="text-slate-600">{i.customer.name}</td>
+                    <td className="whitespace-nowrap">
+                      <span className="text-slate-600">{date(i.dueDate)}</span>
+                      <span className="ml-2 text-xs font-medium text-rose-600">{translate('{days} days late', { days: daysSince(i.dueDate) })}</span>
+                    </td>
+                    <td className="tabular text-right font-medium text-slate-800">{money(i.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}
+
 export default function DashboardPage() {
-  const { me, canAny } = useAuth();
+  const { me, canAny, settings } = useAuth();
   const [period, setPeriod] = useState<PerformancePeriod>('month');
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard'],
@@ -460,9 +710,18 @@ export default function DashboardPage() {
   const wonNow = Number(data?.sales?.wonThisMonth.amount ?? 0);
   const wonBefore = Number(data?.sales?.wonLastMonth ?? 0);
   const wonChange = wonBefore > 0 ? { value: ((wonNow - wonBefore) / wonBefore) * 100, label: 'vs last month' } : null;
-  const shownTarget = data?.sales ? (data.sales.myTarget ?? data.sales.targets[0] ?? null) : null;
+  const myTarget = data?.sales?.myTarget ?? null;
+  const team = data?.sales?.team ?? null;
+  const teamTarget = (team?.members ?? []).filter((m) => m.target).reduce((t, m) => ({ achieved: t.achieved + Number(m.achieved), amount: t.amount + Number(m.target) }), { achieved: 0, amount: 0 });
+  const shownTarget = myTarget
+    ? { percent: Number(myTarget.percent), achieved: myTarget.achieved, amount: myTarget.amount }
+    : teamTarget.amount > 0
+      ? { percent: (teamTarget.achieved / teamTarget.amount) * 100, achieved: teamTarget.achieved, amount: teamTarget.amount }
+      : null;
+  const followUpsInRail = !!team && !myTarget;
   const canReadQuotes = canAny('quotation.read.own', 'quotation.read.team', 'quotation.read.all');
-  const sideCards = !!data && (!!data.approvals || !data.sales);
+  const ownFollowUps = !!data?.sales && !data.sales.team;
+  const sideCards = !!data && (!!data.approvals || !data.sales || ownFollowUps);
 
   return (
     <div>
@@ -480,9 +739,7 @@ export default function DashboardPage() {
       {error ? (
         <ErrorState error={error} onRetry={() => refetch()} />
       ) : isLoading || !data ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-28" />)}
-        </div>
+        <ReportSkeleton />
       ) : (
         <div className="space-y-5">
           {data.sales && (
@@ -490,7 +747,7 @@ export default function DashboardPage() {
               <div className="flex min-w-0 flex-col gap-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
                   <StatCard
-                    label="Total Sales (MMK)"
+                    label={translate('Total sales ({currency})', { currency: settings?.['company.currency'] ?? 'MMK' })}
                     value={money(data.sales.wonThisMonth.amount, { compact: true })}
                     change={wonChange}
                     sub={translate('{count} deals won this month', { count: data.sales.wonThisMonth.count })}
@@ -509,7 +766,7 @@ export default function DashboardPage() {
                     icon={FileText}
                   />
                   <StatCard
-                    label="Target Achievement"
+                    label={myTarget || !team ? 'Target Achievement' : 'Team target achievement'}
                     value={shownTarget ? `${Math.round(shownTarget.percent)}%` : '—'}
                     sub={shownTarget ? translate('{achieved} of {target}', { achieved: money(shownTarget.achieved, { compact: true }), target: money(shownTarget.amount, { compact: true }) }) : 'No active target'}
                     icon={Trophy}
@@ -543,22 +800,27 @@ export default function DashboardPage() {
               </div>
               <div className="grid min-w-0 grid-cols-1 gap-5 md:auto-cols-fr md:grid-flow-col xl:flex xl:flex-col">
                 <NotificationsCard />
-                <MyTargetCard targets={data.sales.targets} className="xl:flex-1" />
+                {followUpsInRail ? (
+                  <FollowUpsCard f={data.sales.followUps} showOwner limit={5} className="xl:flex-1" />
+                ) : (
+                  <MyTargetCard target={myTarget} className="xl:flex-1" />
+                )}
               </div>
             </div>
           )}
 
+          {data.sales?.team && (followUpsInRail ? (
+            <TeamPerformanceCard team={data.sales.team} />
+          ) : (
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+              <TeamPerformanceCard team={data.sales.team} className="min-w-0" />
+              <FollowUpsCard f={data.sales.followUps} showOwner limit={5} />
+            </div>
+          ))}
+
           {data.admin && <AdminOverview a={data.admin} />}
 
-            {data.finance && (
-              <Card title={translate("Finance overview")} actions={<Link to="/reports" className="text-[13px] font-medium text-brand-600 hover:underline">{translate("Reports")}</Link>}>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <StatCard label="Outstanding receivables" value={money(data.finance.receivables.amount, { compact: true })} sub={translate('{count} open invoices', { count: data.finance.receivables.count })} icon={Receipt} />
-                  <StatCard label="Overdue" value={money(data.finance.overdue.amount, { compact: true })} sub={translate('{count} past due', { count: data.finance.overdue.count })} icon={CircleAlert} />
-                  <StatCard label="Collected this month" value={money(data.finance.paymentsThisMonth.amount, { compact: true })} sub={translate('{count} payments', { count: data.finance.paymentsThisMonth.count })} icon={Wallet} />
-                </div>
-              </Card>
-            )}
+          {data.finance && <FinanceOverview f={data.finance} />}
 
           {(canReadQuotes || sideCards) && (
             <div className={cn('grid grid-cols-1 gap-5', canReadQuotes && sideCards && 'xl:grid-cols-[minmax(0,1fr)_320px]')}>
@@ -566,6 +828,7 @@ export default function DashboardPage() {
               {sideCards && (
                 <div className={cn('grid min-w-0 grid-cols-1 gap-5 md:auto-cols-fr md:grid-flow-col', canReadQuotes && 'xl:flex xl:flex-col')}>
                   {data.approvals && <PendingApprovalsCard a={data.approvals} className="xl:flex-1" />}
+                  {ownFollowUps && data.sales && <FollowUpsCard f={data.sales.followUps} showOwner={false} className="xl:flex-1" />}
                   {!data.sales && <NotificationsCard className="xl:flex-1" />}
                 </div>
               )}

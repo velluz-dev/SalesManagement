@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import type { Permission } from '@shared';
 import { useAuth } from './AuthProvider';
-import { FullPageSpinner } from '../components/ui/Spinner';
+import { AppShellSkeleton } from '../components/ui/Spinner';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ShieldAlert } from 'lucide-react';
 import { translate } from '../i18n';
@@ -10,7 +10,7 @@ import { translate } from '../i18n';
 export function RequireAuth() {
   const { me, loading, signedOut } = useAuth();
   const location = useLocation();
-  if (loading) return <FullPageSpinner />;
+  if (loading) return <AppShellSkeleton />;
   if (!me) return <Navigate to="/login" replace state={signedOut ? null : { from: location.pathname + location.search }} />;
   if (me.user.mustChangePassword && location.pathname !== '/profile') {
     return <Navigate to="/profile" replace state={{ forced: true }} />;

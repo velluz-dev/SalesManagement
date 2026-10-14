@@ -7,7 +7,6 @@ let sA1: Agent, sA2: Agent, mA: Agent, mB: Agent, finance: Agent, director: Agen
 let customerId: string;
 let productId: string;
 
-/** Takes a quotation through approval to customer acceptance. */
 async function acceptedQuotation(lines = [item(1000, 3)]) {
   const q = await createQuotation(sA1, customerId, lines);
   await sA1.post(`/api/quotations/${q.id}/submit`).send({}).expect(200);
@@ -29,11 +28,11 @@ describe('product catalog', () => {
   it('lets sales managers maintain products and everyone in sales read them', async () => {
     const res = await mA.post('/api/products').send({ code: 'cbl-cat6', name: 'Cat6 cable', unit: 'box', category: 'Hardware', listPrice: '180.00' });
     expect(res.status).toBe(201);
-    expect(res.body.data.code).toBe('CBL-CAT6'); // normalised to upper case
+    expect(res.body.data.code).toBe('CBL-CAT6');
     productId = res.body.data.id;
     expect((await sA1.get('/api/products')).body.data.map((p: { id: string }) => p.id)).toContain(productId);
     expect((await sA1.post('/api/products').send({ code: 'X1', name: 'x', listPrice: '1' })).status).toBe(403);
-    expect((await admin.get('/api/products')).status).toBe(403); // admin has no business data
+    expect((await admin.get('/api/products')).status).toBe(403);
     expect((await mA.post('/api/products').send({ code: 'CBL-CAT6', name: 'dupe', listPrice: '1' })).status).toBe(409);
   });
 
@@ -43,7 +42,6 @@ describe('product catalog', () => {
     const legacy = (await mA.post('/api/products').send({ code: 'OLD-1', name: 'Old scanner', listPrice: '50', isActive: false })).body.data;
     expect((await sA1.get('/api/products')).body.data.map((p: { id: string }) => p.id)).not.toContain(legacy.id);
     expect((await mA.get('/api/products?isActive=false')).body.data.map((p: { id: string }) => p.id)).toContain(legacy.id);
-    // A discontinued product cannot be put on a new quotation.
     const res = await sA1.post('/api/quotations').send({ customerId, items: [{ productId: legacy.id, description: 'Old', quantity: 1, unitPrice: '50' }] });
     expect(res.status).toBe(400);
   });
@@ -76,7 +74,7 @@ describe('payment terms', () => {
 
   it('cannot be set on a customer by sales staff (it is a credit decision)', async () => {
     const term = await prisma.paymentTerm.findUniqueOrThrow({ where: { name: 'COD' } });
-    expect((await sA1.patch(`/api/customers/${customerId}`).send({ paymentTermId: term.id })).status).toBe(400); // unknown field
+    expect((await sA1.patch(`/api/customers/${customerId}`).send({ paymentTermId: term.id })).status).toBe(400);
     expect((await sA1.put(`/api/credit/${customerId}`).send({ creditLimit: '1', paymentTermId: term.id })).status).toBe(403);
   });
 });
@@ -144,7 +142,6 @@ describe('contracts', () => {
       expect((await finance.post('/api/invoices').send({ salesOrderId: orderId })).status).toBe(422);
       const contract = (await sA1.get(`/api/contracts/${contractId}`)).body.data;
       expect((await finance.post('/api/invoices').send({ quotationId: contract.quotation.id })).status).toBe(422);
-      // An invoiced order cannot be cancelled.
       expect((await sA1.post(`/api/sales-orders/${orderId}/cancel`).send({ reason: 'x y z' })).status).toBe(422);
     });
 

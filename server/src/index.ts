@@ -2,6 +2,10 @@ import { env } from './config/env';
 import { createApp } from './app';
 import { prisma } from './lib/prisma';
 import { startOverdueScanner } from './jobs/overdue-scanner';
+import { syncPermissions } from './lib/permission-sync';
+
+const { introduced } = await syncPermissions(prisma);
+if (introduced.length) console.log(`Granted new permissions to system roles: ${introduced.join(', ')}`);
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {

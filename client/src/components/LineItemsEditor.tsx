@@ -25,7 +25,6 @@ export interface WithItems {
 
 export const emptyLine = (taxRate = '0'): LineItemValues => ({ productId: '', description: '', quantity: '1', unitPrice: '', discountPercent: '0', taxRate });
 
-/** Active products for line pickers (only fetched for users who can read the catalog). */
 function useSellableProducts() {
   const { canAny } = useAuth();
   return useQuery({
@@ -42,7 +41,6 @@ export function LineItemsEditor({ control, register, errors, currency, defaultTa
   errors?: FieldErrors<WithItems>;
   currency?: string;
   defaultTaxRate?: string;
-  /** When given, each line gets a product picker that fills description and list price. */
   setValue?: UseFormSetValue<WithItems>;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });

@@ -14,7 +14,6 @@ export interface NavItem {
 }
 
 export interface NavSection {
-  /** Empty for the top-level items above the first heading. */
   title: string;
   items: NavItem[];
 }
@@ -67,7 +66,6 @@ export const NAVIGATION: NavSection[] = [
   },
 ];
 
-/** Record lists the global search can send a query to; each list page reads `?q=`. */
 export const SEARCH_TARGETS: { to: string; label: string; icon: ComponentType<{ className?: string }>; any: Permission[] }[] = [
   { to: '/customers', label: 'Customers', icon: Users, any: ['customer.read.own', 'customer.read.team', 'customer.read.all'] },
   { to: '/leads', label: 'Leads', icon: Contact, any: ['lead.read.own', 'lead.read.team', 'lead.read.all'] },
@@ -78,7 +76,6 @@ export const SEARCH_TARGETS: { to: string; label: string; icon: ComponentType<{ 
   { to: '/invoices', label: 'Invoices', icon: Receipt, any: ['invoice.read'] },
 ];
 
-/** A link with a query string (e.g. /reports?tab=finance) is active only when its query matches too. */
 export function isNavActive(to: string, pathname: string, search: string) {
   const [path = '/', query] = to.split('?');
   if (path === '/') return pathname === '/';

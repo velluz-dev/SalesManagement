@@ -12,7 +12,8 @@ import { FilterSelect, PageHeader, SearchInput, Toolbar } from '../../components
 import { StatusBadge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { enumOptions } from '../../components/ui/Pickers';
-import { date, money } from '../../lib/format';
+import { cn } from '../../lib/cn';
+import { date, dateTime, EMPTY, isPast, money } from '../../lib/format';
 import type { Lead } from '../../lib/types';
 import { LeadFormModal } from './LeadForm';
 
@@ -20,7 +21,7 @@ export default function LeadsPage() {
   const { can } = useAuth();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
-  const lp = useListParams<'status' | 'source'>({ sort: 'createdAt' });
+  const lp = useListParams<'status' | 'source' | 'followUp'>({ sort: 'createdAt' });
   const { data, isLoading, isFetching, error, refetch } = useList<Lead>('leads', lp.query);
 
   const columns: Column<Lead>[] = [
@@ -38,6 +39,17 @@ export default function LeadsPage() {
     { key: 'status', header: 'Status', cell: (l) => <StatusBadge status={l.status} /> },
     { key: 'source', header: 'Source', cell: (l) => enumLabel(l.source), hideOnMobile: true },
     { key: 'value', header: 'Est. value', sortKey: 'estimatedValue', align: 'right', cell: (l) => <span className="tabular">{money(l.estimatedValue)}</span> },
+    {
+      key: 'followUp',
+      header: 'Next follow-up',
+      sortKey: 'nextFollowUpAt',
+      cell: (l) =>
+        l.nextFollowUpAt && !['CONVERTED', 'UNQUALIFIED'].includes(l.status) ? (
+          <span className={cn('whitespace-nowrap', isPast(l.nextFollowUpAt) ? 'font-medium text-rose-600' : 'text-slate-600')}>{dateTime(l.nextFollowUpAt)}</span>
+        ) : (
+          <span className="text-slate-400">{EMPTY}</span>
+        ),
+    },
     { key: 'owner', header: 'Owner', cell: (l) => l.owner.name, hideOnMobile: true },
     { key: 'createdAt', header: 'Created', sortKey: 'createdAt', cell: (l) => date(l.createdAt), hideOnMobile: true },
   ];
@@ -54,6 +66,12 @@ export default function LeadsPage() {
           <SearchInput value={lp.q} onChange={lp.setQ} placeholder={translate("Search title, contact, company…")} className="sm:w-80" />
           <FilterSelect label="Status" value={lp.filters.status ?? ''} onChange={(v) => lp.setFilter('status', v)} options={enumOptions(LEAD_STATUSES, enumLabel)} />
           <FilterSelect label="Source" value={lp.filters.source ?? ''} onChange={(v) => lp.setFilter('source', v)} options={enumOptions(LEAD_SOURCES, enumLabel)} />
+          <FilterSelect
+            label="Follow-up"
+            value={lp.filters.followUp ?? ''}
+            onChange={(v) => lp.setFilter('followUp', v)}
+            options={[{ value: 'due', label: translate('Due today') }, { value: 'overdue', label: translate('Overdue') }]}
+          />
         </Toolbar>
         <DataTable
           caption="Leads"

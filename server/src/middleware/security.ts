@@ -20,7 +20,6 @@ const rateLimitHandler = (_req: Request, res: Response) =>
 const loginIdentifier = (req: Request) => String(req.body?.identifier ?? '').trim().toLowerCase().slice(0, 100);
 const skipLoginLimits = () => env.isTest && process.env.TEST_RATE_LIMIT !== 'true';
 
-/** Failed logins for one account from one IP (10 / 15 min). */
 const loginPairLimiter = rateLimit({
   windowMs: 15 * 60_000,
   limit: 10,
@@ -32,7 +31,6 @@ const loginPairLimiter = rateLimit({
   handler: rateLimitHandler,
 });
 
-/** Failed logins from one IP across all accounts: stops password spraying (30 / 15 min). */
 const loginIpLimiter = rateLimit({
   windowMs: 15 * 60_000,
   limit: 30,
@@ -44,7 +42,6 @@ const loginIpLimiter = rateLimit({
   handler: rateLimitHandler,
 });
 
-/** Failed logins for one account from all IPs: stops distributed guessing (25 / 15 min). */
 const loginAccountLimiter = rateLimit({
   windowMs: 15 * 60_000,
   limit: 25,
@@ -56,7 +53,6 @@ const loginAccountLimiter = rateLimit({
   handler: rateLimitHandler,
 });
 
-/** Runs middleware in order, stopping at the first that responds or errors. */
 function chain(...handlers: RequestHandler[]): RequestHandler {
   return (req, res, next) => {
     const run = (i: number): void => {

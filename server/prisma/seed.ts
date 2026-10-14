@@ -57,7 +57,6 @@ async function main() {
   console.log('Seeding DEMO data (fictional, for development only)…');
   await wipe();
   const roles = await seedBase(prisma, { resetRolePermissions: true });
-  await prisma.systemSetting.upsert({ where: { key: 'system.demoData' }, create: { key: 'system.demoData', value: true }, update: { value: true } });
   await prisma.systemSetting.update({ where: { key: 'company.name' }, data: { value: 'Acme Trading Co. (Demo)' } });
   await prisma.systemSetting.update({ where: { key: 'company.currency' }, data: { value: 'MMK' } });
 
@@ -371,7 +370,6 @@ async function main() {
     }
   }
 
-  // A manual order for a dealer, waiting for confirmation.
   const dealer = customers.find((c) => c.type === 'DEALER') ?? customers[1]!;
   const dealerLines = [
     { position: 1, productId: products[6]!.id, description: products[6]!.name, quantity: new Prisma.Decimal(40), unitPrice: products[6]!.listPrice, discountPercent: new Prisma.Decimal(5), taxRate: new Prisma.Decimal(0) },

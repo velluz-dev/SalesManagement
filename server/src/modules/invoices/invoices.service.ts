@@ -129,7 +129,6 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
       }
       const existing = await tx.invoice.findFirst({ where: { quotationId: q.id, status: { not: 'CANCELLED' } } });
       if (existing) throw unprocessable(`Quotation already invoiced as ${existing.number}`);
-      // Quotations fulfilled through sales orders are billed per order, never directly (prevents double billing).
       const order = await tx.salesOrder.findFirst({ where: { quotationId: q.id, status: { not: 'CANCELLED' } } });
       if (order) throw unprocessable(`This quotation is fulfilled through sales order ${order.number}; invoice the order instead`);
       const inv = await tx.invoice.create({
@@ -138,6 +137,7 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
           customerId: q.customerId,
           quotationId: q.id,
           salespersonId: q.ownerId,
+          paymentTermId: q.paymentTermId,
           currency: q.currency,
           notes: input.notes ?? q.notes,
           createdById: actor.user.id,
@@ -166,6 +166,7 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
           customerId: o.customerId,
           salesOrderId: o.id,
           salespersonId: o.ownerId,
+          paymentTermId: o.paymentTermId,
           currency: o.currency,
           notes: input.notes ?? o.notes,
           createdById: actor.user.id,
@@ -187,6 +188,7 @@ export async function createInvoice(actor: Actor, input: z.infer<typeof createIn
         number: await nextInvoiceNumber(tx),
         customerId: customer.id,
         salespersonId: input.salespersonId ?? customer.ownerId,
+        paymentTermId: customer.paymentTermId,
         currency: settings['company.currency'],
         notes: input.notes ?? null,
         createdById: actor.user.id,
@@ -253,11 +255,12 @@ export async function issueInvoice(actor: Actor, id: string, input: z.infer<type
     }
 
     const issueDate = input.issueDate ?? startOfTodayUtc();
-    // Due date: the customer's payment term, else the system default (B10/B12).
-    const terms = customer.paymentTerm?.days ?? settings['invoice.defaultPaymentTermsDays'];
+    const agreed = inv.paymentTermId ? await tx.paymentTerm.findUnique({ where: { id: inv.paymentTermId } }) : null;
+    const term = agreed ?? customer.paymentTerm;
+    const terms = term?.days ?? settings['invoice.defaultPaymentTermsDays'];
     const dueDate = input.dueDate ?? addDays(issueDate, terms);
     if (dueDate < issueDate) throw badRequest('Due date cannot be before the issue date');
-    await tx.invoice.update({ where: { id }, data: { status: 'ISSUED', issueDate, dueDate, paymentTermId: customer.paymentTermId } });
+    await tx.invoice.update({ where: { id }, data: { status: 'ISSUED', issueDate, dueDate, paymentTermId: term?.id ?? null } });
     await audit(tx, actor, {
       action: 'invoice.issued',
       entityType: 'Invoice',

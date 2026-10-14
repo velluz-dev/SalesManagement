@@ -28,7 +28,6 @@ export const OpportunitySelect = ({ customerId, ...p }: SelectProps & { customer
 
 export const enumOptions = (values: readonly string[], label: (v: string) => string) => values.map((v) => ({ value: v, label: label(v) }));
 
-/** Active payment terms (Net 30, COD, ...), labelled with their day count. */
 export function PaymentTermSelect({ placeholder = 'Default terms', ...rest }: SelectProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['payment-terms'],

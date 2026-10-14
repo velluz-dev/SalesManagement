@@ -28,6 +28,7 @@ export const QUOTATION_STATUSES = [
   'DECLINED',
   'CANCELLED',
   'SUPERSEDED',
+  'EXPIRED',
 ] as const;
 export type QuotationStatus = (typeof QUOTATION_STATUSES)[number];
 export const EDITABLE_QUOTATION_STATUSES: QuotationStatus[] = ['DRAFT', 'REJECTED'];
@@ -66,6 +67,9 @@ export const NOTIFICATION_TYPES = [
   'INVOICE_OVERDUE',
   'LEAD_ASSIGNED',
   'TARGET_SET',
+  'FOLLOW_UP_DUE',
+  'INVOICE_DUE_SOON',
+  'QUOTATION_EXPIRED',
   'SYSTEM',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

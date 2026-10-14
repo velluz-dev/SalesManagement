@@ -5,6 +5,7 @@ import { ACTIVITY_TYPES } from '@shared';
 import { enumLabel, translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useList } from '../../hooks/useApi';
+import { ListSkeleton } from '../../components/ui/Spinner';
 import { Card } from '../../components/ui/Layout';
 import { Button } from '../../components/ui/Button';
 import { Modal, ConfirmDialog } from '../../components/ui/Modal';
@@ -106,7 +107,9 @@ export function ActivityPanel({ filter, link }: { filter: Link; link: Link }) {
       title={translate("Activities")}
       actions={can('activity.manage') && <Button size="sm" variant="secondary" icon={Plus} onClick={() => setAdding(true)}>{translate("Add")}</Button>}
     >
-      {!data?.data.length ? (
+      {!data ? (
+        <ListSkeleton rows={3} />
+      ) : !data.data.length ? (
         <div className="flex items-center gap-2 text-sm text-slate-500"><CalendarCheck className="size-4" /> {translate("No activities logged yet.")}</div>
       ) : (
         <ul className="-my-3 divide-y divide-slate-100">{data.data.map((a) => <ActivityRow key={a.id} a={a} canManage={can('activity.manage')} />)}</ul>

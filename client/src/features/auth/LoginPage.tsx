@@ -52,7 +52,6 @@ export function LoginPage() {
           </span>
         </div>
         <div className="relative my-auto flex flex-col items-center py-6">
-          {/* multiply blends the illustration's white background into the tinted panel */}
           <img
             src={loginIllustration}
             alt=""

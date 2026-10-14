@@ -10,7 +10,6 @@ import { LanguageSwitch } from '../components/layout/LanguageSwitch';
 import { Button } from '../components/ui/Button';
 import { StatusBadge } from '../components/ui/Badge';
 
-/** A page inside the provider, as every app screen is. */
 function Page() {
   return (
     <>
@@ -32,11 +31,9 @@ function Screen() {
 }
 
 afterEach(() => {
-  // Leave each test in English.
   try {
     localStorage.setItem('saleshub.lang', 'en');
   } catch {
-    /* ignore */
   }
 });
 
@@ -51,7 +48,6 @@ describe('Myanmar language support', () => {
     expect(screen.getByText('အတည်ပြုရန်စောင့်ဆိုင်း')).toBeInTheDocument();
     expect(screen.getByText('ပြန်လည်ကြိုဆိုပါသည်၊ Sam!')).toBeInTheDocument();
     expect(document.documentElement.lang).toBe('my');
-    // Remembered when the browser allows storage (some test runtimes do not provide it).
     const stored = (() => {
       try {
         return localStorage.getItem('saleshub.lang');

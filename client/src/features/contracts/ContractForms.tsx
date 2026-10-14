@@ -20,7 +20,6 @@ interface Values {
 
 const validUrl = (v: string) => !v || /^https?:\/\/\S+$/i.test(v.trim());
 
-/** Turns an accepted quotation into a contract. The value comes from the quotation and cannot be edited. */
 export function CreateContractModal({ quotation, onClose }: {
   quotation: { id: string; number: string; total: string; currency: string; terms: string | null; customer: { name: string } };
   onClose: () => void;

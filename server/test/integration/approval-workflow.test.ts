@@ -69,7 +69,7 @@ describe('quotation approval workflow', () => {
   });
 
   it('routes high-value quotations to the director pool; managers cannot decide them', async () => {
-    const q = await createQuotation(sA1, customerId, [item(60_000_000, 2)]); // 120M MMK
+    const q = await createQuotation(sA1, customerId, [item(60_000_000, 2)]);
     await sA1.post(`/api/quotations/${q.id}/submit`).send({}).expect(200);
     const req = await pendingRequest(q.id);
     expect(req.assignedToId).toBeNull();

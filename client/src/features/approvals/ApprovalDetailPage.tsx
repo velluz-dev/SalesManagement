@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ConfirmDialog } from '../../components/ui/Modal';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
@@ -33,7 +33,7 @@ export default function ApprovalDetailPage() {
     silentError: true,
   });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !r) return <ErrorState error={error} onRetry={refetch} />;
   const q = quote.data;
   const currency = r.quotation?.currency;

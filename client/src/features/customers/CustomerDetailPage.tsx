@@ -7,14 +7,15 @@ import { useDetail, useList } from '../../hooks/useApi';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { Badge, InvoiceStatusBadge, StatusBadge } from '../../components/ui/Badge';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton, ListSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
-import { date, money } from '../../lib/format';
+import { EMPTY, date, money } from '../../lib/format';
 import type { Customer, Invoice, Opportunity, Quotation } from '../../lib/types';
 import { CustomerFormModal } from './CustomerForm';
+import { ActivityPanel } from '../activities/ActivityPanel';
 
 function MiniList<T extends { id: string }>({ rows, empty, render }: { rows?: T[]; empty: string; render: (r: T) => React.ReactNode }) {
-  if (!rows) return <p className="text-sm text-slate-400">{translate("Loading…")}</p>;
+  if (!rows) return <ListSkeleton rows={3} />;
   if (!rows.length) return <p className="text-sm text-slate-500">{empty}</p>;
   return <ul className="-my-2 divide-y divide-slate-100">{rows.map((r) => <li key={r.id} className="py-2">{render(r)}</li>)}</ul>;
 }
@@ -30,7 +31,7 @@ export default function CustomerDetailPage() {
   const quotes = useList<Quotation>('quotations', { customerId: id, pageSize: 10 }, { enabled: canQuotes });
   const invoices = useList<Invoice>('invoices', { customerId: id, pageSize: 10 }, { enabled: can('invoice.read') });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !c) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
@@ -76,6 +77,7 @@ export default function CustomerDetailPage() {
               />
             </Card>
           )}
+          <ActivityPanel filter={{ customerId: c.id }} link={{ customerId: c.id }} />
           {canQuotes && (
             <Card title={translate("Quotations")}>
               <MiniList
@@ -92,20 +94,27 @@ export default function CustomerDetailPage() {
           )}
         </div>
         <div className="space-y-6">
-          {can('credit.read') && (
-            <Card title={translate("Credit")} actions={<Link to={`/credit?q=${encodeURIComponent(c.name)}`} className="text-sm font-medium text-brand-600">{translate("Manage")}</Link>}>
-              {c.credit ? (
-                <DescriptionList
-                  columns={1}
-                  items={[
-                    { label: 'Credit limit', value: money(c.credit.creditLimit) },
-                    { label: 'Payment terms', value: c.paymentTerm ? `${c.paymentTerm.name} (${c.paymentTerm.days} days)` : 'System default' },
-                    { label: 'Status', value: c.credit.onHold ? <Badge tone="red">{translate("On hold")}</Badge> : <Badge tone="green">{translate("Good standing")}</Badge> },
-                  ]}
-                />
-              ) : (
-                <p className="text-sm text-slate-500">{translate("No credit terms configured. Default payment terms apply.")}</p>
-              )}
+          {c.account && (
+            <Card
+              title={translate("Account & credit")}
+              actions={can('credit.read') && <Link to={`/credit?q=${encodeURIComponent(c.name)}`} className="text-sm font-medium text-brand-600">{translate("Manage")}</Link>}
+            >
+              <DescriptionList
+                columns={1}
+                items={[
+                  { label: 'Outstanding balance', value: <span className="tabular font-semibold">{money(c.account.outstanding)}</span> },
+                  {
+                    label: 'Overdue',
+                    value: Number(c.account.overdue) > 0
+                      ? <span className="tabular font-medium text-rose-600">{money(c.account.overdue)} ({translate('{count} invoices', { count: c.account.overdueInvoices })})</span>
+                      : <span className="tabular">{money(0)}</span>,
+                  },
+                  { label: 'Credit limit', value: c.account.creditLimit ? money(c.account.creditLimit) : translate('Not set') },
+                  { label: 'Available credit', value: c.account.available ? <span className="tabular">{money(c.account.available)}</span> : EMPTY },
+                  { label: 'Payment terms', value: c.paymentTerm ? `${c.paymentTerm.name} (${c.paymentTerm.days} days)` : translate('System default') },
+                  { label: 'Status', value: c.account.onHold ? <Badge tone="red">{translate("On hold")}</Badge> : <Badge tone="green">{translate("Good standing")}</Badge> },
+                ]}
+              />
             </Card>
           )}
           {can('invoice.read') && (

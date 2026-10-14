@@ -21,7 +21,6 @@ describe('login brute-force protection', () => {
   });
 
   it('throttles password spraying across many accounts from one IP (30 failures)', async () => {
-    // The previous test already spent 11 attempts from this IP (blocked attempts count too).
     let allowed = 0;
     let status = 401;
     for (let i = 0; i < 40 && status !== 429; i++) {

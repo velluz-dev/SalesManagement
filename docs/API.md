@@ -51,11 +51,11 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 | Method | Path | Permission | Scope / notes |
 |---|---|---|---|
 | GET | `/customers` | `customer.read.*` | own/team/all. Filters: `isActive`, `ownerId`, `industry`. |
-| GET | `/customers/:id` | `customer.read.*` | Includes credit if `credit.read`. |
+| GET | `/customers/:id` | `customer.read.*` | Includes credit if `credit.read`, and an `account` summary for everyone in scope: outstanding and overdue balance, credit limit, available credit, hold status. |
 | POST | `/customers` | `customer.create` | `ownerId` only with `lead.assign` (team members). |
 | PATCH | `/customers/:id` | `customer.update` | Within read scope. |
-| GET | `/leads`, `/leads/:id` | `lead.read.*` | Filters: `status`, `source`, `ownerId`. |
-| POST | `/leads` | `lead.create` | Assignee is notified. |
+| GET | `/leads`, `/leads/:id` | `lead.read.*` | Filters: `status`, `source`, `ownerId`, `followUp=due\|overdue`. Sortable by `nextFollowUpAt`. |
+| POST | `/leads` | `lead.create` | Assignee is notified. Optional `nextFollowUpAt` (ISO datetime) schedules a follow-up reminder. |
 | PATCH | `/leads/:id` | `lead.update` | Converted leads are read-only (422). |
 | POST | `/leads/:id/convert` | `lead.convert` | `{ customerId \| customer:{…}, opportunity?:{ name, amount, expectedCloseDate? } }`, atomic. |
 | GET | `/opportunities`, `/opportunities/:id` | `opportunity.read.*` | Filters: `stage`, `status=open\|won\|lost`, `customerId`, `ownerId`. |
@@ -70,15 +70,15 @@ Base URL: `/api`. All endpoints except `POST /auth/login`, `POST /auth/logout` a
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/quotations` | `quotation.read.*` | own/team/all. Filters: `status`, `customerId`, `ownerId`, `opportunityId`, `includeSuperseded`. |
-| GET | `/quotations/:id` | `quotation.read.*` | Items with computed line totals and full approval history. |
-| POST | `/quotations` | `quotation.create` | `{ customerId, opportunityId?, validUntil?, notes?, terms?, items:[{ description, quantity, unitPrice, discountPercent?, taxRate? }] }`. Totals computed server-side. |
+| GET | `/quotations/:id` | `quotation.read.*` | Items with computed line totals, full approval history, agreed `paymentTerm`, and a `credit` check (limit, outstanding, available, warnings) while the deal is open. |
+| POST | `/quotations` | `quotation.create` | `{ customerId, opportunityId?, validUntil?, paymentTermId?, notes?, terms?, items:[{ description, quantity, unitPrice, discountPercent?, taxRate? }] }`. Totals computed server-side. `paymentTermId` defaults to the customer's term and carries through to contracts, orders and the invoice due date. |
 | PATCH | `/quotations/:id` | `quotation.update` | DRAFT/REJECTED only (422 otherwise). Items are replaced wholesale. |
-| POST | `/quotations/:id/submit` | `quotation.submit` | `{ comment? }`. Approver resolved by approval rules. 422 if no rule or no eligible approver. |
+| POST | `/quotations/:id/submit` | `quotation.submit` | `{ comment? }`. Approver resolved by approval rules. 422 if no rule or no eligible approver. Response includes credit `warnings`, which are also sent to the approver. |
 | POST | `/quotations/:id/withdraw` | `quotation.submit` | Moves PENDING_APPROVAL back to DRAFT. |
-| POST | `/quotations/:id/send` | `quotation.update` | Moves APPROVED to SENT. |
+| POST | `/quotations/:id/send` | `quotation.update` | Moves APPROVED to SENT. 422 once the validity date has passed. APPROVED/SENT offers past `validUntil` become EXPIRED automatically. |
 | POST | `/quotations/:id/customer-response` | `quotation.update` | `{ outcome: ACCEPTED\|DECLINED }` from APPROVED/SENT. |
 | POST | `/quotations/:id/cancel` | `quotation.update` | Moves DRAFT or REJECTED to CANCELLED. |
-| POST | `/quotations/:id/revise` | `quotation.update` | APPROVED/SENT/DECLINED (not invoiced) becomes a new DRAFT version, old becomes SUPERSEDED. `201`. |
+| POST | `/quotations/:id/revise` | `quotation.update` | APPROVED/SENT/DECLINED/EXPIRED (not invoiced) becomes a new DRAFT version, old becomes SUPERSEDED. `201`. |
 | GET | `/approvals` | `approval.read.assigned` / `.all` | `view=assigned\|all`, `status`. Each row has `canDecide`. |
 | GET | `/approvals/:id` | assigned approver, requester/owner, or `approval.read.all` | Includes `canDecide` and `decisionBlocker`. |
 | POST | `/approvals/:id/decision` | `approval.decide` + assignment | `{ decision: APPROVE\|REJECT, comment? }`. A comment is required to reject. Self-approval blocked unless enabled. `409` if already decided. |
@@ -151,15 +151,15 @@ A customer's payment term is set with `PUT /credit/:customerId` (`paymentTermId`
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/dashboard` | session | Sections `sales`, `approvals`, `finance`, `admin`, each present only if permitted (otherwise `null`). |
-| GET | `/reports/sales?from&to` | `report.sales.*` | By salesperson, monthly won, pipeline. Scoped own/team/all. |
+| GET | `/dashboard` | session | Sections `sales`, `approvals`, `finance`, `admin`, each present only if permitted (otherwise `null`). `sales.followUps` lists due and overdue follow-ups in scope; `sales.team` gives per-salesperson (and, for company scope, per-team) achievement against target, open pipeline and overdue follow-ups. |
+| GET | `/reports/sales?from&to` | `report.sales.*` | By salesperson, monthly won, pipeline, and a `forecast` of open deals by expected close month (amount and probability-weighted). Scoped own/team/all. |
 | GET | `/reports/finance?from&to` | `report.finance` | Totals, invoiced vs collected by month, aging, payment methods, top debtors. |
 | GET | `/notifications` | session (own only) | `unread=true`; response includes `unread` count. |
 | GET | `/notifications/unread-count` | session | |
 | POST | `/notifications/:id/read`, `/notifications/read-all` | session | |
 | GET | `/audit-logs` | `audit.read` | Filters: `action` (prefix), `entityType`, `entityId`, `actorId`, `from`, `to`, `q`. |
 | GET | `/audit-logs/facets` | `audit.read` | Distinct actions and entity types. |
-| GET | `/settings/public` | session | Company name, currency, quotation defaults, demo flag. |
+| GET | `/settings/public` | session | Company name, currency, quotation defaults. |
 | GET | `/settings` | `settings.read` | Definitions and values. |
 | PUT | `/settings` | `settings.manage` | `{ "<key>": value, … }`. Only catalogue keys are accepted, each validated by type. |
 | GET | `/health` | None | Liveness. |

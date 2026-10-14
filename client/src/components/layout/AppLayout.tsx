@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, ChevronRight, CornerDownLeft, FlaskConical, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, UserRound, X } from 'lucide-react';
+import { Bell, ChevronRight, CornerDownLeft, KeyRound, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, UserRound, X } from 'lucide-react';
 import { enumLabel } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { NAVIGATION, SEARCH_TARGETS, isNavActive } from './navigation';
@@ -148,7 +148,6 @@ interface SearchOption {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-/** Jumps to a page, or hands the text to a record list (each list page reads ?q=). Only shows what the user may open. */
 function GlobalSearch() {
   const navigate = useNavigate();
   const { canAny } = useAuth();
@@ -342,7 +341,6 @@ function saveSidebarPref(open: boolean) {
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(readSidebarPref);
-  const { settings } = useAuth();
   const location = useLocation();
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
@@ -411,12 +409,6 @@ export function AppLayout() {
       </div>
 
       <div className={cn('transition-[padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]', desktopOpen && 'lg:pl-[228px]')}>
-        {settings?.demoData && (
-          <div className="flex items-center justify-center gap-2 bg-amber-100/70 px-4 py-1.5 text-center text-xs font-medium text-slate-800">
-            <FlaskConical className="size-3.5 shrink-0" aria-hidden />
-            {translate('Demo environment. Every record here is made up for development and testing.')}
-          </div>
-        )}
         <header className="sticky top-0 z-20 bg-[#f5f6fa]/85 backdrop-blur">
           <div className="flex h-16 items-center gap-2 px-4 sm:px-6">
             <button

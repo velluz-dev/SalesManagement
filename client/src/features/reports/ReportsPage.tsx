@@ -9,7 +9,7 @@ import { EMPTY, money, monthLabel, todayIso } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, StatCard, Tabs } from '../../components/ui/Layout';
 import { ErrorState } from '../../components/ui/EmptyState';
-import { Skeleton } from '../../components/ui/Spinner';
+import { ReportSkeleton, Skeleton } from '../../components/ui/Spinner';
 import { BarsChart, HBarsChart } from '../../components/charts/Charts';
 
 interface SalesReport {
@@ -20,7 +20,19 @@ interface SalesReport {
   }[];
   monthly: { month: string; won: string; count: number }[];
   pipeline: { stage: string; count: number; amount: string }[];
+  forecast: {
+    months: ({ month: string } & ForecastBucket)[];
+    later: ForecastBucket;
+    pastDue: ForecastBucket;
+    noDate: ForecastBucket;
+  };
 }
+
+type ForecastBucket = {
+  amount: string;
+  weighted: string;
+  count: number;
+};
 
 interface FinanceReport {
   totals: { invoiced: string; collected: string; outstanding: string; overdue: string };
@@ -58,7 +70,7 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
     queryFn: async () => (await api.get<{ data: SalesReport }>('/reports/sales', range)).data,
   });
   if (error) return <ErrorState error={error} onRetry={refetch} />;
-  if (isLoading || !data) return <Skeleton className="h-96" />;
+  if (isLoading || !data) return <ReportSkeleton />;
   const won = data.bySalesperson.reduce((s, r) => s + Number(r.wonAmount), 0);
   const wonCount = data.bySalesperson.reduce((s, r) => s + r.wonCount, 0);
   const lost = data.bySalesperson.reduce((s, r) => s + r.lostCount, 0);
@@ -80,6 +92,30 @@ function SalesTab({ range }: { range: { from: string; to: string } }) {
           <HBarsChart rows={data.pipeline} yKey="stage" yLabel="Stage" yFormat={enumLabel} series={{ key: 'amount', label: 'Value' }} />
         </Card>
       </div>
+      <Card title={translate("Pipeline forecast")} description="Open deals by expected close month. Weighted value applies each deal's win probability.">
+        <BarsChart
+          rows={data.forecast.months}
+          xKey="month"
+          xLabel="Month"
+          xFormat={monthLabel}
+          series={[{ key: 'amount', label: 'Pipeline' }, { key: 'weighted', label: 'Weighted' }]}
+        />
+        <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3">
+          {[
+            { label: 'Past expected close date', bucket: data.forecast.pastDue, tone: 'text-rose-600' },
+            { label: 'Closing later', bucket: data.forecast.later, tone: 'text-slate-900' },
+            { label: 'No close date set', bucket: data.forecast.noDate, tone: 'text-amber-600' },
+          ].map((b) => (
+            <div key={b.label} className="rounded-lg bg-slate-50 px-3 py-2.5">
+              <dt className="text-xs text-slate-500">{translate(b.label)}</dt>
+              <dd className={`tabular mt-0.5 text-sm font-semibold ${b.tone}`}>
+                {money(b.bucket.amount, { compact: true })}
+                <span className="ml-1.5 text-xs font-normal text-slate-400">{translate('{count} deals', { count: b.bucket.count })}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </Card>
       <Card
         title={translate("Performance by salesperson")}
         bodyClassName="p-0"
@@ -122,7 +158,7 @@ function FinanceTab({ range }: { range: { from: string; to: string } }) {
     queryFn: async () => (await api.get<{ data: FinanceReport }>('/reports/finance', range)).data,
   });
   if (error) return <ErrorState error={error} onRetry={refetch} />;
-  if (isLoading || !data) return <Skeleton className="h-96" />;
+  if (isLoading || !data) return <ReportSkeleton />;
   const t = data.totals;
   return (
     <div className="space-y-6">
@@ -168,7 +204,6 @@ export default function ReportsPage() {
   const { canAny, can } = useAuth();
   const hasSales = canAny('report.sales.own', 'report.sales.team', 'report.sales.all');
   const hasFinance = can('report.finance');
-  // The tab lives in the URL (?tab=sales|finance) so the sidebar links open the right report.
   const [params, setParams] = useSearchParams();
   const requested = params.get('tab') === 'finance' ? 'finance' : 'sales';
   const tab: 'sales' | 'finance' = requested === 'finance' ? (hasFinance ? 'finance' : 'sales') : hasSales ? 'sales' : 'finance';

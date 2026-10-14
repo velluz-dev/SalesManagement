@@ -8,10 +8,12 @@ import { badRequest, notFound, unprocessable } from '../../lib/errors';
 import { contains, listQuery, pageArgs, paged, sortBy } from '../../lib/pagination';
 import { dateOnly, money, optionalEmail, optionalText, requiredText, uuid } from '../../lib/validation';
 import { ownerSelect, resolveOwnerId } from '../../lib/ownership';
+import { endOfDay, startOfTodayUtc } from '../../lib/dates';
 import { customerScope } from '../customers/customers.service';
 
-export const listLeadsQuery = listQuery(['createdAt', 'updatedAt', 'title', 'estimatedValue'] as const).extend({
+export const listLeadsQuery = listQuery(['createdAt', 'updatedAt', 'title', 'estimatedValue', 'nextFollowUpAt'] as const).extend({
   status: z.enum(LEAD_STATUSES).optional(),
+  followUp: z.enum(['due', 'overdue']).optional(),
   source: z.enum(LEAD_SOURCES).optional(),
   ownerId: uuid.optional(),
 });
@@ -26,6 +28,7 @@ export const createLeadSchema = z.strictObject({
   status: z.enum(LEAD_STATUSES).exclude(['CONVERTED']).default('NEW'),
   estimatedValue: money.optional().nullable(),
   notes: optionalText(2000),
+  nextFollowUpAt: z.iso.datetime({ offset: true }).transform((s) => new Date(s)).optional().nullable(),
   ownerId: uuid.optional(),
 });
 export const updateLeadSchema = createLeadSchema.partial();
@@ -44,6 +47,11 @@ export const convertLeadSchema = z
 
 const leadScope = (actor: Actor): Prisma.LeadWhereInput => ownerWhere(actor, 'lead');
 
+export function followUpWhere(kind: 'due' | 'overdue', now: Date = new Date()): Prisma.LeadWhereInput {
+  const cutoff = kind === 'overdue' ? now : endOfDay(startOfTodayUtc(now));
+  return { status: { in: ['NEW', 'CONTACTED', 'QUALIFIED'] }, nextFollowUpAt: { lte: cutoff } };
+}
+
 export async function listLeads(actor: Actor, q: z.infer<typeof listLeadsQuery>) {
   const where: Prisma.LeadWhereInput = {
     AND: [
@@ -51,11 +59,12 @@ export async function listLeads(actor: Actor, q: z.infer<typeof listLeadsQuery>)
       q.q ? { OR: [{ title: contains(q.q) }, { contactName: contains(q.q) }, { company: contains(q.q) }, { email: contains(q.q) }] } : {},
       q.status ? { status: q.status } : {},
       q.source ? { source: q.source } : {},
+      q.followUp ? followUpWhere(q.followUp) : {},
       q.ownerId ? { ownerId: q.ownerId } : {},
     ],
   };
   const [rows, total] = await Promise.all([
-    prisma.lead.findMany({ where, include: { owner: ownerSelect }, orderBy: sortBy(q.sort, q.order, ['estimatedValue']), ...pageArgs(q) }),
+    prisma.lead.findMany({ where, include: { owner: ownerSelect }, orderBy: sortBy(q.sort, q.order, ['estimatedValue', 'nextFollowUpAt']), ...pageArgs(q) }),
     prisma.lead.count({ where }),
   ]);
   return paged(rows, total, q);
@@ -155,7 +164,7 @@ export async function convertLead(actor: Actor, id: string, input: z.infer<typeo
 
     const updated = await tx.lead.update({
       where: { id },
-      data: { status: 'CONVERTED', convertedAt: new Date(), convertedCustomerId: customerId },
+      data: { status: 'CONVERTED', convertedAt: new Date(), convertedCustomerId: customerId, nextFollowUpAt: null },
     });
     await audit(tx, actor, { action: 'lead.converted', entityType: 'Lead', entityId: id, before: lead, after: updated });
     return { lead: updated, customerId, opportunityId };

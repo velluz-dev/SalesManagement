@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, NumberInput } from '../../components/ui/Form';
 import { EmptyState, ErrorState } from '../../components/ui/EmptyState';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { ListPageSkeleton } from '../../components/ui/Spinner';
 import { api, errorMessage } from '../../lib/api';
 import type { PaymentTerm } from '../../lib/types';
 import { translate } from '../../i18n';
@@ -68,7 +68,7 @@ export default function PaymentTermsPage() {
   });
   const remove = useAction((id: string) => api.delete(`/payment-terms/${id}`), { invalidate: ['payment-terms'], success: 'Payment term deleted' });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   return (
     <div className="max-w-4xl">

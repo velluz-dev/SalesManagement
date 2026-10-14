@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, PageHeader } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog } from '../../components/ui/Modal';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { SettingsPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { cn } from '../../lib/cn';
 import type { Role } from '../../lib/types';
@@ -34,7 +34,7 @@ export default function RolesPage() {
 
   const save = useAction((permissions: string[]) => api.patch(`/roles/${role!.id}`, { permissions }), { invalidate: ['roles'], success: 'Role permissions updated' });
 
-  if (roles.isLoading || catalogue.isLoading) return <FullPageSpinner />;
+  if (roles.isLoading || catalogue.isLoading) return <SettingsPageSkeleton />;
   if (roles.error || catalogue.error || !role) return <ErrorState error={roles.error ?? catalogue.error} onRetry={() => roles.refetch()} />;
 
   const ownRole = me?.roles.includes(role.code) ?? false;

@@ -21,6 +21,17 @@ export interface Customer {
   createdAt: string;
   credit?: CustomerCredit | null;
   _count?: { opportunities: number; quotations: number; invoices: number; leads?: number };
+  account?: CustomerAccount;
+}
+
+export interface CustomerAccount {
+  outstanding: string;
+  openInvoices: number;
+  overdue: string;
+  overdueInvoices: number;
+  creditLimit: string | null;
+  available: string | null;
+  onHold: boolean;
 }
 
 export interface CustomerCredit {
@@ -43,6 +54,7 @@ export interface Lead {
   status: string;
   estimatedValue: string | null;
   notes: string | null;
+  nextFollowUpAt: string | null;
   ownerId: string;
   owner: UserRef;
   convertedCustomer?: { id: string; name: string } | null;
@@ -148,6 +160,10 @@ export interface Quotation {
   currency: string;
   notes: string | null;
   terms: string | null;
+  paymentTermId: string | null;
+  paymentTerm?: PaymentTermRef | null;
+  credit?: QuotationCredit | null;
+  warnings?: string[];
   subtotal: string;
   discountTotal: string;
   taxTotal: string;
@@ -280,6 +296,14 @@ export interface AuditLog {
   actor: UserRef | null;
 }
 
+export interface QuotationCredit {
+  limit: string;
+  exposure: string;
+  available: string;
+  onHold: boolean;
+  warnings: string[];
+}
+
 export interface PaymentTermRef {
   id: string;
   name: string;
@@ -325,6 +349,7 @@ export interface Contract {
   value: string;
   currency: string;
   terms: string | null;
+  paymentTerm?: PaymentTermRef | null;
   documentUrl: string | null;
   cancelReason: string | null;
   createdAt: string;
@@ -359,6 +384,7 @@ export interface SalesOrder {
   deliveryDate: string | null;
   currency: string;
   notes: string | null;
+  paymentTerm?: PaymentTermRef | null;
   subtotal: string;
   discountTotal: string;
   taxTotal: string;

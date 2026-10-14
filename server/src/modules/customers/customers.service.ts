@@ -7,6 +7,8 @@ import { notFound } from '../../lib/errors';
 import { contains, listQuery, pageArgs, paged } from '../../lib/pagination';
 import { booleanQuery, optionalEmail, optionalText, requiredText, uuid } from '../../lib/validation';
 import { ownerSelect, resolveOwnerId } from '../../lib/ownership';
+import { startOfTodayUtc } from '../../lib/dates';
+import { ZERO } from '../../lib/money';
 
 export const listCustomersQuery = listQuery(['name', 'createdAt', 'updatedAt'] as const).extend({
   ownerId: uuid.optional(),
@@ -64,7 +66,26 @@ export async function getCustomer(actor: Actor, id: string) {
     },
   });
   if (!c) throw notFound('Customer');
-  return c;
+  const today = startOfTodayUtc();
+  const [open, overdue, credit] = await Promise.all([
+    prisma.invoice.aggregate({ where: { customerId: id, status: { in: ['ISSUED', 'PARTIALLY_PAID'] } }, _sum: { total: true, amountPaid: true }, _count: true }),
+    prisma.invoice.aggregate({ where: { customerId: id, status: { in: ['ISSUED', 'PARTIALLY_PAID'] }, dueDate: { lt: today } }, _sum: { total: true, amountPaid: true }, _count: true }),
+    prisma.customerCredit.findUnique({ where: { customerId: id }, select: { creditLimit: true, onHold: true } }),
+  ]);
+  const balance = (r: typeof open) => (r._sum.total ?? ZERO).sub(r._sum.amountPaid ?? ZERO);
+  const outstanding = balance(open);
+  return {
+    ...c,
+    account: {
+      outstanding: outstanding.toFixed(2),
+      openInvoices: open._count,
+      overdue: balance(overdue).toFixed(2),
+      overdueInvoices: overdue._count,
+      creditLimit: credit?.creditLimit.toFixed(2) ?? null,
+      available: credit ? Prisma.Decimal.max(credit.creditLimit.sub(outstanding), ZERO).toFixed(2) : null,
+      onHold: credit?.onHold ?? false,
+    },
+  };
 }
 
 export async function createCustomer(actor: Actor, input: z.infer<typeof createCustomerSchema>) {

@@ -107,9 +107,7 @@ describe('periodBounds', () => {
 
 describe('business dates (Asia/Yangon, UTC+06:30)', () => {
   it('uses the Myanmar calendar date, not the UTC date', () => {
-    // 01:00 in Yangon on 11 Oct = 18:30 UTC on 10 Oct.
     expect(startOfTodayUtc(new Date('2026-10-10T18:30:00Z')).toISOString().slice(0, 10)).toBe('2026-10-11');
-    // 23:00 in Yangon on 10 Oct = 16:30 UTC on 10 Oct.
     expect(startOfTodayUtc(new Date('2026-10-10T16:30:00Z')).toISOString().slice(0, 10)).toBe('2026-10-10');
   });
 });

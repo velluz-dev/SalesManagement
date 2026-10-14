@@ -25,7 +25,7 @@ describe('sanitizeNumber', () => {
   it('caps percentages and whole-number fields', () => {
     expect(sanitizeNumber('150', { maxValue: 100 })).toBe('100');
     expect(sanitizeNumber('7.5', { decimals: 0, maxValue: 365 })).toBe('75');
-    expect(sanitizeNumber('12345678901234')).toBe('123456789012'); // 12 integer digits
+    expect(sanitizeNumber('12345678901234')).toBe('123456789012');
   });
 
   it('removes leading zeros', () => {

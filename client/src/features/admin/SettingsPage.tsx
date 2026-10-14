@@ -11,7 +11,7 @@ import { Card, PageHeader } from '../../components/ui/Layout';
 import { Badge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, NumberInput, Select } from '../../components/ui/Form';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { SettingsPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import type { Role } from '../../lib/types';
@@ -137,7 +137,7 @@ export default function SettingsPage() {
   const roles = useQuery({ queryKey: ['roles'], queryFn: async () => (await api.get<{ data: Role[] }>('/roles')).data, enabled: can('role.read') });
   const removeRule = useAction((id: string) => api.delete(`/approval-rules/${id}`), { invalidate: ['approval-rules'], success: 'Rule deleted' });
 
-  if (settings.isLoading || rules.isLoading) return <FullPageSpinner />;
+  if (settings.isLoading || rules.isLoading) return <SettingsPageSkeleton />;
   if (settings.error || !settings.data) return <ErrorState error={settings.error} onRetry={() => settings.refetch()} />;
 
   return (

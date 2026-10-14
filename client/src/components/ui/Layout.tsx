@@ -76,7 +76,6 @@ export function Card({ title, description, actions, children, className, bodyCla
   );
 }
 
-/** KPI tile: solid icon square, label, value, and an optional period-over-period change. */
 export function StatCard({
   label,
   value,
@@ -88,7 +87,6 @@ export function StatCard({
   value: ReactNode;
   sub?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
-  /** Percentage change vs the previous period; omitted when there is no comparable data. */
   change?: { value: number; label: string } | null;
 }) {
   return (

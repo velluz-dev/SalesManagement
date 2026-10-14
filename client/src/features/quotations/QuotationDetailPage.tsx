@@ -1,23 +1,53 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Ban, CheckCheck, ClipboardList, FileSignature, GitBranch, Pencil, Receipt, Send, ThumbsDown, Undo2, Mail } from 'lucide-react';
+import { AlertTriangle, Ban, CalendarX2, CheckCheck, ClipboardList, FileSignature, GitBranch, Pencil, Receipt, Send, ThumbsDown, Undo2, Mail } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { useAction, useDetail } from '../../hooks/useApi';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ConfirmDialog } from '../../components/ui/Modal';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
-import { EMPTY, date, money } from '../../lib/format';
-import type { Quotation } from '../../lib/types';
+import { EMPTY, date, money, todayIso } from '../../lib/format';
+import type { Quotation, QuotationCredit } from '../../lib/types';
 import { ApprovalTimeline } from '../approvals/ApprovalTimeline';
 import { CreateContractModal } from '../contracts/ContractForms';
 import { translate } from '../../i18n';
 
 type ActionKey = 'submit' | 'withdraw' | 'send' | 'accept' | 'decline' | 'cancel' | 'revise';
+
+function CreditCard({ credit, total, currency }: { credit: QuotationCredit; total: string; currency: string }) {
+  const rows = [
+    { label: 'Credit limit', value: credit.limit },
+    { label: 'Outstanding', value: credit.exposure },
+    { label: 'Available', value: credit.available },
+    { label: 'This quotation', value: total },
+  ];
+  return (
+    <Card title={translate('Customer credit')} actions={credit.onHold ? <StatusBadge status="ON_HOLD" /> : undefined}>
+      <dl className="tabular space-y-2 text-sm">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between gap-3">
+            <dt className="text-slate-500">{translate(r.label)}</dt>
+            <dd className="font-medium text-slate-900">{money(r.value, { currency })}</dd>
+          </div>
+        ))}
+      </dl>
+      {credit.warnings.length > 0 ? (
+        <ul className="mt-4 space-y-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
+          {credit.warnings.map((w) => (
+            <li key={w} className="flex gap-2"><AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden />{w}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-xs text-emerald-700">{translate('Within the credit limit.')}</p>
+      )}
+    </Card>
+  );
+}
 
 export default function QuotationDetailPage() {
   const { id = '' } = useParams();
@@ -50,10 +80,11 @@ export default function QuotationDetailPage() {
     },
   );
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !q) return <ErrorState error={error} onRetry={refetch} />;
 
   const s = q.status;
+  const lapsed = s === 'EXPIRED' || ((s === 'APPROVED' || s === 'SENT') && q.validUntil.slice(0, 10) < todayIso());
   const canEdit = can('quotation.update') && (s === 'DRAFT' || s === 'REJECTED');
   const latestRejection = s === 'REJECTED' ? q.approvalRequests?.find((r) => r.status === 'REJECTED') : undefined;
   const activeInvoice = q.invoices?.find((i) => i.status !== 'CANCELLED');
@@ -83,14 +114,14 @@ export default function QuotationDetailPage() {
             {canEdit && <Button variant="ghost" icon={Ban} onClick={() => setAction('cancel')}>{translate("Cancel")}</Button>}
             {can('quotation.submit') && (s === 'DRAFT' || s === 'REJECTED') && <Button icon={Send} onClick={() => setAction('submit')}>{s === 'REJECTED' ? 'Resubmit' : 'Submit for approval'}</Button>}
             {can('quotation.submit') && s === 'PENDING_APPROVAL' && <Button variant="secondary" icon={Undo2} onClick={() => setAction('withdraw')}>{translate("Withdraw")}</Button>}
-            {can('quotation.update') && s === 'APPROVED' && <Button variant="secondary" icon={Mail} onClick={() => setAction('send')}>{translate("Mark as sent")}</Button>}
-            {can('quotation.update') && (s === 'APPROVED' || s === 'SENT') && (
+            {can('quotation.update') && s === 'APPROVED' && !lapsed && <Button variant="secondary" icon={Mail} onClick={() => setAction('send')}>{translate("Mark as sent")}</Button>}
+            {can('quotation.update') && (s === 'APPROVED' || s === 'SENT') && !lapsed && (
               <>
                 <Button variant="success" icon={CheckCheck} onClick={() => setAction('accept')}>{translate("Accepted")}</Button>
                 <Button variant="secondary" icon={ThumbsDown} onClick={() => setAction('decline')}>{translate("Declined")}</Button>
               </>
             )}
-            {can('quotation.update') && ['APPROVED', 'SENT', 'DECLINED'].includes(s) && !activeInvoice && <Button variant="secondary" icon={GitBranch} onClick={() => setAction('revise')}>{translate("Revise")}</Button>}
+            {can('quotation.update') && ['APPROVED', 'SENT', 'DECLINED', 'EXPIRED'].includes(s) && !activeInvoice && <Button variant="secondary" icon={GitBranch} onClick={() => setAction('revise')}>{translate("Revise")}</Button>}
             {can('contract.manage') && s === 'ACCEPTED' && !q.contract && !activeInvoice && (
               <Button variant="secondary" icon={FileSignature} onClick={() => setCreatingContract(true)}>{translate("Create contract")}</Button>
             )}
@@ -115,6 +146,15 @@ export default function QuotationDetailPage() {
           <p className="mt-1 text-rose-700">{translate("Edit the quotation and resubmit it for approval.")}</p>
         </div>
       )}
+      {lapsed && (
+        <div role="alert" className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <CalendarX2 className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+          <div>
+            <p className="font-medium">{translate('This offer expired on {date}', { date: date(q.validUntil) })}</p>
+            <p className="mt-0.5 text-amber-800">{translate('Revise the quotation to send the customer a new offer with updated prices and validity.')}</p>
+          </div>
+        </div>
+      )}
       {s === 'SUPERSEDED' && q.revision && (
         <div className="mb-6 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
           {translate("This version has been superseded by")} <Link className="font-medium underline" to={`/quotations/${q.revision.id}`}>v{q.revision.version}</Link> and is read-only.
@@ -130,6 +170,7 @@ export default function QuotationDetailPage() {
                 { label: 'Issue date', value: date(q.issueDate) },
                 { label: 'Valid until', value: date(q.validUntil) },
                 { label: 'Currency', value: q.currency },
+                { label: 'Payment terms', value: q.paymentTerm ? q.paymentTerm.name : translate("Customer's default terms") },
                 { label: 'Opportunity', value: q.opportunity ? <Link className="text-brand-600 hover:underline" to={`/opportunities/${q.opportunity.id}`}>{q.opportunity.name}</Link> : EMPTY },
                 { label: 'Previous version', value: q.parent ? <Link className="text-brand-600 hover:underline" to={`/quotations/${q.parent.id}`}>v{q.parent.version}</Link> : EMPTY },
                 { label: 'Contract', value: q.contract ? <Link className="text-brand-600 hover:underline" to={`/contracts/${q.contract.id}`}>{q.contract.number}</Link> : EMPTY },
@@ -185,9 +226,12 @@ export default function QuotationDetailPage() {
             </Card>
           )}
         </div>
-        <Card title={translate("Approval history")}>
-          <ApprovalTimeline requests={q.approvalRequests ?? []} currency={q.currency} />
-        </Card>
+        <div className="space-y-6">
+          {q.credit && <CreditCard credit={q.credit} total={q.total} currency={q.currency} />}
+          <Card title={translate("Approval history")}>
+            <ApprovalTimeline requests={q.approvalRequests ?? []} currency={q.currency} />
+          </Card>
+        </div>
       </div>
 
       {creatingContract && (
@@ -207,8 +251,9 @@ export default function QuotationDetailPage() {
           reason={d.reason}
           reasonRequired={d.reasonRequired}
           onConfirm={async (comment) => {
-            await run.mutateAsync({ key: action, comment });
+            const r = await run.mutateAsync({ key: action, comment });
             toast.success(d.success);
+            if (r?.data.warnings?.length) toast.error(r.data.warnings.join('. '));
           }}
         />
       )}

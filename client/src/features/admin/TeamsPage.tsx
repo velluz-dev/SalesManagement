@@ -9,7 +9,7 @@ import { Card, PageHeader } from '../../components/ui/Layout';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, Select } from '../../components/ui/Form';
 import { EmptyState, ErrorState } from '../../components/ui/EmptyState';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { ListPageSkeleton } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
 import { useLookup } from '../../hooks/useApi';
 import type { Team } from '../../lib/types';
@@ -85,7 +85,7 @@ export default function TeamsPage() {
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['teams'], queryFn: async () => (await api.get<{ data: Team[] }>('/teams')).data });
   const remove = useAction((id: string) => api.delete(`/teams/${id}`), { invalidate: ['teams', 'users', 'lookups'], success: 'Team deleted' });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <ListPageSkeleton />;
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   return (
     <div>

@@ -7,7 +7,7 @@ import { Button, ButtonLink } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ConfirmDialog } from '../../components/ui/Modal';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { api } from '../../lib/api';
 import { date, money } from '../../lib/format';
@@ -23,7 +23,7 @@ export default function ContractDetailPage() {
   const complete = useAction(() => api.post(`/contracts/${id}/complete`), { invalidate: ['contracts'], success: 'Contract completed', silentError: true });
   const cancel = useAction((reason: string) => api.post(`/contracts/${id}/cancel`, { reason }), { invalidate: ['contracts'], success: 'Contract cancelled', silentError: true });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !c) return <ErrorState error={error} onRetry={refetch} />;
   const active = c.status === 'ACTIVE';
   const manage = can('contract.manage') && active;
@@ -57,12 +57,12 @@ export default function ContractDetailPage() {
               items={[
                 { label: 'Value', value: <span className="tabular font-semibold">{money(c.value, { currency: c.currency })}</span> },
                 { label: 'Start date', value: date(c.startDate) },
+                { label: 'Payment terms', value: c.paymentTerm ? c.paymentTerm.name : translate("Customer's default terms") },
                 { label: 'End date', value: c.endDate ? date(c.endDate) : 'Open-ended' },
                 { label: 'Quotation', value: c.quotation ? <Link className="text-brand-600 hover:underline" to={`/quotations/${c.quotation.id}`}>{c.quotation.number} v{c.quotation.version}</Link> : null },
                 {
                   label: 'Signed document',
                   value: c.documentUrl ? (
-                    // Only http(s) links are accepted by the API.
                     <a className="inline-flex items-center gap-1 text-brand-600 hover:underline" href={c.documentUrl} target="_blank" rel="noopener noreferrer">
                       {translate("Open document")} <ExternalLink className="size-3.5" />
                     </a>

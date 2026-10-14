@@ -81,6 +81,7 @@ model Lead {
   status              LeadStatus @default(NEW)
   estimatedValue      Decimal?   @db.Decimal(14, 2)
   notes               String?
+  nextFollowUpAt      DateTime?
   ownerId             String     @db.Uuid
   convertedCustomerId String?    @db.Uuid
   convertedAt         DateTime?
@@ -94,6 +95,7 @@ model Lead {
 
   @@index([ownerId])
   @@index([status])
+  @@index([nextFollowUpAt])
 }
 
 model Opportunity {

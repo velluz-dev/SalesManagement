@@ -1,5 +1,3 @@
-// Contracts (from accepted quotations) and sales orders (fulfilment, then invoicing).
-
 enum ContractStatus {
   ACTIVE
   COMPLETED
@@ -14,29 +12,31 @@ enum SalesOrderStatus {
 }
 
 model Contract {
-  id           String         @id @default(uuid()) @db.Uuid
-  number       String         @unique
-  quotationId  String         @unique @db.Uuid
-  customerId   String         @db.Uuid
-  ownerId      String         @db.Uuid
-  title        String
-  startDate    DateTime       @db.Date
-  endDate      DateTime?      @db.Date
-  value        Decimal        @db.Decimal(14, 2) // snapshot of the quotation total
-  currency     String         @default("MMK") @db.VarChar(3)
-  status       ContractStatus @default(ACTIVE)
-  terms        String?
-  documentUrl  String?
-  cancelReason String?
-  createdById  String         @db.Uuid
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String         @id @default(uuid()) @db.Uuid
+  number        String         @unique
+  quotationId   String         @unique @db.Uuid
+  customerId    String         @db.Uuid
+  ownerId       String         @db.Uuid
+  title         String
+  startDate     DateTime       @db.Date
+  endDate       DateTime?      @db.Date
+  value         Decimal        @db.Decimal(14, 2)
+  currency      String         @default("MMK") @db.VarChar(3)
+  status        ContractStatus @default(ACTIVE)
+  terms         String?
+  paymentTermId String?        @db.Uuid
+  documentUrl   String?
+  cancelReason  String?
+  createdById   String         @db.Uuid
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  quotation Quotation    @relation(fields: [quotationId], references: [id], onDelete: Restrict)
-  customer  Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  owner     User         @relation("ContractOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  createdBy User         @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  orders    SalesOrder[]
+  quotation   Quotation    @relation(fields: [quotationId], references: [id], onDelete: Restrict)
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  owner       User         @relation("ContractOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  createdBy   User         @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  paymentTerm PaymentTerm? @relation(fields: [paymentTermId], references: [id], onDelete: SetNull)
+  orders      SalesOrder[]
 
   @@index([ownerId])
   @@index([customerId])
@@ -55,7 +55,7 @@ model SalesOrder {
   deliveryDate  DateTime?        @db.Date
   currency      String           @default("MMK") @db.VarChar(3)
   notes         String?
-  // Cached totals, written only in the same transaction as the items (rule B6).
+  paymentTermId String?          @db.Uuid
   subtotal      Decimal          @default(0) @db.Decimal(14, 2)
   discountTotal Decimal          @default(0) @db.Decimal(14, 2)
   taxTotal      Decimal          @default(0) @db.Decimal(14, 2)
@@ -68,13 +68,14 @@ model SalesOrder {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  customer  Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  owner     User             @relation("SalesOrderOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  createdBy User             @relation("SalesOrderCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  contract  Contract?        @relation(fields: [contractId], references: [id], onDelete: SetNull)
-  quotation Quotation?       @relation(fields: [quotationId], references: [id], onDelete: SetNull)
-  items     SalesOrderItem[]
-  invoices  Invoice[]
+  customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  owner       User             @relation("SalesOrderOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  createdBy   User             @relation("SalesOrderCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  contract    Contract?        @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  quotation   Quotation?       @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  paymentTerm PaymentTerm?     @relation(fields: [paymentTermId], references: [id], onDelete: SetNull)
+  items       SalesOrderItem[]
+  invoices    Invoice[]
 
   @@index([ownerId])
   @@index([customerId])

@@ -1,10 +1,4 @@
-/**
- * Myanmar (Burmese, Unicode) translations, keyed by the English UI text.
- * Missing keys fall back to English. `enum.X` keys translate status/stage/method codes.
- * Have new or business-critical wording reviewed by a native speaker.
- */
 export const my: Record<string, string> = {
-  // ── Navigation & layout ──
   Dashboard: 'ဒက်ရှ်ဘုတ်',
   SALES: 'အရောင်း',
   FINANCE: 'ငွေစာရင်း',
@@ -53,7 +47,6 @@ export const my: Record<string, string> = {
   'Change password': 'စကားဝှက်ပြောင်းရန်',
   'Sign out': 'အကောင့်မှထွက်ရန်',
   'Team: {name}': 'အဖွဲ့ - {name}',
-  'Demo environment. Every record here is made up for development and testing.': 'စမ်းသပ်ပတ်ဝန်းကျင်။ ဤနေရာရှိ မှတ်တမ်းအားလုံးသည် ဖန်တီးမှုနှင့် စမ်းသပ်မှုအတွက် ပြုလုပ်ထားသော နမူနာများဖြစ်သည်။',
   'Mark all as read': 'အားလုံးဖတ်ပြီးဟု မှတ်ရန်',
   'No notifications yet.': 'အသိပေးချက် မရှိသေးပါ။',
   'View all notifications': 'အသိပေးချက်အားလုံးကြည့်ရန်',
@@ -61,7 +54,6 @@ export const my: Record<string, string> = {
   'Show sidebar': 'ဘေးဘားပြရန်',
   Language: 'ဘာသာစကား',
 
-  // ── Common actions & words ──
   Save: 'သိမ်းရန်',
   'Save changes': 'ပြောင်းလဲမှုများ သိမ်းရန်',
   Cancel: 'ပယ်ဖျက်ရန်',
@@ -191,7 +183,6 @@ export const my: Record<string, string> = {
   Up: 'တက်',
   Down: 'ကျ',
 
-  // ── Empty, error and access states ──
   'No records found': 'မှတ်တမ်း မတွေ့ပါ',
   'Try adjusting your search or filters.': 'ရှာဖွေမှု သို့မဟုတ် စစ်ထုတ်မှုကို ပြောင်းကြည့်ပါ။',
   'This page could not load': 'ဤစာမျက်နှာကို ဖွင့်မရပါ',
@@ -204,7 +195,6 @@ export const my: Record<string, string> = {
   'Nothing matches the current filter.': 'လက်ရှိစစ်ထုတ်မှုနှင့် ကိုက်ညီသည်များ မရှိပါ။',
   'Nothing matches this view right now.': 'ယခုအချိန်တွင် ကိုက်ညီသည်များ မရှိပါ။',
 
-  // ── Server messages ──
   'Incorrect email, username or password': 'အီးမေးလ်၊ အသုံးပြုသူအမည် သို့မဟုတ် စကားဝှက် မှားနေသည်',
   'Too many requests. Please try again later.': 'တောင်းဆိုမှု များလွန်းနေသည်။ ခဏကြာမှ ထပ်ကြိုးစားပါ။',
   'The request contains invalid data': 'ထည့်သွင်းထားသော အချက်အလက် မှားယွင်းနေသည်',
@@ -220,7 +210,6 @@ export const my: Record<string, string> = {
   'Something went wrong': 'တစ်ခုခု မှားယွင်းသွားသည်',
   '{field} is required (at least 3 characters)': '{field} ထည့်ရန်လိုသည် (အနည်းဆုံး စာလုံး ၃ လုံး)',
 
-  // ── Login & profile ──
   'Sign in': 'အကောင့်ဝင်ရန်',
   'Email or username': 'အီးမေးလ် သို့မဟုတ် အသုံးပြုသူအမည်',
   'Enter your email or username': 'အီးမေးလ် သို့မဟုတ် အသုံးပြုသူအမည် ထည့်ပါ',
@@ -241,7 +230,6 @@ export const my: Record<string, string> = {
   'Use at least 10 characters with letters and numbers.': 'စာလုံးနှင့် ဂဏန်းပါဝင်သော အနည်းဆုံး စာလုံး ၁၀ လုံး အသုံးပြုပါ။',
   'Password changed. Other sessions have been signed out.': 'စကားဝှက် ပြောင်းပြီးပါပြီ။ အခြားစက်များမှ ထွက်ပေးလိုက်ပါပြီ။',
 
-  // ── Dashboard ──
   'Welcome back, {name}!': 'ပြန်လည်ကြိုဆိုပါသည်၊ {name}!',
   "Here's what's happening with your sales today.": 'ယနေ့ သင့်အရောင်းလုပ်ငန်း အခြေအနေ။',
   'Total Sales (MMK)': 'စုစုပေါင်းအရောင်း (ကျပ်)',
@@ -287,7 +275,6 @@ export const my: Record<string, string> = {
   '{count} payments': 'ငွေပေးချေမှု {count} ခု',
   'No quotations yet': 'ဈေးနှုန်းတင်ပြချက် မရှိသေးပါ',
 
-  // ── Leads ──
   Lead: 'ဖောက်သည်လောင်း',
   'New lead': 'ဖောက်သည်လောင်း အသစ်',
   'Potential deals to qualify and convert.': 'စစ်ဆေးပြီး ဖောက်သည်အဖြစ် ပြောင်းလဲရမည့် အလားအလာရှိသော အရောင်းများ။',
@@ -311,7 +298,6 @@ export const my: Record<string, string> = {
   'Lead converted': 'ဖောက်သည်လောင်းကို ပြောင်းလဲပြီးပါပြီ',
   Conversion: 'ပြောင်းလဲမှု',
 
-  // ── Customers ──
   'New customer': 'ဖောက်သည်အသစ်',
   'Accounts you are responsible for.': 'သင်တာဝန်ယူထားသော ဖောက်သည်များ။',
   'Search name, email, industry…': 'အမည်၊ အီးမေးလ်၊ လုပ်ငန်း ရှာရန်…',
@@ -328,7 +314,6 @@ export const my: Record<string, string> = {
   'No credit terms configured. Default payment terms apply.': 'အကြွေးစည်းကမ်း မသတ်မှတ်ရသေးပါ။ မူလ ငွေပေးချေမှုစည်းကမ်း အသုံးပြုမည်။',
   'Good standing': 'ကောင်းမွန်',
 
-  // ── Opportunities ──
   Opportunity: 'အရောင်းအခွင့်အလမ်း',
   'New opportunity': 'အခွင့်အလမ်း အသစ်',
   'Sales opportunities by stage.': 'အဆင့်အလိုက် အရောင်းအခွင့်အလမ်းများ။',
@@ -349,7 +334,6 @@ export const my: Record<string, string> = {
   'Create quotation': 'ဈေးနှုန်း ဖန်တီးရန်',
   'No quotations linked yet.': 'ချိတ်ဆက်ထားသော ဈေးနှုန်း မရှိသေးပါ။',
 
-  // ── Activities ──
   'New activity': 'လုပ်ဆောင်ချက် အသစ်',
   'Add activity': 'လုပ်ဆောင်ချက် ထည့်ရန်',
   'Calls, meetings, emails and tasks.': 'ဖုန်းခေါ်ဆိုမှု၊ အစည်းအဝေး၊ အီးမေးလ်နှင့် လုပ်ငန်းတာဝန်များ။',
@@ -364,7 +348,6 @@ export const my: Record<string, string> = {
   'Delete activity': 'လုပ်ဆောင်ချက် ဖျက်ရန်',
   'Delete activity?': 'လုပ်ဆောင်ချက်ကို ဖျက်မလား?',
 
-  // ── Quotations ──
   Quotation: 'ဈေးနှုန်းတင်ပြချက်',
   'New quotation': 'ဈေးနှုန်းတင်ပြချက် အသစ်',
   'Create, submit for approval and track quotations.': 'ဈေးနှုန်းများကို ဖန်တီး၊ အတည်ပြုရန် တင်ပြပြီး စောင့်ကြည့်ပါ။',
@@ -428,7 +411,6 @@ export const my: Record<string, string> = {
   Rejected: 'ငြင်းပယ်ခံရ',
   Declined: 'ငြင်းပယ်',
 
-  // ── Approvals ──
   'Quotation approval requests routed by the configured approval rules.': 'သတ်မှတ်ထားသော စည်းမျဉ်းများအတိုင်း လမ်းကြောင်းပေးထားသော ဈေးနှုန်းအတည်ပြုတောင်းဆိုမှုများ။',
   'Awaiting my decision': 'ကျွန်ုပ်၏ ဆုံးဖြတ်ချက် စောင့်ဆိုင်းနေ',
   'My queue history': 'ကျွန်ုပ်၏ မှတ်တမ်း',
@@ -454,7 +436,6 @@ export const my: Record<string, string> = {
   'Quotation approved': 'ဈေးနှုန်းကို အတည်ပြုပြီးပါပြီ',
   'Quotation rejected': 'ဈေးနှုန်းကို ငြင်းပယ်ပြီးပါပြီ',
 
-  // ── Contracts ──
   'Agreements created from accepted quotations. Create one from an accepted quotation\'s page.': 'လက်ခံထားသော ဈေးနှုန်းများမှ ဖန်တီးသော သဘောတူစာချုပ်များ။ လက်ခံထားသော ဈေးနှုန်းစာမျက်နှာမှ ဖန်တီးပါ။',
   'Search number, title, customer…': 'နံပါတ်၊ ခေါင်းစဉ်၊ ဖောက်သည် ရှာရန်…',
   'No contracts yet': 'စာချုပ် မရှိသေးပါ',
@@ -484,7 +465,6 @@ export const my: Record<string, string> = {
   'Not attached': 'မချိတ်ရသေး',
   'New sales order': 'အရောင်းအော်ဒါ အသစ်',
 
-  // ── Sales orders ──
   Order: 'အော်ဒါ',
   'New order': 'အော်ဒါ အသစ်',
   'Orders to fulfil, from contracts, accepted quotations or entered directly.': 'စာချုပ်၊ လက်ခံထားသော ဈေးနှုန်း သို့မဟုတ် တိုက်ရိုက်ထည့်သွင်းသော ဖြည့်ဆည်းရမည့် အော်ဒါများ။',
@@ -525,7 +505,6 @@ export const my: Record<string, string> = {
   'Not invoiced': 'ငွေမတောင်းခံရသေး',
   'Not yet': 'မပြုလုပ်ရသေး',
 
-  // ── Products & payment terms ──
   'New product': 'ကုန်ပစ္စည်း အသစ်',
   'The catalog used on quotations and sales orders.': 'ဈေးနှုန်းနှင့် အရောင်းအော်ဒါများတွင် အသုံးပြုသော ကုန်ပစ္စည်းစာရင်း။',
   'Search code, name, category…': 'ကုဒ်၊ အမည်၊ အမျိုးအစား ရှာရန်…',
@@ -549,7 +528,6 @@ export const my: Record<string, string> = {
   'Payment term deleted': 'ငွေပေးချေမှုစည်းကမ်း ဖျက်ပြီးပါပြီ',
   'This term is not used by any customer. Terms used on invoices cannot be deleted; deactivate them instead.': 'ဤစည်းကမ်းကို မည်သည့်ဖောက်သည်မျှ မသုံးပါ။ ငွေတောင်းခံလွှာတွင် သုံးထားသော စည်းကမ်းများကို ဖျက်၍မရပါ၊ ပိတ်ထားပါ။',
 
-  // ── Invoices & payments ──
   'New invoice': 'ငွေတောင်းခံလွှာ အသစ်',
   'Invoices are created as drafts. Review, then issue them to start the payment terms.': 'ငွေတောင်းခံလွှာများကို မူကြမ်းအဖြစ် ဖန်တီးသည်။ စစ်ဆေးပြီး ထုတ်ပေးမှ ငွေပေးချေမှုစည်းကမ်း စတင်မည်။',
   'Create draft': 'မူကြမ်း ဖန်တီးရန်',
@@ -603,7 +581,6 @@ export const my: Record<string, string> = {
   'Set when issued': 'ထုတ်ပေးချိန်တွင် သတ်မှတ်မည်',
   Manual: 'ကိုယ်တိုင်ထည့်',
 
-  // ── Credit ──
   'Credit limits, terms and exposure from outstanding invoices.': 'အကြွေးကန့်သတ်ချက်၊ စည်းကမ်းများနှင့် ပေးရန်ကျန် ငွေတောင်းခံလွှာများမှ အကြွေးတာဝန်။',
   'Search customer…': 'ဖောက်သည် ရှာရန်…',
   'On hold': 'ဆိုင်းငံ့ထား',
@@ -618,7 +595,6 @@ export const my: Record<string, string> = {
   "Sets the due date of this customer's invoices.": 'ဤဖောက်သည်၏ ငွေတောင်းခံလွှာ ပေးရမည့်ရက်ကို သတ်မှတ်သည်။',
   'Credit terms saved': 'အကြွေးစည်းကမ်း သိမ်းပြီးပါပြီ',
 
-  // ── Targets ──
   'Sales targets': 'အရောင်းပစ်မှတ်များ',
   'Targets and achievement by salesperson and team.': 'အရောင်းဝန်ထမ်းနှင့် အဖွဲ့အလိုက် ပစ်မှတ်နှင့် ပြည့်မီမှု။',
   'Set target': 'ပစ်မှတ် သတ်မှတ်ရန်',
@@ -643,7 +619,6 @@ export const my: Record<string, string> = {
   'Current periods only': 'လက်ရှိကာလသာ',
   'Target progress': 'ပစ်မှတ် တိုးတက်မှု',
 
-  // ── Reports ──
   'Performance and financial reporting for your authorized scope.': 'သင့်ခွင့်ပြုထားသော နယ်ပယ်အတွက် စွမ်းဆောင်ရည်နှင့် ငွေကြေးအစီရင်ခံစာ။',
   'Sales performance': 'အရောင်းစွမ်းဆောင်ရည်',
   Financial: 'ငွေကြေး',
@@ -666,11 +641,9 @@ export const my: Record<string, string> = {
   'No outstanding receivables.': 'ရရန်ကျန်ငွေ မရှိပါ။',
   'Scope:': 'နယ်ပယ် -',
 
-  // ── Notifications ──
   'Approval requests, decisions, overdue invoices and assignments.': 'အတည်ပြုတောင်းဆိုမှု၊ ဆုံးဖြတ်ချက်၊ ရက်ကျော်ငွေတောင်းခံလွှာနှင့် တာဝန်ပေးမှုများ။',
   'All notifications marked as read': 'အသိပေးချက်အားလုံး ဖတ်ပြီးဟု မှတ်ပြီးပါပြီ',
 
-  // ── Administration ──
   'Manage accounts, team membership and role assignments.': 'အကောင့်၊ အဖွဲ့ဝင်ဖြစ်မှုနှင့် ရာထူးသတ်မှတ်မှုများကို စီမံပါ။',
   'New user': 'အသုံးပြုသူ အသစ်',
   'Search name, username or email…': 'အမည်၊ အသုံးပြုသူအမည် သို့မဟုတ် အီးမေးလ် ရှာရန်…',
@@ -744,7 +717,6 @@ export const my: Record<string, string> = {
   'Quotations in this amount range cannot be submitted until another rule covers it. Existing requests keep their history.': 'အခြားစည်းမျဉ်းက မလွှမ်းခြုံမချင်း ဤပမာဏအပိုင်းရှိ ဈေးနှုန်းများကို တင်ပြ၍မရပါ။ ရှိပြီးသား တောင်းဆိုမှုများ၏ မှတ်တမ်းကို ဆက်ထားမည်။',
   "No rules yet. Quotations can't be submitted until you add one.": 'စည်းမျဉ်း မရှိသေးပါ။ တစ်ခုထည့်မှသာ ဈေးနှုန်းများ တင်ပြနိုင်မည်။',
 
-  // ── Status / stage / method names (enum.X) ──
   'enum.DRAFT': 'မူကြမ်း',
   'enum.PENDING_APPROVAL': 'အတည်ပြုရန်စောင့်ဆိုင်း',
   'enum.APPROVED': 'အတည်ပြုပြီး',
@@ -827,4 +799,58 @@ export const my: Record<string, string> = {
   Failed: 'မအောင်မြင်',
   'No activity yet.': 'လုပ်ဆောင်ချက် မရှိသေးပါ။',
   "Here's what's happening across your workspace today.": 'ယနေ့ သင့်လုပ်ငန်းခွင်တွင် ဖြစ်ပျက်နေသည်များ။',
+  'Next follow-up': 'နောက်တစ်ကြိမ် ဆက်သွယ်ရန်',
+  'You get a reminder when it is due': 'ရက်ရောက်လျှင် သတိပေးချက် ရရှိမည်',
+  'Follow-up': 'ဆက်သွယ်ရန်',
+  'Due today': 'ယနေ့ ရက်ကျ',
+  "Leave empty to use the customer's agreed terms.": 'ဖောက်သည်နှင့် သဘောတူထားသော စည်းကမ်းကို သုံးရန် ဗလာထားပါ။',
+  "Customer's default terms": 'ဖောက်သည်၏ မူလ ငွေပေးချေမှုစည်းကမ်း',
+  'This offer expired on {date}': 'ဤကမ်းလှမ်းချက် {date} တွင် သက်တမ်းကုန်ခဲ့သည်',
+  'Revise the quotation to send the customer a new offer with updated prices and validity.': 'ဈေးနှုန်းနှင့် သက်တမ်းအသစ်ဖြင့် ကမ်းလှမ်းရန် ဈေးနှုန်းစာကို ပြင်ဆင်ပါ။',
+  'This quotation': 'ဤဈေးနှုန်းစာ',
+  'Within the credit limit.': 'အကြွေးကန့်သတ်ချက် အတွင်းရှိသည်။',
+  'Account & credit': 'အကောင့်နှင့် အကြွေး',
+  'Outstanding balance': 'ပေးရန်ကျန်ငွေ',
+  '{count} invoices': 'ငွေတောင်းခံလွှာ {count} စောင်',
+  'Not set': 'မသတ်မှတ်ရသေး',
+  'Follow-ups due': 'ဆက်သွယ်ရန် ရက်ကျ',
+  '{count} overdue': '{count} ခု ရက်လွန်',
+  'Nothing due today. Schedule the next call from a lead or deal.': 'ယနေ့ ရက်ကျ မရှိပါ။ Lead သို့မဟုတ် Deal မှ နောက်ဖုန်းခေါ်ချိန် သတ်မှတ်ပါ။',
+  'View all follow-ups': 'ဆက်သွယ်ရန်များ အားလုံးကြည့်ရန်',
+  'No target': 'ပစ်မှတ် မရှိ',
+  'Performance this month': 'ယခုလ စွမ်းဆောင်ရည်',
+  'Team performance this month': 'ယခုလ အဖွဲ့ စွမ်းဆောင်ရည်',
+  'Achievement counts invoiced sales': 'ငွေတောင်းခံပြီး အရောင်းကို ရေတွက်သည်',
+  'Achievement counts won deals': 'အောင်မြင်သော Deal များကို ရေတွက်သည်',
+  'By team': 'အဖွဲ့အလိုက်',
+  'By salesperson': 'အရောင်းဝန်ထမ်းအလိုက်',
+  'No salespeople yet': 'အရောင်းဝန်ထမ်း မရှိသေးပါ',
+  'Overdue follow-ups': 'ရက်လွန် ဆက်သွယ်ရန်များ',
+  '{count} members': 'အဖွဲ့ဝင် {count} ဦး',
+  'Not yet due': 'ရက်မကျသေး',
+  '1 to 30 days': '၁ ရက်မှ ၃၀ ရက်',
+  '31 to 60 days': '၃၁ ရက်မှ ၆၀ ရက်',
+  '61 to 90 days': '၆၁ ရက်မှ ၉၀ ရက်',
+  'Over 90 days': '၉၀ ရက်ကျော်',
+  'Credit risk': 'အကြွေး အန္တရာယ်',
+  '{over} over limit, {hold} on hold': 'ကန့်သတ်ချက်ကျော် {over}၊ ဆိုင်းငံ့ {hold}',
+  'Invoiced vs collected': 'ငွေတောင်းခံ နှင့် ကောက်ခံရရှိ',
+  'Overdue invoices': 'ရက်လွန် ငွေတောင်းခံလွှာများ',
+  'View all': 'အားလုံးကြည့်ရန်',
+  'No overdue invoices. Every customer is paying on time.': 'ရက်လွန် ငွေတောင်းခံလွှာ မရှိပါ။ ဖောက်သည်အားလုံး အချိန်မီ ပေးချေနေသည်။',
+  '{days} days late': '{days} ရက် နောက်ကျ',
+  'Total sales ({currency})': 'စုစုပေါင်း အရောင်း ({currency})',
+  'Pipeline forecast': 'Pipeline ခန့်မှန်းချက်',
+  "Open deals by expected close month. Weighted value applies each deal's win probability.": 'ပိတ်ရန် မျှော်မှန်းလအလိုက် ဖွင့်ထားသော Deal များ။ အလေးချိန်တန်ဖိုးသည် Deal တစ်ခုစီ၏ အောင်နိုင်ခြေကို အသုံးပြုသည်။',
+  Weighted: 'အလေးချိန်တန်ဖိုး',
+  'Past expected close date': 'မျှော်မှန်း ပိတ်ရက် ကျော်လွန်',
+  'Closing later': 'နောက်ပိုင်း ပိတ်မည်',
+  'No close date set': 'ပိတ်ရက် မသတ်မှတ်ရသေး',
+  '{count} deals': 'Deal {count} ခု',
+  Month: 'လ',
+  'enum.EXPIRED': 'သက်တမ်းကုန်',
+  'enum.ON_HOLD': 'ဆိုင်းငံ့ထား',
+  'enum.FOLLOW_UP_DUE': 'ဆက်သွယ်ရန် ရက်ကျ',
+  'enum.INVOICE_DUE_SOON': 'ငွေပေးချေရန် နီးကပ်',
+  'enum.QUOTATION_EXPIRED': 'ဈေးနှုန်းစာ သက်တမ်းကုန်',
 };

@@ -12,6 +12,7 @@ export const SETTING_DEFINITIONS = [
   { key: 'quotation.defaultValidityDays', label: 'Quotation validity (days)', description: 'Default validity period of new quotations', type: 'number', default: 30, min: 1, max: 365 },
   { key: 'quotation.defaultTaxRate', label: 'Default tax rate (%)', description: 'Default tax rate applied to new quotation lines', type: 'number', default: 0, min: 0, max: 100 },
   { key: 'invoice.defaultPaymentTermsDays', label: 'Default payment terms (days)', description: 'Used when a customer has no specific terms', type: 'number', default: 30, min: 0, max: 365 },
+  { key: 'invoice.reminderDaysBefore', label: 'Payment reminder (days before due)', description: 'Finance and the salesperson are reminded this many days before an invoice falls due. 0 turns the reminder off', type: 'number', default: 3, min: 0, max: 60 },
   { key: 'credit.blockOnExceed', label: 'Block invoices over credit limit', description: 'If enabled, issuing an invoice that exceeds the credit limit (or for a customer on hold) is blocked instead of warned', type: 'boolean', default: false },
   { key: 'targets.achievementBasis', label: 'Target achievement basis', description: 'What counts toward sales targets', type: 'enum', default: 'WON_OPPORTUNITIES', options: ['WON_OPPORTUNITIES', 'INVOICED'], optionLabels: { WON_OPPORTUNITIES: 'Won opportunities', INVOICED: 'Invoiced amount' } },
 ] as const satisfies readonly SettingDefinition[];

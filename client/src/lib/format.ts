@@ -1,6 +1,5 @@
 import { currentLocale, enumLabel, translate } from '../i18n';
 
-/** Placeholder for a missing value; a dash reads the same in every language. */
 export const EMPTY = '—';
 
 let currency = 'MMK';
@@ -8,9 +7,7 @@ export const setCurrency = (c: string) => {
   currency = c;
 };
 
-/** Currencies quoted without minor units in everyday use. */
 const WHOLE_UNIT = new Set(['MMK', 'JPY']);
-/** Currencies shown as "1,250,000 MMK" (code after the amount), as is usual in Myanmar business documents. */
 const CODE_SUFFIX = new Set(['MMK']);
 
 const formatters = new Map<string, Intl.NumberFormat>();
@@ -28,7 +25,6 @@ function formatter(cur: string, compact: boolean) {
   return f;
 }
 
-/** Formats an amount in the company currency, e.g. "125,000,000 MMK" or compact "125M MMK". */
 export function money(v: string | number | null | undefined, opts: { compact?: boolean; currency?: string } = {}) {
   if (v === null || v === undefined || v === '') return EMPTY;
   const cur = opts.currency ?? currency;
@@ -65,7 +61,15 @@ export function relativeTime(v: string | Date) {
 
 export const label = (v: string | null | undefined) => (v ? enumLabel(v) : EMPTY);
 
-/** Today's date (YYYY-MM-DD) in the user's local calendar; the UTC date would lag in Myanmar until 06:30. */
+export function toLocalInput(v: string | null | undefined) {
+  if (!v) return '';
+  const d = new Date(v);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export const isPast = (v: string | null | undefined) => !!v && new Date(v).getTime() < Date.now();
+
 export const todayIso = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

@@ -12,18 +12,11 @@ export function Input({ className, invalid, ...rest }: ComponentProps<'input'> &
 }
 
 export interface NumberRules {
-  /** Allowed digits after the decimal point; 0 = whole numbers only. Default 2. */
   decimals?: number;
-  /** Values above this are capped (e.g. 100 for percentages). */
   maxValue?: number;
-  /** Longest whole-number part, to match server limits. Default 12. */
   maxIntegerDigits?: number;
 }
 
-/**
- * Reduces text to a valid non-negative number string: digits and at most one decimal point,
- * limited decimals and length, capped at `max`. Commas and spaces from pasted amounts are dropped.
- */
 export function sanitizeNumber(raw: string, { decimals = 2, maxValue, maxIntegerDigits = 12 }: NumberRules = {}): string {
   let v = raw.replace(/[^\d.]/g, '');
   if (decimals === 0) {
@@ -39,11 +32,6 @@ export function sanitizeNumber(raw: string, { decimals = 2, maxValue, maxInteger
   return v;
 }
 
-/**
- * Text box that only ever holds a valid number. Letters and symbols are blocked as you type, pasted
- * text is cleaned, and a trailing "." is removed on blur. Works with react-hook-form `register` and
- * with controlled `value`/`onChange`. The server still validates every value.
- */
 export function NumberInput({ decimals = 2, maxValue, maxIntegerDigits, onChange, onBlur, invalid, ...rest }: Omit<ComponentProps<'input'>, 'type'> & NumberRules & { invalid?: boolean }) {
   const rules = { decimals, maxValue, maxIntegerDigits };
   const emit = (target: HTMLInputElement, e: SyntheticEvent<HTMLInputElement>) => onChange?.({ ...e, target, currentTarget: target } as ChangeEvent<HTMLInputElement>);

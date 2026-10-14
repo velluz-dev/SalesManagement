@@ -16,7 +16,6 @@ export const listContractsQuery = listQuery(['createdAt', 'startDate', 'endDate'
   ownerId: uuid.optional(),
 });
 
-/** Only http(s) links are stored, so a document link can never become a `javascript:` URL. */
 const documentUrl = z
   .string()
   .trim()
@@ -76,6 +75,7 @@ export async function getContract(actor: Actor, id: string) {
     include: {
       ...include,
       createdBy: ownerSelect,
+      paymentTerm: { select: { id: true, name: true, days: true } },
       quotation: { select: { id: true, number: true, version: true, total: true, currency: true } },
       orders: { select: { id: true, number: true, status: true, total: true, orderDate: true }, orderBy: { createdAt: 'desc' } },
     },
@@ -89,7 +89,6 @@ async function nextContractNumber(tx: Prisma.TransactionClient) {
   return `C-${new Date().getUTCFullYear()}-${String(row!.n).padStart(5, '0')}`;
 }
 
-/** Turns an ACCEPTED quotation into a contract; the value is the quotation total at that moment. */
 export async function createContract(actor: Actor, input: z.infer<typeof createContractSchema>) {
   const id = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Quotation" WHERE id = ${input.quotationId}::uuid FOR UPDATE`;
@@ -114,6 +113,7 @@ export async function createContract(actor: Actor, input: z.infer<typeof createC
         value: q.total,
         currency: q.currency,
         terms: input.terms ?? q.terms,
+        paymentTermId: q.paymentTermId,
         documentUrl: input.documentUrl ?? null,
         createdById: actor.user.id,
       },

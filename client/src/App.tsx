@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import type { Permission } from '@shared';
 import { RequireAuth, RequirePermission } from './auth/guards';
 import { AppLayout } from './components/layout/AppLayout';
-import { FullPageSpinner } from './components/ui/Spinner';
+import { PageSkeleton } from './components/ui/Spinner';
 import { EmptyState } from './components/ui/EmptyState';
 import { LoginPage } from './features/auth/LoginPage';
 import { ProfilePage } from './features/auth/ProfilePage';
@@ -67,7 +67,7 @@ export function App() {
           <Route
             path="*"
             element={
-              <Suspense fallback={<FullPageSpinner />}>
+              <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   <Route index element={<DashboardPage />} />
                   <Route path="profile" element={<ProfilePage />} />

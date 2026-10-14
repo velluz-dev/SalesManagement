@@ -57,15 +57,11 @@ npm run db:deploy                      # prisma migrate deploy
 
 The Prisma schema is split by domain in `server/prisma/schema/` (`identity`, `sales`, `quotations`, `approvals`, `targets`, `finance`, `platform`), and migrations live in `server/prisma/migrations`. The initial migration adds CHECK constraints (non-negative money, `amountPaid ≤ total`, target owner XOR, …) and a partial unique index guaranteeing **at most one pending approval per quotation**. A second migration creates the sequences used for concurrency-safe quotation and invoice numbers, and a third adds unique usernames, backfilling existing users from their email address.
 
-## 4. Seed data (development only)
+## 4. Accounts
 
-```bash
-npm run db:seed
-```
+Roles and permissions are synced automatically every time the API starts, so new permissions reach the system roles without touching any data.
 
-This **wipes business data** and loads fictional demo data: 16 customers, leads, 40 opportunities, quotations in every status with approval history, invoices that are paid, partially paid or overdue, payments, and targets. The seed refuses to run when `NODE_ENV=production`. All emails use the reserved `.local` and `example.com` domains, and the UI shows a **"Demo environment"** banner whenever demo data is loaded.
-
-Test accounts (password for all: `Password123!`). Sign in with either the username or the email:
+Sign-in accounts (password for all: `Password123!`). Sign in with either the username or the email:
 
 | Role | Username | Email |
 |---|---|---|
@@ -78,9 +74,7 @@ Test accounts (password for all: `Password123!`). Sign in with either the userna
 | Salesperson (SMB team) | `sales3`, `sales4` | `sales3@crm.local`, `sales4@crm.local` |
 | Deactivated user (cannot sign in) | `inactive` | `inactive@crm.local` |
 
-The login page does not display these accounts; share them from this document only.
-
-To load only reference data (roles, permissions, settings and approval rules) without demo data, as in production, run `seedBase()` from `server/prisma/seed-base.ts`. It is idempotent and does not overwrite role permissions an administrator has changed.
+The login page does not display these accounts; share them from this document only. Change the passwords before going live.
 
 ## 5. Run
 

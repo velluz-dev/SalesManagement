@@ -30,7 +30,6 @@ const common = {
   notes: optionalText(4000),
 };
 
-/** An order comes from a contract, an accepted quotation, or is entered manually. */
 export const createOrderSchema = z.union([
   z.strictObject({ contractId: uuid, ...common }),
   z.strictObject({ quotationId: uuid, ...common }),
@@ -77,6 +76,7 @@ export async function getOrder(actor: Actor, id: string) {
     where: { id, ...orderScope(actor) },
     include: {
       ...listInclude,
+      paymentTerm: { select: { id: true, name: true, days: true } },
       createdBy: ownerSelect,
       quotation: { select: { id: true, number: true, version: true } },
       items: { orderBy: { position: 'asc' }, include: { product: { select: { id: true, code: true, name: true, unit: true } } } },
@@ -90,7 +90,6 @@ export async function getOrder(actor: Actor, id: string) {
   };
 }
 
-/** Same consistency rule as quotations: items and cached totals are written together (B6). */
 async function writeOrderItems(tx: Prisma.TransactionClient, salesOrderId: string, items: LineInput[], defaultTaxRate: number) {
   const normalized = normalizeLines(items, defaultTaxRate);
   await tx.salesOrderItem.deleteMany({ where: { salesOrderId } });
@@ -98,6 +97,14 @@ async function writeOrderItems(tx: Prisma.TransactionClient, salesOrderId: strin
   const totals = calculateTotals(normalized);
   await tx.salesOrder.update({ where: { id: salesOrderId }, data: totals });
   return totals;
+}
+
+async function contractOrdered(tx: Prisma.TransactionClient, contractId: string, excludeOrderId?: string) {
+  const r = await tx.salesOrder.aggregate({
+    _sum: { total: true },
+    where: { contractId, status: { in: ['CONFIRMED', 'DELIVERED'] }, ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}) },
+  });
+  return r._sum.total ?? ZERO;
 }
 
 async function nextOrderNumber(tx: Prisma.TransactionClient) {
@@ -108,7 +115,7 @@ async function nextOrderNumber(tx: Prisma.TransactionClient) {
 export async function createOrder(actor: Actor, input: z.infer<typeof createOrderSchema>) {
   const id = await prisma.$transaction(async (tx) => {
     const settings = await getSettings(tx);
-    let source: { customerId: string; ownerId: string; contractId: string | null; quotationId: string | null; currency: string; lines: LineInput[]; label: string };
+    let source: { customerId: string; ownerId: string; contractId: string | null; quotationId: string | null; paymentTermId: string | null; currency: string; lines: LineInput[]; label: string };
 
     if ('contractId' in input) {
       const c = await tx.contract.findFirst({
@@ -119,7 +126,8 @@ export async function createOrder(actor: Actor, input: z.infer<typeof createOrde
       if (c.status !== 'ACTIVE') throw unprocessable('Orders can only be created under an active contract');
       const direct = await tx.invoice.findFirst({ where: { quotationId: c.quotationId, status: { not: 'CANCELLED' } } });
       if (direct) throw unprocessable(`The contract's quotation was already invoiced directly as ${direct.number}`);
-      source = { customerId: c.customerId, ownerId: c.ownerId, contractId: c.id, quotationId: c.quotationId, currency: c.currency, lines: copyLines(c.quotation.items), label: c.number };
+      if ((await contractOrdered(tx, c.id)).gte(c.value)) throw unprocessable(`The full value of contract ${c.number} has already been ordered`);
+      source = { customerId: c.customerId, ownerId: c.ownerId, contractId: c.id, quotationId: c.quotationId, paymentTermId: c.paymentTermId, currency: c.currency, lines: copyLines(c.quotation.items), label: c.number };
     } else if ('quotationId' in input) {
       const q = await tx.quotation.findFirst({
         where: { id: input.quotationId, ...quotationScope(actor) },
@@ -129,12 +137,16 @@ export async function createOrder(actor: Actor, input: z.infer<typeof createOrde
       if (q.status !== 'ACCEPTED') throw unprocessable('Only quotations the customer has accepted can be ordered');
       const direct = await tx.invoice.findFirst({ where: { quotationId: q.id, status: { not: 'CANCELLED' } } });
       if (direct) throw unprocessable(`This quotation was already invoiced directly as ${direct.number}`);
-      source = { customerId: q.customerId, ownerId: q.ownerId, contractId: null, quotationId: q.id, currency: q.currency, lines: copyLines(q.items), label: q.number };
+      const contract = await tx.contract.findUnique({ where: { quotationId: q.id }, select: { number: true, status: true } });
+      if (contract && contract.status !== 'CANCELLED') throw unprocessable(`This quotation is under contract ${contract.number}; create orders from the contract`);
+      const existing = await tx.salesOrder.findFirst({ where: { quotationId: q.id, contractId: null, status: { not: 'CANCELLED' } } });
+      if (existing) throw unprocessable(`This quotation was already ordered as ${existing.number}`);
+      source = { customerId: q.customerId, ownerId: q.ownerId, contractId: null, quotationId: q.id, paymentTermId: q.paymentTermId, currency: q.currency, lines: copyLines(q.items), label: q.number };
     } else {
       const customer = await tx.customer.findFirst({ where: { id: input.customerId, ...customerScope(actor) } });
       if (!customer) throw badRequest('Customer not found or not accessible');
       await assertSellableProducts(tx, input.items);
-      source = { customerId: customer.id, ownerId: actor.user.id, contractId: null, quotationId: null, currency: settings['company.currency'], lines: input.items, label: 'manual' };
+      source = { customerId: customer.id, ownerId: actor.user.id, contractId: null, quotationId: null, paymentTermId: customer.paymentTermId, currency: settings['company.currency'], lines: input.items, label: 'manual' };
     }
 
     const order = await tx.salesOrder.create({
@@ -144,6 +156,7 @@ export async function createOrder(actor: Actor, input: z.infer<typeof createOrde
         ownerId: source.ownerId,
         contractId: source.contractId,
         quotationId: source.quotationId,
+        paymentTermId: source.paymentTermId,
         orderDate: input.orderDate ?? startOfTodayUtc(),
         deliveryDate: input.deliveryDate ?? null,
         currency: source.currency,
@@ -191,7 +204,6 @@ export async function updateOrder(actor: Actor, id: string, input: z.infer<typeo
   return getOrder(actor, id);
 }
 
-/** Outstanding invoices plus confirmed/delivered orders that are not invoiced yet. */
 async function orderExposure(tx: Prisma.TransactionClient, customerId: string, excludeOrderId: string) {
   const invoiced = await customerExposure(tx, customerId);
   const pending = await tx.salesOrder.aggregate({
@@ -206,13 +218,19 @@ async function orderExposure(tx: Prisma.TransactionClient, customerId: string, e
   return invoiced.add(pending._sum.total ?? ZERO);
 }
 
-/** Confirms a pending order after a credit check (warn by default, block when `credit.blockOnExceed`). */
 export async function confirmOrder(actor: Actor, id: string) {
   const warnings: string[] = [];
   await prisma.$transaction(async (tx) => {
     const o = await lockOrder(tx, actor, id);
     assertStatus(o.status, ['PENDING'], 'confirm');
     if (o.total.lte(0)) throw unprocessable('Order total must be greater than zero');
+    if (o.contractId) {
+      const contract = await tx.contract.findUniqueOrThrow({ where: { id: o.contractId }, select: { number: true, value: true } });
+      const ordered = (await contractOrdered(tx, o.contractId, id)).add(o.total);
+      if (ordered.gt(contract.value)) {
+        throw unprocessable(`Orders under contract ${contract.number} would total ${ordered.toFixed(2)}, more than the contract value of ${contract.value.toFixed(2)}. Reduce the quantities on this order.`);
+      }
+    }
     const credit = await tx.customerCredit.findUnique({ where: { customerId: o.customerId } });
     if (credit) {
       const exposure = (await orderExposure(tx, o.customerId, id)).add(o.total);

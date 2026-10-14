@@ -7,7 +7,7 @@ import { Button, ButtonLink } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
 import { ConfirmDialog } from '../../components/ui/Modal';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
@@ -32,7 +32,7 @@ export default function SalesOrderDetailPage() {
   const deliver = useAction(() => api.post(`/sales-orders/${id}/deliver`), { invalidate: ['sales-orders'], success: 'Order marked as delivered', silentError: true });
   const cancel = useAction((reason: string) => api.post(`/sales-orders/${id}/cancel`, { reason }), { invalidate: ['sales-orders', 'contracts'], success: 'Order cancelled', silentError: true });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !o) return <ErrorState error={error} onRetry={refetch} />;
   const update = can('order.update');
   const activeInvoice = o.invoices?.find((i) => i.status !== 'CANCELLED');
@@ -96,6 +96,7 @@ export default function SalesOrderDetailPage() {
             items={[
               { label: 'Order date', value: date(o.orderDate) },
               { label: 'Delivery date', value: date(o.deliveryDate) },
+              { label: 'Payment terms', value: o.paymentTerm ? o.paymentTerm.name : translate("Customer's default terms") },
               { label: 'Contract', value: o.contract ? <Link className="text-brand-600 hover:underline" to={`/contracts/${o.contract.id}`}>{o.contract.number}</Link> : 'None' },
               { label: 'Quotation', value: o.quotation ? <Link className="text-brand-600 hover:underline" to={`/quotations/${o.quotation.id}`}>{o.quotation.number} v{o.quotation.version}</Link> : 'Manual order' },
               { label: 'Confirmed', value: o.confirmedAt ? dateTime(o.confirmedAt) : 'Not yet' },

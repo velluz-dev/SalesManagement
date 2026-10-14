@@ -2,7 +2,6 @@ import { Languages } from 'lucide-react';
 import { LANGUAGES, useI18n } from '../../i18n';
 import { cn } from '../../lib/cn';
 
-/** English ⇄ မြန်မာ toggle. The choice is remembered on this device. */
 export function LanguageSwitch({ className }: { className?: string }) {
   const { lang, setLang, t } = useI18n();
   return (

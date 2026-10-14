@@ -96,7 +96,7 @@ describe('invoices and payments', () => {
     expect((await director.post('/api/payments').send({})).status).toBe(403);
   });
 
-  it('derives overdue status and notifies finance once per invoice', async () => {
+  it('derives overdue status and notifies finance once per reminder step', async () => {
     await prisma.invoice.update({ where: { id: invoiceId }, data: { dueDate: new Date('2020-01-01T00:00:00Z'), issueDate: new Date('2019-12-01T00:00:00Z') } });
     const list = await finance.get('/api/invoices').query({ overdue: 'true' });
     expect(list.body.data.map((i: { id: string }) => i.id)).toContain(invoiceId);
@@ -104,7 +104,7 @@ describe('invoices and payments', () => {
 
     await scanOverdueInvoices();
     await scanOverdueInvoices();
-    const notes = await prisma.notification.count({ where: { type: 'INVOICE_OVERDUE', dedupeKey: `invoice-overdue:${invoiceId}` } });
+    const notes = await prisma.notification.count({ where: { type: 'INVOICE_OVERDUE', dedupeKey: `invoice-overdue:${invoiceId}:60` } });
     expect(notes).toBe(2);
   });
 

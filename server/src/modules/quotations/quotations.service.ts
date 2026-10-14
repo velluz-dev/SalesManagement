@@ -14,6 +14,7 @@ import { ownerSelect } from '../../lib/ownership';
 import { customerScope } from '../customers/customers.service';
 import { opportunityScope } from '../opportunities/opportunities.service';
 import { resolveApprover } from '../approvals/approval-engine';
+import { customerExposure } from '../invoices/invoices.service';
 import type { CreateQuotationInput, LineItemInput, listQuotationsQuery, UpdateQuotationInput } from './quotations.schemas';
 
 export const quotationScope = (actor: Actor): Prisma.QuotationWhereInput => ownerWhere(actor, 'quotation');
@@ -27,6 +28,7 @@ const detailInclude = {
   owner: ownerSelect,
   customer: { select: { id: true, name: true, email: true, address: true } },
   opportunity: { select: { id: true, name: true, stage: true } },
+  paymentTerm: { select: { id: true, name: true, days: true } },
   items: { orderBy: { position: 'asc' }, include: { product: { select: { id: true, code: true, name: true, unit: true } } } },
   parent: { select: { id: true, number: true, version: true, status: true } },
   revision: { select: { id: true, number: true, version: true, status: true } },
@@ -76,10 +78,36 @@ export async function listQuotations(actor: Actor, q: z.infer<typeof listQuotati
   return paged(rows, total, q);
 }
 
+const CREDIT_CHECKED_STATUSES: QuotationStatus[] = ['DRAFT', 'REJECTED', 'PENDING_APPROVAL', 'APPROVED', 'SENT'];
+
+export async function creditCheck(db: Db, customerId: string, amount: Prisma.Decimal) {
+  const credit = await db.customerCredit.findUnique({ where: { customerId } });
+  if (!credit) return null;
+  const exposure = await customerExposure(db, customerId);
+  const after = exposure.add(amount);
+  const warnings: string[] = [];
+  if (credit.onHold) warnings.push('Customer is on credit hold');
+  if (after.gt(credit.creditLimit)) warnings.push(`Credit limit exceeded: exposure would be ${after.toFixed(2)} against a limit of ${credit.creditLimit.toFixed(2)}`);
+  return {
+    limit: credit.creditLimit.toFixed(2),
+    exposure: exposure.toFixed(2),
+    available: Prisma.Decimal.max(credit.creditLimit.sub(exposure), 0).toFixed(2),
+    onHold: credit.onHold,
+    warnings,
+  };
+}
+
 export async function getQuotation(actor: Actor, id: string) {
   const q = await prisma.quotation.findFirst({ where: { id, ...quotationScope(actor) }, include: detailInclude });
   if (!q) throw notFound('Quotation');
-  return withLineTotals(q);
+  const credit = CREDIT_CHECKED_STATUSES.includes(q.status) ? await creditCheck(prisma, q.customerId, q.total) : null;
+  return { ...withLineTotals(q), credit };
+}
+
+async function assertPaymentTerm(db: Db, paymentTermId: string | null | undefined) {
+  if (!paymentTermId) return;
+  const term = await db.paymentTerm.findUnique({ where: { id: paymentTermId }, select: { isActive: true } });
+  if (!term?.isActive) throw badRequest('Payment term not found or inactive');
 }
 
 async function lockQuotation(tx: Prisma.TransactionClient, actor: Actor, id: string) {
@@ -112,6 +140,7 @@ async function assertCustomerAndOpportunity(tx: Db, actor: Actor, customerId: st
     if (!opp) throw badRequest('Opportunity not found or not accessible');
     if (opp.customerId !== customerId) throw badRequest('The opportunity belongs to a different customer');
   }
+  return customer;
 }
 
 async function nextQuotationNumber(tx: Prisma.TransactionClient) {
@@ -121,7 +150,8 @@ async function nextQuotationNumber(tx: Prisma.TransactionClient) {
 
 export async function createQuotation(actor: Actor, input: CreateQuotationInput) {
   const id = await prisma.$transaction(async (tx) => {
-    await assertCustomerAndOpportunity(tx, actor, input.customerId, input.opportunityId);
+    const customer = await assertCustomerAndOpportunity(tx, actor, input.customerId, input.opportunityId);
+    await assertPaymentTerm(tx, input.paymentTermId);
     const settings = await getSettings(tx);
     const today = startOfTodayUtc();
     const q = await tx.quotation.create({
@@ -135,6 +165,7 @@ export async function createQuotation(actor: Actor, input: CreateQuotationInput)
         currency: settings['company.currency'],
         notes: input.notes ?? null,
         terms: input.terms ?? null,
+        paymentTermId: input.paymentTermId !== undefined ? input.paymentTermId : customer.paymentTermId,
       },
     });
     await assertSellableProducts(tx, input.items);
@@ -152,6 +183,7 @@ export async function updateQuotation(actor: Actor, id: string, input: UpdateQuo
     const customerId = input.customerId ?? before.customerId;
     const opportunityId = input.opportunityId !== undefined ? input.opportunityId : before.opportunityId;
     if (input.customerId || input.opportunityId) await assertCustomerAndOpportunity(tx, actor, customerId, opportunityId);
+    await assertPaymentTerm(tx, input.paymentTermId);
     await tx.quotation.update({
       where: { id },
       data: {
@@ -160,6 +192,7 @@ export async function updateQuotation(actor: Actor, id: string, input: UpdateQuo
         ...(input.validUntil ? { validUntil: input.validUntil } : {}),
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
         ...(input.terms !== undefined ? { terms: input.terms } : {}),
+        ...(input.paymentTermId !== undefined ? { paymentTermId: input.paymentTermId } : {}),
       },
     });
     if (input.items) {
@@ -174,6 +207,7 @@ export async function updateQuotation(actor: Actor, id: string, input: UpdateQuo
 }
 
 export async function submitQuotation(actor: Actor, id: string, comment?: string | null) {
+  let warnings: string[] = [];
   await prisma.$transaction(async (tx) => {
     const q = await lockQuotation(tx, actor, id);
     assertStatus(q.status, ['DRAFT', 'REJECTED'], 'submit');
@@ -181,6 +215,7 @@ export async function submitQuotation(actor: Actor, id: string, comment?: string
     if (!itemCount) throw unprocessable('Add at least one line item before submitting');
     if (q.validUntil < startOfTodayUtc()) throw unprocessable('The validity date is in the past. Update it before submitting.');
 
+    warnings = (await creditCheck(tx, q.customerId, q.total))?.warnings ?? [];
     const assignment = await resolveApprover(tx, { total: q.total, ownerId: q.ownerId, requestedById: actor.user.id });
     const request = await tx.approvalRequest.create({
       data: {
@@ -198,7 +233,7 @@ export async function submitQuotation(actor: Actor, id: string, comment?: string
     await notify(tx, assignment.eligibleUserIds, {
       type: 'APPROVAL_REQUESTED',
       title: 'Quotation awaiting your approval',
-      message: `${q.number} v${q.version} (${q.currency} ${q.total.toFixed(2)}) was submitted by ${actor.user.name}`,
+      message: `${q.number} v${q.version} (${q.currency} ${q.total.toFixed(2)}) was submitted by ${actor.user.name}${warnings.length ? `. ${warnings.join('. ')}` : ''}`,
       link: `/approvals/${request.id}`,
     });
     await audit(tx, actor, {
@@ -206,10 +241,10 @@ export async function submitQuotation(actor: Actor, id: string, comment?: string
       entityType: 'Quotation',
       entityId: id,
       before: { status: q.status },
-      after: { status: 'PENDING_APPROVAL', approvalRequestId: request.id, rule: assignment.rule.name, approverRole: assignment.approverRole.code, assignedToId: assignment.assignedToId },
+      after: { status: 'PENDING_APPROVAL', approvalRequestId: request.id, rule: assignment.rule.name, approverRole: assignment.approverRole.code, assignedToId: assignment.assignedToId, creditWarnings: warnings },
     });
   });
-  return getQuotation(actor, id);
+  return { ...(await getQuotation(actor, id)), warnings };
 }
 
 export async function withdrawQuotation(actor: Actor, id: string, comment?: string | null) {
@@ -233,6 +268,9 @@ async function transition(actor: Actor, id: string, from: QuotationStatus[], to:
   await prisma.$transaction(async (tx) => {
     const q = await lockQuotation(tx, actor, id);
     assertStatus(q.status, from, action);
+    if ((to === 'SENT' || to === 'ACCEPTED') && q.validUntil < startOfTodayUtc()) {
+      throw unprocessable(`This offer expired on ${q.validUntil.toISOString().slice(0, 10)}. Revise the quotation to make a new offer.`);
+    }
     await tx.quotation.update({ where: { id }, data: { status: to, ...extra } });
     await audit(tx, actor, { action: `quotation.${to.toLowerCase()}`, entityType: 'Quotation', entityId: id, before: { status: q.status }, after: { status: to } });
   });
@@ -249,7 +287,7 @@ export const cancelQuotation = (actor: Actor, id: string) => transition(actor, i
 export async function reviseQuotation(actor: Actor, id: string, comment?: string | null) {
   const newId = await prisma.$transaction(async (tx) => {
     const q = await lockQuotation(tx, actor, id);
-    assertStatus(q.status, ['APPROVED', 'SENT', 'DECLINED'], 'revise');
+    assertStatus(q.status, ['APPROVED', 'SENT', 'DECLINED', 'EXPIRED'], 'revise');
     const invoiced = await tx.invoice.count({ where: { quotationId: id, status: { not: 'CANCELLED' } } });
     if (invoiced) throw unprocessable('This quotation has been invoiced and cannot be revised');
     const items = await tx.quotationItem.findMany({ where: { quotationId: id }, orderBy: { position: 'asc' } });
@@ -268,6 +306,7 @@ export async function reviseQuotation(actor: Actor, id: string, comment?: string
         currency: q.currency,
         notes: q.notes,
         terms: q.terms,
+        paymentTermId: q.paymentTermId,
       },
     });
     await writeItems(

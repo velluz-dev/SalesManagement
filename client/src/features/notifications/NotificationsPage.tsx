@@ -8,12 +8,21 @@ import { Button } from '../../components/ui/Button';
 import { Pagination } from '../../components/ui/DataTable';
 import { PageHeader, Tabs } from '../../components/ui/Layout';
 import { EmptyState, ErrorState } from '../../components/ui/EmptyState';
-import { Badge } from '../../components/ui/Badge';
+import { Badge, type Tone } from '../../components/ui/Badge';
 import { Skeleton } from '../../components/ui/Spinner';
 import { dateTime, label } from '../../lib/format';
 import { cn } from '../../lib/cn';
 import type { Notification } from '../../lib/types';
 import { translate } from '../../i18n';
+
+const NOTIFICATION_TONES: Record<string, Tone> = {
+  INVOICE_OVERDUE: 'red',
+  APPROVAL_REQUESTED: 'amber',
+  FOLLOW_UP_DUE: 'indigo',
+  INVOICE_DUE_SOON: 'amber',
+  QUOTATION_EXPIRED: 'amber',
+  APPROVAL_DECIDED: 'green',
+};
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -56,7 +65,7 @@ export default function NotificationsPage() {
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium text-slate-900">{n.title}</span>
-                      <Badge tone={n.type === 'INVOICE_OVERDUE' ? 'red' : n.type === 'APPROVAL_REQUESTED' ? 'amber' : 'gray'}>{label(n.type)}</Badge>
+                      <Badge tone={NOTIFICATION_TONES[n.type] ?? 'gray'}>{label(n.type)}</Badge>
                     </span>
                     <span className="mt-0.5 block text-sm text-slate-600">{n.message}</span>
                     <span className="mt-1 block text-xs text-slate-400">{dateTime(n.createdAt)}</span>

@@ -21,7 +21,7 @@ describe('permission-driven navigation', () => {
     const items = visibleFor(DEFAULT_ROLE_PERMISSIONS.FINANCE_OFFICER.permissions);
     expect(items).toEqual(expect.arrayContaining(['Invoices', 'Payments', 'Customer Credit', 'Overdue', 'Payment Terms', 'Financial Reports', 'Sales Orders']));
     expect(items).not.toContain('Leads');
-    expect(items).not.toContain('Sales Reports'); // finance has no sales-report permission
+    expect(items).not.toContain('Sales Reports');
   });
   it('shows administrators admin menus and no business data', () => {
     const items = visibleFor(DEFAULT_ROLE_PERMISSIONS.SYSTEM_ADMIN.permissions);

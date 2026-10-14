@@ -24,7 +24,6 @@ export interface PublicSettings {
   'company.currency': string;
   'quotation.defaultTaxRate': number;
   'quotation.defaultValidityDays': number;
-  demoData: boolean;
 }
 
 interface AuthState {

@@ -46,7 +46,6 @@ export default function InvoiceCreatePage() {
     },
   });
 
-  // Orders ready to bill. Already-invoiced orders are rejected by the server.
   const orders = useQuery({
     queryKey: ['sales-orders', 'invoiceable'],
     queryFn: async () => {

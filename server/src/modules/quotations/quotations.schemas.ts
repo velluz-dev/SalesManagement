@@ -27,6 +27,7 @@ export const createQuotationSchema = z.strictObject({
   validUntil: dateOnly.optional(),
   notes: optionalText(4000),
   terms: optionalText(4000),
+  paymentTermId: uuid.optional().nullable(),
   items: z.array(lineItemSchema).min(1, 'Add at least one line item').max(100),
 });
 export type CreateQuotationInput = z.infer<typeof createQuotationSchema>;

@@ -8,6 +8,7 @@ enum QuotationStatus {
   DECLINED
   CANCELLED
   SUPERSEDED
+  EXPIRED
 }
 
 model Quotation {
@@ -24,6 +25,7 @@ model Quotation {
   currency      String          @default("MMK") @db.VarChar(3)
   notes         String?
   terms         String?
+  paymentTermId String?         @db.Uuid
   subtotal      Decimal         @default(0) @db.Decimal(14, 2)
   discountTotal Decimal         @default(0) @db.Decimal(14, 2)
   taxTotal      Decimal         @default(0) @db.Decimal(14, 2)
@@ -37,6 +39,7 @@ model Quotation {
   customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
   opportunity      Opportunity?      @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
   owner            User              @relation("QuotationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  paymentTerm      PaymentTerm?      @relation(fields: [paymentTermId], references: [id], onDelete: SetNull)
   parent           Quotation?        @relation("QuotationRevision", fields: [parentId], references: [id], onDelete: Restrict)
   revision         Quotation?        @relation("QuotationRevision")
   items            QuotationItem[]

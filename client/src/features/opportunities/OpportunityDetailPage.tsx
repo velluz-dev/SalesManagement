@@ -8,7 +8,7 @@ import { useAction, useDetail } from '../../hooks/useApi';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { Card, DescriptionList, PageHeader } from '../../components/ui/Layout';
 import { StatusBadge } from '../../components/ui/Badge';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
@@ -27,7 +27,7 @@ export default function OpportunityDetailPage() {
     success: 'Stage updated',
   });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !o) return <ErrorState error={error} onRetry={refetch} />;
   const currentIdx = OPPORTUNITY_STAGES.indexOf(o.stage as never);
 

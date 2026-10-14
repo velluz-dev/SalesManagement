@@ -11,10 +11,11 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { Checkbox, Field, FormError, Input, NumberInput } from '../../components/ui/Form';
 import { CustomerSelect } from '../../components/ui/Pickers';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { api, errorMessage } from '../../lib/api';
-import { date, dateTime, money } from '../../lib/format';
+import { cn } from '../../lib/cn';
+import { date, dateTime, isPast, money } from '../../lib/format';
 import type { Lead } from '../../lib/types';
 import { LeadFormModal } from './LeadForm';
 import { ActivityPanel } from '../activities/ActivityPanel';
@@ -127,7 +128,7 @@ export default function LeadDetailPage() {
   const [converting, setConverting] = useState(false);
   const { data: lead, isLoading, error, refetch } = useDetail<Lead>(['leads', id], `/leads/${id}`);
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !lead) return <ErrorState error={error} onRetry={refetch} />;
   const converted = lead.status === 'CONVERTED';
 
@@ -158,6 +159,12 @@ export default function LeadDetailPage() {
                 { label: 'Phone', value: lead.phone },
                 { label: 'Source', value: enumLabel(lead.source) },
                 { label: 'Estimated value', value: money(lead.estimatedValue) },
+                {
+                  label: 'Next follow-up',
+                  value: lead.nextFollowUpAt ? (
+                    <span className={cn(isPast(lead.nextFollowUpAt) && lead.status !== 'CONVERTED' && 'font-medium text-rose-600')}>{dateTime(lead.nextFollowUpAt)}</span>
+                  ) : null,
+                },
                 { label: 'Created', value: dateTime(lead.createdAt) },
                 { label: 'Last updated', value: dateTime(lead.updatedAt) },
               ]}

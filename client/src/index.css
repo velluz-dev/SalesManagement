@@ -3,7 +3,6 @@
 @theme {
   --font-sans: 'Inter', 'Noto Sans Myanmar', 'Myanmar Text', 'Padauk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Brand: indigo */
   --color-brand-50: #eef0ff;
   --color-brand-100: #e0e3ff;
   --color-brand-200: #c6cbff;
@@ -16,7 +15,6 @@
   --color-brand-900: #363180;
   --color-brand-950: #211d4b;
 
-  /* Sidebar navy */
   --color-navy-700: #2a3463;
   --color-navy-800: #1b2348;
   --color-navy-900: #131a39;
@@ -34,11 +32,9 @@
 }
 
 @layer base {
-  /* Burmese stacks marks above and below the line: give Myanmar text more vertical room. */
   html:lang(my) body {
     line-height: 1.75;
   }
-  /* Tailwind text-size utilities read --tw-leading first; zero specificity keeps explicit leading-* classes in charge. */
   :where(html:lang(my)) * {
     --tw-leading: 1.7;
   }

@@ -13,6 +13,7 @@ import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
 import { applyServerErrors } from '../../lib/forms';
+import { toLocalInput } from '../../lib/format';
 import type { Lead } from '../../lib/types';
 
 const schema = z.object({
@@ -25,6 +26,7 @@ const schema = z.object({
   status: z.enum(LEAD_STATUSES),
   estimatedValue: z.string().refine((v) => v === '' || /^\d{1,12}(\.\d{1,2})?$/.test(v), 'Enter an amount, e.g. 25000'),
   notes: z.string().max(2000),
+  nextFollowUpAt: z.string(),
   ownerId: z.string(),
 });
 type Values = z.infer<typeof schema>;
@@ -46,6 +48,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: { open: boolean;
       status: (lead?.status as Values['status']) ?? 'NEW',
       estimatedValue: lead?.estimatedValue ?? '',
       notes: lead?.notes ?? '',
+      nextFollowUpAt: toLocalInput(lead?.nextFollowUpAt),
       ownerId: lead?.ownerId ?? me?.user.id ?? '',
     },
   });
@@ -60,6 +63,7 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: { open: boolean;
       phone: rest.phone || null,
       notes: rest.notes || null,
       estimatedValue: rest.estimatedValue || null,
+      nextFollowUpAt: rest.nextFollowUpAt ? new Date(rest.nextFollowUpAt).toISOString() : null,
       ...(can('lead.assign') && ownerId ? { ownerId } : {}),
     };
     try {
@@ -103,6 +107,9 @@ export function LeadFormModal({ open, onClose, lead, onSaved }: { open: boolean;
           </Select>
         </Field>
         <Field label="Estimated value" error={formState.errors.estimatedValue?.message}><NumberInput decimals={2} {...register('estimatedValue')} /></Field>
+        <Field label="Next follow-up" hint="You get a reminder when it is due" error={formState.errors.nextFollowUpAt?.message}>
+          <Input type="datetime-local" {...register('nextFollowUpAt')} />
+        </Field>
         {can('lead.assign') && (
           <Field label="Owner" error={formState.errors.ownerId?.message}><UserSelect {...register('ownerId')} /></Field>
         )}

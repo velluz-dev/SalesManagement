@@ -11,7 +11,7 @@ import { Card, DescriptionList, PageHeader, ProgressBar } from '../../components
 import { Badge, InvoiceStatusBadge } from '../../components/ui/Badge';
 import { ConfirmDialog, Modal } from '../../components/ui/Modal';
 import { Field, FormError, Input, NumberInput, Select, Textarea } from '../../components/ui/Form';
-import { FullPageSpinner } from '../../components/ui/Spinner';
+import { DetailPageSkeleton } from '../../components/ui/Spinner';
 import { ErrorState } from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
 import { api, errorMessage } from '../../lib/api';
@@ -82,7 +82,7 @@ export default function InvoiceDetailPage() {
     silentError: true,
   });
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <DetailPageSkeleton />;
   if (error || !inv) return <ErrorState error={error} onRetry={refetch} />;
   const open = inv.status === 'ISSUED' || inv.status === 'PARTIALLY_PAID';
   const paidPct = Number(inv.total) > 0 ? (Number(inv.amountPaid) / Number(inv.total)) * 100 : 0;
