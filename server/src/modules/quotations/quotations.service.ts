@@ -15,7 +15,7 @@ import { customerScope } from '../customers/customers.service';
 import { opportunityScope } from '../opportunities/opportunities.service';
 import { resolveApprover } from '../approvals/approval-engine';
 import { customerExposure } from '../invoices/invoices.service';
-import type { CreateQuotationInput, LineItemInput, listQuotationsQuery, UpdateQuotationInput } from './quotations.schemas';
+import type { CreateQuotationInput, LineItemInput, listQuotationsQuery, UpdateQuotationInput } from './quotations.validation';
 
 export const quotationScope = (actor: Actor): Prisma.QuotationWhereInput => ownerWhere(actor, 'quotation');
 

@@ -1,49 +1,15 @@
 import { z } from 'zod';
-import { INVOICE_STATUSES } from '../../shared';
 import { prisma, Prisma, type Db } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest, notFound, unprocessable } from '../../lib/errors';
 import { calculateLine, calculateTotals, ZERO } from '../../lib/money';
 import { assertSellableProducts, copyLines, normalizeLines, type LineInput } from '../../lib/line-items';
-import { contains, listQuery, pageArgs, paged, sortBy } from '../../lib/pagination';
+import { contains, pageArgs, paged, sortBy } from '../../lib/pagination';
 import { getSettings } from '../../lib/settings';
 import { addDays, daysBetween, startOfTodayUtc } from '../../lib/dates';
-import { booleanQuery, dateOnly, optionalText, requiredText, uuid } from '../../lib/validation';
 import { ownerSelect } from '../../lib/ownership';
-import { lineItemSchema, type LineItemInput } from '../quotations/quotations.schemas';
-
-export const listInvoicesQuery = listQuery(['createdAt', 'dueDate', 'issueDate', 'total', 'number'] as const).extend({
-  status: z.enum(INVOICE_STATUSES).optional(),
-  customerId: uuid.optional(),
-  overdue: booleanQuery,
-  unpaid: booleanQuery,
-  from: dateOnly.optional(),
-  to: dateOnly.optional(),
-});
-
-export const createInvoiceSchema = z.union([
-  z.strictObject({ quotationId: uuid, notes: optionalText(4000) }),
-  z.strictObject({ salesOrderId: uuid, notes: optionalText(4000) }),
-  z.strictObject({
-    customerId: uuid,
-    salespersonId: uuid.optional().nullable(),
-    notes: optionalText(4000),
-    items: z.array(lineItemSchema).min(1, 'Add at least one line item').max(100),
-  }),
-]);
-
-export const updateInvoiceSchema = z.strictObject({
-  notes: optionalText(4000),
-  items: z.array(lineItemSchema).min(1).max(100).optional(),
-});
-
-export const issueInvoiceSchema = z.strictObject({
-  issueDate: dateOnly.optional(),
-  dueDate: dateOnly.optional(),
-});
-
-export const cancelInvoiceSchema = z.strictObject({ reason: requiredText(500, 'Cancellation reason') });
+import { createInvoiceSchema, issueInvoiceSchema, listInvoicesQuery, updateInvoiceSchema } from './invoices.validation';
 
 export function deriveInvoiceState(inv: { status: string; total: Prisma.Decimal; amountPaid: Prisma.Decimal; dueDate: Date | null }, today = startOfTodayUtc()) {
   const balance = inv.status === 'CANCELLED' || inv.status === 'DRAFT' ? ZERO : inv.total.sub(inv.amountPaid);

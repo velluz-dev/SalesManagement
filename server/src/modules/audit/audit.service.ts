@@ -1,17 +1,8 @@
 import { z } from 'zod';
 import { prisma, Prisma } from '../../lib/prisma';
-import { contains, listQuery, pageArgs, paged } from '../../lib/pagination';
+import { contains, pageArgs, paged } from '../../lib/pagination';
 import { addDays } from '../../lib/dates';
-import { dateOnly, uuid } from '../../lib/validation';
-
-export const auditQuery = listQuery(['createdAt'] as const).extend({
-  action: z.string().max(80).optional(),
-  entityType: z.string().max(60).optional(),
-  entityId: z.string().max(80).optional(),
-  actorId: uuid.optional(),
-  from: dateOnly.optional(),
-  to: dateOnly.optional(),
-});
+import { auditQuery } from './audit.validation';
 
 export async function listAuditLogs(q: z.infer<typeof auditQuery>) {
   const where: Prisma.AuditLogWhereInput = {

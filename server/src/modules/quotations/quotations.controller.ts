@@ -8,7 +8,7 @@ import {
   customerResponseSchema,
   listQuotationsQuery,
   updateQuotationSchema,
-} from './quotations.schemas';
+} from './quotations.validation';
 
 export async function listQuotations(req: Request, res: Response) {
   res.json(await svc.listQuotations(getActor(req), listQuotationsQuery.parse(req.query)));

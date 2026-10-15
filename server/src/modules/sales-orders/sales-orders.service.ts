@@ -1,49 +1,25 @@
 import { z } from 'zod';
-import { SALES_ORDER_STATUSES, type SalesOrderStatus } from '../../shared';
+import { type SalesOrderStatus } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import { ownerWhere, type Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest, notFound, unprocessable } from '../../lib/errors';
 import { calculateLine, calculateTotals, ZERO } from '../../lib/money';
-import { contains, listQuery, pageArgs, paged, sortBy } from '../../lib/pagination';
+import { contains, pageArgs, paged, sortBy } from '../../lib/pagination';
 import { getSettings } from '../../lib/settings';
 import { startOfTodayUtc } from '../../lib/dates';
-import { dateOnly, optionalText, requiredText, uuid } from '../../lib/validation';
 import { ownerSelect } from '../../lib/ownership';
 import { assertSellableProducts, copyLines, normalizeLines, type LineInput } from '../../lib/line-items';
-import { lineItemSchema } from '../quotations/quotations.schemas';
+import { lineItemSchema } from '../quotations/quotations.validation';
 import { quotationScope } from '../quotations/quotations.service';
 import { customerScope } from '../customers/customers.service';
 import { contractScope } from '../contracts/contracts.service';
 import { customerExposure } from '../invoices/invoices.service';
-
-export const listOrdersQuery = listQuery(['createdAt', 'orderDate', 'deliveryDate', 'total', 'number'] as const).extend({
-  status: z.enum(SALES_ORDER_STATUSES).optional(),
-  customerId: uuid.optional(),
-  contractId: uuid.optional(),
-  ownerId: uuid.optional(),
-});
-
-const common = {
-  orderDate: dateOnly.optional(),
-  deliveryDate: dateOnly.optional().nullable(),
-  notes: optionalText(4000),
-};
-
-export const createOrderSchema = z.union([
-  z.strictObject({ contractId: uuid, ...common }),
-  z.strictObject({ quotationId: uuid, ...common }),
-  z.strictObject({ customerId: uuid, items: z.array(lineItemSchema).min(1, 'Add at least one line item').max(200), ...common }),
-]);
-
-export const updateOrderSchema = z.strictObject({
-  deliveryDate: dateOnly.optional().nullable(),
-  notes: optionalText(4000),
-  items: z.array(lineItemSchema).min(1).max(200).optional(),
-});
-
-export const cancelOrderSchema = z.strictObject({ reason: requiredText(500, 'Cancellation reason') });
-export const deliverOrderSchema = z.strictObject({ deliveryDate: dateOnly.optional() });
+import {
+  createOrderSchema,
+  listOrdersQuery,
+  updateOrderSchema,
+} from './sales-orders.validation';
 
 export const orderScope = (actor: Actor): Prisma.SalesOrderWhereInput => ownerWhere(actor, 'order');
 

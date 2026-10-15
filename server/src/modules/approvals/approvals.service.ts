@@ -1,27 +1,14 @@
 import { z } from 'zod';
-import { APPROVAL_STATUSES, APPROVER_TYPES } from '../../shared';
 import { prisma, Prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { notify } from '../../lib/notify';
 import { badRequest, conflict, forbidden, notFound, unprocessable } from '../../lib/errors';
-import { contains, listQuery, pageArgs, paged } from '../../lib/pagination';
+import { contains, pageArgs, paged } from '../../lib/pagination';
 import { getSetting } from '../../lib/settings';
-import { money, optionalText, requiredText, uuid } from '../../lib/validation';
 import { ownerSelect } from '../../lib/ownership';
 import { isSelfApproval } from './approval-engine';
-
-export const listApprovalsQuery = listQuery(['createdAt', 'amount', 'decidedAt'] as const).extend({
-  status: z.enum(APPROVAL_STATUSES).optional(),
-  view: z.enum(['assigned', 'all']).default('assigned'),
-});
-
-export const decisionSchema = z
-  .strictObject({ decision: z.enum(['APPROVE', 'REJECT']), comment: optionalText(2000) })
-  .refine((v) => v.decision === 'APPROVE' || (v.comment && v.comment.length >= 3), {
-    message: 'A rejection reason is required',
-    path: ['comment'],
-  });
+import { decisionSchema, listApprovalsQuery, ruleSchema } from './approvals.validation';
 
 function assignedWhere(actor: Actor): Prisma.ApprovalRequestWhereInput {
   return {
@@ -137,21 +124,6 @@ export async function decide(actor: Actor, id: string, input: z.infer<typeof dec
   });
   return getApproval(actor, id);
 }
-
-export const ruleSchema = z
-  .strictObject({
-    name: requiredText(120, 'Name'),
-    minAmount: money,
-    maxAmount: money.nullable().optional(),
-    approverType: z.enum(APPROVER_TYPES),
-    approverRoleId: uuid,
-    priority: z.coerce.number().int().min(0).max(1000).default(0),
-    isActive: z.boolean().default(true),
-  })
-  .refine((r) => r.maxAmount == null || Number(r.maxAmount) > Number(r.minAmount), {
-    message: 'Maximum must be greater than minimum',
-    path: ['maxAmount'],
-  });
 
 async function assertApproverRole(roleId: string) {
   const role = await prisma.role.findFirst({

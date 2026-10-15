@@ -4,7 +4,7 @@ import { prisma, Prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest, forbidden, notFound, unprocessable } from '../../lib/errors';
-import { optionalText, requiredText } from '../../lib/validation';
+import { createRoleSchema, updateRoleSchema } from './roles.validation';
 
 const roleInclude = {
   permissions: { select: { permission: { select: { code: true } } } },
@@ -20,21 +20,6 @@ const toRoleDto = (r: RoleRow) => ({
   isSystem: r.isSystem,
   userCount: r._count.users,
   permissions: r.permissions.map((p) => p.permission.code).sort(),
-});
-
-const permissionCodes = z.array(z.string().max(64)).max(200);
-
-export const createRoleSchema = z.strictObject({
-  code: z.string().trim().regex(/^[A-Z][A-Z0-9_]{2,40}$/, 'Use UPPER_SNAKE_CASE, 3 to 40 characters'),
-  name: requiredText(80, 'Name'),
-  description: optionalText(300),
-  permissions: permissionCodes.default([]),
-});
-
-export const updateRoleSchema = z.strictObject({
-  name: requiredText(80, 'Name').optional(),
-  description: optionalText(300),
-  permissions: permissionCodes.optional(),
 });
 
 async function resolvePermissionIds(codes: string[]) {

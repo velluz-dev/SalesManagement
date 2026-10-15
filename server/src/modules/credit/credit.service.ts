@@ -3,23 +3,11 @@ import { prisma, Prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest, notFound } from '../../lib/errors';
-import { contains, listQuery, pageArgs, paged } from '../../lib/pagination';
-import { booleanQuery, money, optionalText, uuid } from '../../lib/validation';
+import { contains, pageArgs, paged } from '../../lib/pagination';
 import { ZERO } from '../../lib/money';
 import { customerScope } from '../customers/customers.service';
 import { deriveInvoiceState, overdueWhere } from '../invoices/invoices.service';
-
-export const listCreditQuery = listQuery(['name'] as const).extend({
-  onHold: booleanQuery,
-  overLimit: booleanQuery,
-});
-
-export const creditSchema = z.strictObject({
-  creditLimit: money,
-  paymentTermId: uuid.nullable().optional(),
-  onHold: z.boolean().default(false),
-  notes: optionalText(1000),
-});
+import { creditSchema, listCreditQuery } from './credit.validation';
 
 function scopedCustomers(actor: Actor): Prisma.CustomerWhereInput {
   const hasCustomerScope = ['customer.read.own', 'customer.read.team', 'customer.read.all'].some((p) => actor.permissions.has(p));

@@ -1,19 +1,10 @@
 import { z } from 'zod';
 import { prisma, Prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
-import { dateOnly } from '../../lib/validation';
-import { addDays, daysBetween, startOfTodayUtc } from '../../lib/dates';
+import { daysBetween, startOfTodayUtc } from '../../lib/dates';
 import { ZERO } from '../../lib/money';
 import { fillMonths, ownerSql, reportOwners } from './report-scope';
-
-export const rangeQuery = z
-  .object({ from: dateOnly.optional(), to: dateOnly.optional() })
-  .transform((v) => {
-    const to = v.to ?? startOfTodayUtc();
-    const from = v.from ?? new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth() - 11, 1));
-    return { from, to, toExclusive: addDays(to, 1) };
-  })
-  .refine((v) => v.from <= v.to, 'from must be before to');
+import { rangeQuery } from './reports.validation';
 
 const monthCount = (from: Date, to: Date) =>
   (to.getUTCFullYear() - from.getUTCFullYear()) * 12 + (to.getUTCMonth() - from.getUTCMonth()) + 1;

@@ -5,7 +5,7 @@ import { hashPassword } from '../../lib/password';
 import { revokeUserSessions } from '../../lib/session';
 import { badRequest, conflict, forbidden, notFound, unprocessable } from '../../lib/errors';
 import { pageArgs, paged, contains } from '../../lib/pagination';
-import type { CreateUserInput, ListUsersQuery, UpdateUserInput } from './users.schemas';
+import type { CreateUserInput, ListUsersQuery, UpdateUserInput } from './users.validation';
 
 export const userSelect = {
   id: true,

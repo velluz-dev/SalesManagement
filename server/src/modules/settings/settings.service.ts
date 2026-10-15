@@ -5,8 +5,7 @@ import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest } from '../../lib/errors';
 import { getSettings } from '../../lib/settings';
-
-export const updateSettingsSchema = z.record(z.string(), z.unknown());
+import { updateSettingsSchema } from './settings.validation';
 
 function validatorFor(def: SettingDefinition): z.ZodType {
   switch (def.type) {

@@ -2,10 +2,11 @@ import type { Request, Response } from 'express';
 import { getActor } from '../../lib/auth-context';
 import { idParams } from '../../lib/validation';
 import * as svc from './products.service';
+import { listProductsQuery, productSchema, updateProductSchema } from './products.validation';
 
 export async function listProducts(req: Request, res: Response) {
   const actor = getActor(req);
-  const q = svc.listProductsQuery.parse(req.query);
+  const q = listProductsQuery.parse(req.query);
   res.json(await svc.listProducts(actor, q));
 }
 
@@ -20,13 +21,13 @@ export async function getProduct(req: Request, res: Response) {
 
 export async function createProduct(req: Request, res: Response) {
   const actor = getActor(req);
-  const input = svc.productSchema.parse(req.body);
+  const input = productSchema.parse(req.body);
   res.status(201).json({ data: await svc.createProduct(actor, input) });
 }
 
 export async function updateProduct(req: Request, res: Response) {
   const actor = getActor(req);
   const { id } = idParams.parse(req.params);
-  const input = svc.updateProductSchema.parse(req.body);
+  const input = updateProductSchema.parse(req.body);
   res.json({ data: await svc.updateProduct(actor, id, input) });
 }

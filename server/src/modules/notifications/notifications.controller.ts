@@ -2,9 +2,10 @@ import type { Request, Response } from 'express';
 import { getActor } from '../../lib/auth-context';
 import { idParams } from '../../lib/validation';
 import * as svc from './notifications.service';
+import { listNotificationsQuery, readAllSchema } from './notifications.validation';
 
 export async function listNotifications(req: Request, res: Response) {
-  res.json(await svc.listNotifications(getActor(req), svc.listNotificationsQuery.parse(req.query)));
+  res.json(await svc.listNotifications(getActor(req), listNotificationsQuery.parse(req.query)));
 }
 
 export async function unreadCount(req: Request, res: Response) {
@@ -20,7 +21,7 @@ export async function markRead(req: Request, res: Response) {
 
 export async function markAllRead(req: Request, res: Response) {
   const actor = getActor(req);
-  svc.readAllSchema.parse(req.body ?? {});
+  readAllSchema.parse(req.body ?? {});
   await svc.markAllRead(actor);
   res.status(204).end();
 }

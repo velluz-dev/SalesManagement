@@ -2,11 +2,8 @@ import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { notFound } from '../../lib/errors';
-import { pageArgs, paged, paginationQuery } from '../../lib/pagination';
-import { booleanQuery } from '../../lib/validation';
-
-export const listNotificationsQuery = paginationQuery.extend({ unread: booleanQuery });
-export const readAllSchema = z.object({});
+import { pageArgs, paged } from '../../lib/pagination';
+import { listNotificationsQuery } from './notifications.validation';
 
 export async function listNotifications(actor: Actor, q: z.infer<typeof listNotificationsQuery>) {
   const where = { userId: actor.user.id, ...(q.unread ? { readAt: null } : {}) };

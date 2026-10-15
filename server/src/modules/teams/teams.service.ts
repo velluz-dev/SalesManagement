@@ -3,19 +3,12 @@ import { prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { badRequest, notFound } from '../../lib/errors';
-import { requiredText, uuid } from '../../lib/validation';
+import { teamSchema, updateTeamSchema } from './teams.validation';
 
 const teamInclude = {
   manager: { select: { id: true, name: true, email: true } },
   members: { select: { id: true, name: true, email: true, isActive: true }, orderBy: { name: 'asc' } },
 } as const;
-
-export const teamSchema = z.strictObject({
-  name: requiredText(80, 'Team name'),
-  managerId: uuid.nullable().optional(),
-  memberIds: z.array(uuid).max(200).optional(),
-});
-export const updateTeamSchema = teamSchema.partial();
 
 async function assertActiveUsers(ids: string[]) {
   if (!ids.length) return;

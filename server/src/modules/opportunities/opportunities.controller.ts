@@ -2,9 +2,10 @@ import type { Request, Response } from 'express';
 import { getActor } from '../../lib/auth-context';
 import { idParams, uuid } from '../../lib/validation';
 import * as svc from './opportunities.service';
+import { createOpportunitySchema, listOpportunitiesQuery, updateOpportunitySchema } from './opportunities.validation';
 
 export async function listOpportunities(req: Request, res: Response) {
-  res.json(await svc.listOpportunities(getActor(req), svc.listOpportunitiesQuery.parse(req.query)));
+  res.json(await svc.listOpportunities(getActor(req), listOpportunitiesQuery.parse(req.query)));
 }
 
 export async function pipeline(req: Request, res: Response) {
@@ -18,10 +19,10 @@ export async function getOpportunity(req: Request, res: Response) {
 }
 
 export async function createOpportunity(req: Request, res: Response) {
-  res.status(201).json({ data: await svc.createOpportunity(getActor(req), svc.createOpportunitySchema.parse(req.body)) });
+  res.status(201).json({ data: await svc.createOpportunity(getActor(req), createOpportunitySchema.parse(req.body)) });
 }
 
 export async function updateOpportunity(req: Request, res: Response) {
   const { id } = idParams.parse(req.params);
-  res.json({ data: await svc.updateOpportunity(getActor(req), id, svc.updateOpportunitySchema.parse(req.body)) });
+  res.json({ data: await svc.updateOpportunity(getActor(req), id, updateOpportunitySchema.parse(req.body)) });
 }

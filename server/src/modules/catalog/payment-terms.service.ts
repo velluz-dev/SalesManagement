@@ -3,16 +3,7 @@ import { prisma } from '../../lib/prisma';
 import type { Actor } from '../../lib/auth-context';
 import { audit } from '../../lib/audit';
 import { conflict, notFound } from '../../lib/errors';
-import { booleanQuery, requiredText } from '../../lib/validation';
-
-export const listPaymentTermsQuery = z.object({ all: booleanQuery });
-
-export const termSchema = z.strictObject({
-  name: requiredText(40, 'Name'),
-  days: z.coerce.number().int().min(0, 'Use 0 to 365 days').max(365, 'Use 0 to 365 days'),
-  isActive: z.boolean().default(true),
-});
-export const updateTermSchema = termSchema.partial();
+import { listPaymentTermsQuery, termSchema, updateTermSchema } from './payment-terms.validation';
 
 export async function listPaymentTerms(actor: Actor, q: z.infer<typeof listPaymentTermsQuery>) {
   const includeInactive = q.all && actor.permissions.has('credit.manage');

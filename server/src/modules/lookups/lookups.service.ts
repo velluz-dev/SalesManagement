@@ -4,9 +4,7 @@ import type { Actor } from '../../lib/auth-context';
 import { contains } from '../../lib/pagination';
 import { customerScope } from '../customers/customers.service';
 import { opportunityScope } from '../opportunities/opportunities.service';
-import { uuid } from '../../lib/validation';
-
-export const searchQuery = z.object({ q: z.string().trim().max(100).optional(), customerId: uuid.optional() });
+import { searchQuery } from './lookups.validation';
 
 type SearchQuery = z.infer<typeof searchQuery>;
 

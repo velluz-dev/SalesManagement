@@ -9,7 +9,7 @@ import {
   setRolesSchema,
   setStatusSchema,
   updateUserSchema,
-} from './users.schemas';
+} from './users.validation';
 
 export async function listUsers(req: Request, res: Response) {
   res.json(await svc.listUsers(listUsersQuery.parse(req.query)));
